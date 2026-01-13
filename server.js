@@ -9,7 +9,7 @@ app.use(cors());
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL });
 
-// --- FUNÇÃO QUE CRIA A TABELA SOZINHA (O PULTO DO GATO) ---
+// FUNÇÃO PARA CRIAR TABELA AUTOMÁTICA
 async function inicializarBanco() {
     try {
         await pool.query(`
@@ -33,16 +33,12 @@ async function inicializarBanco() {
 }
 inicializarBanco();
 
-// --- CONFIGURAÇÃO DA BANCA ---
-const MARGEM_LUCRO = 0.85; 
-const GANHO_MAXIMO = 2500.00;
-
+// ROTA PARA BUSCAR JOGOS (CORRIGIDA)
 app.get('/api/jogos', async (req, res) => {
     try {
-        // Buscando os próximos 15 jogos de QUALQUER liga importante
-const resp = await axios.get('https://v3.football.api-sports.io/fixtures?next=15', {
-    headers: { 'x-rapidapi-key': process.env.API_FOOTBALL_KEY }
-});
+        // Buscando os próximos 15 jogos de hoje (Janeiro 2026)
+        const resp = await axios.get('https://v3.football.api-sports.io/fixtures?next=15', {
+            headers: { 'x-rapidapi-key': process.env.API_FOOTBALL_KEY }
         });
 
         const jogos = resp.data.response.map(j => ({
@@ -50,33 +46,36 @@ const resp = await axios.get('https://v3.football.api-sports.io/fixtures?next=15
             times: `${j.teams.home.name} x ${j.teams.away.name}`,
             data: j.fixture.date,
             odds: {
-                casa: (2.10 * MARGEM_LUCRO).toFixed(2),
-                empate: (3.20 * MARGEM_LUCRO).toFixed(2),
-                fora: (3.80 * MARGEM_LUCRO).toFixed(2)
+                casa: (1.85).toFixed(2),
+                empate: (3.10).toFixed(2),
+                fora: (4.20).toFixed(2)
             }
         }));
         res.json(jogos);
-    } catch (e) { 
-        res.status(500).json({ erro: "Erro ao buscar jogos" }); 
+    } catch (error) {
+        console.error("Erro na API de Jogos:", error.message);
+        res.status(500).json({ erro: "Erro ao buscar jogos" });
     }
 });
 
+// ROTA PARA FINALIZAR BILHETE
 app.post('/api/finalizar', async (req, res) => {
-    const { valor, palpite, jogoId, times, horario, odd } = req.body;
-    const codigo = Math.random().toString(36).substring(2, 8).toUpperCase();
-    let retorno = (valor * odd);
-    if (retorno > GANHO_MAXIMO) retorno = GANHO_MAXIMO;
-
     try {
+        const { valor, palpite, jogoId, times, horario, odd } = req.body;
+        const codigo = Math.random().toString(36).substring(2, 8).toUpperCase();
+        const retorno = (valor * odd).toFixed(2);
+
         await pool.query(
             'INSERT INTO bilhetes (codigo, valor, retorno_potencial, jogo_id, times, palpite, status, horario_jogo) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)',
-            [codigo, valor, retorno.toFixed(2), jogoId, times, palpite, 'pendente', horario]
+            [codigo, valor, retorno, jogoId, times, palpite, 'pendente', horario]
         );
-        res.json({ codigo, retorno: retorno.toFixed(2) });
-    } catch (e) { 
-        res.status(500).json({ erro: "Erro ao salvar bilhete" }); 
+        res.json({ codigo, retorno });
+    } catch (e) {
+        console.error("Erro ao salvar bilhete:", e.message);
+        res.status(500).json({ erro: "Erro ao salvar bilhete" });
     }
 });
 
-app.listen(process.env.PORT || 3000, () => console.log("🚀 Servidor Rodando!"));
-
+app.listen(process.env.PORT || 3000, () => {
+    console.log("🚀 MOTOR RODANDO NA PORTA " + (process.env.PORT || 3000));
+});
