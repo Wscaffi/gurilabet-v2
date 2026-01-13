@@ -1,84 +1,53 @@
 const express = require('express');
 const axios = require('axios');
-const { Pool } = require('pg');
 const cors = require('cors');
+const { Pool } = require('pg');
 
 const app = express();
-app.use(express.json());
-app.use(cors());
 
-// Conexão com o Banco de Dados
+// LIBERAÇÃO TOTAL PARA A VERCEL CONECTAR
+app.use(cors({
+    origin: '*',
+    methods: ['GET', 'POST'],
+    allowedHeaders: ['Content-Type']
+}));
+
+app.use(express.json());
+
 const pool = new Pool({ 
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
 });
 
-// Criar tabela automaticamente se não existir
-async function initDb() {
-    try {
-        await pool.query(`
-            CREATE TABLE IF NOT EXISTS bilhetes (
-                id SERIAL PRIMARY KEY,
-                codigo TEXT UNIQUE,
-                valor NUMERIC,
-                retorno_potencial NUMERIC,
-                times TEXT,
-                palpite TEXT,
-                status TEXT DEFAULT 'pendente',
-                criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-            );
-        `);
-        console.log("✅ Banco de dados pronto!");
-    } catch (err) {
-        console.error("❌ Erro ao iniciar banco:", err.message);
-    }
-}
-initDb();
-
-// Rota para buscar jogos (Próximos 15 jogos de qualquer liga)
+// ROTA DE JOGOS COM "PLANO B" AUTOMÁTICO
 app.get('/api/jogos', async (req, res) => {
     try {
-        const resp = await axios.get('https://v3.football.api-sports.io/fixtures?next=15', {
+        const resp = await axios.get('https://v3.football.api-sports.io/fixtures?next=10', {
             headers: { 'x-rapidapi-key': process.env.API_FOOTBALL_KEY }
         });
 
-        const jogos = resp.data.response.map(j => ({
+        let jogos = resp.data.response.map(j => ({
             id: j.fixture.id,
             times: `${j.teams.home.name} x ${j.teams.away.name}`,
-            data: j.fixture.date,
-            odds: {
-                casa: "1.95",
-                empate: "3.40",
-                fora: "4.10"
-            }
+            odds: { casa: "2.10", empate: "3.25", fora: "4.00" }
         }));
+
+        // SE A API FALHAR OU VIER VAZIA, MOSTRA JOGOS DE TESTE NA HORA
+        if (jogos.length === 0) {
+            jogos = [
+                { id: 101, times: "Flamengo x Palmeiras", odds: { casa: "2.10", empate: "3.20", fora: "3.80" } },
+                { id: 102, times: "Real Madrid x Barcelona", odds: { casa: "1.95", empate: "3.40", fora: "4.10" } }
+            ];
+        }
         res.json(jogos);
     } catch (error) {
-        console.error("Erro na API:", error.message);
-        res.status(500).json({ erro: "Erro ao carregar jogos" });
+        // SE DER ERRO NA API, MOSTRA OS JOGOS DE TESTE PARA NÃO TRAVAR O SITE
+        res.json([
+            { id: 101, times: "Flamengo x Palmeiras", odds: { casa: "2.10", empate: "3.20", fora: "3.80" } },
+            { id: 102, times: "Real Madrid x Barcelona", odds: { casa: "1.95", empate: "3.40", fora: "4.10" } }
+        ]);
     }
 });
 
-// Rota para salvar aposta
-app.post('/api/finalizar', async (req, res) => {
-    try {
-        const { valor, palpite, times, odd } = req.body;
-        const codigo = Math.random().toString(36).substring(2, 8).toUpperCase();
-        const retorno = (valor * odd).toFixed(2);
-
-        await pool.query(
-            'INSERT INTO bilhetes (codigo, valor, retorno_potencial, times, palpite) VALUES ($1, $2, $3, $4, $5)',
-            [codigo, valor, retorno, times, palpite]
-        );
-
-        res.json({ codigo, retorno });
-    } catch (error) {
-        console.error("Erro ao salvar:", error.message);
-        res.status(500).json({ erro: "Erro no servidor" });
-    }
-});
-
-// Iniciar servidor
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Motor rodando na porta ${PORT}`));
-app.get('/teste', (req, res) => res.send("O GORILA ESTÁ VIVO"));
+app.listen(PORT, () => console.log(`🚀 Rodando na porta ${PORT}`));
