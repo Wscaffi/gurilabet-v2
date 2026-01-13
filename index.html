@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GurilaBet 🦍</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-[#0b1218] text-white p-2 font-sans">
+    <header class="py-6 text-center border-b border-slate-800 mb-6">
+        <h1 class="text-3xl font-black text-green-500 italic uppercase">Gurila Bet 🦍</h1>
+    </header>
+
+    <div id="lista-jogos" class="max-w-md mx-auto space-y-4 pb-24">
+        <p class="text-center text-slate-500 animate-pulse">Buscando os melhores jogos...</p>
+    </div>
+
+    <div id="modal" class="hidden fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-50">
+        <div class="bg-white p-8 rounded-[30px] w-full max-w-sm text-slate-900 shadow-2xl">
+            <h2 class="font-black text-center text-2xl mb-4">BILHETE PRONTO!</h2>
+            <div class="bg-slate-100 p-6 rounded-2xl text-center border-2 border-dashed border-slate-300">
+                <p class="text-[10px] font-bold text-slate-500 uppercase">Apresente este código</p>
+                <p id="cod-b" class="text-4xl font-black text-green-600 my-2"></p>
+                <p class="text-sm font-bold">Prêmio Estimado: R$ <span id="ret-b"></span></p>
+            </div>
+            <button onclick="enviarZap()" class="w-full bg-green-500 text-white font-black py-4 rounded-xl mt-6 shadow-lg uppercase">Validar no WhatsApp</button>
+            <button onclick="location.reload()" class="w-full text-slate-400 mt-4 text-[10px] font-bold uppercase">Fechar</button>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'https://SUA_URL_DA_RAILWAY.up.railway.app'; // <--- MUDE ISTO
+        let apostaAtiva = {};
+
+        async function carregar() {
+            try {
+                const r = await fetch(`${API_URL}/api/jogos`);
+                const jogos = await r.json();
+                document.getElementById('lista-jogos').innerHTML = jogos.map(j => `
+                    <div class="bg-[#16202a] p-5 rounded-2xl border border-slate-800 shadow-lg">
+                        <div class="flex justify-between text-[10px] text-slate-500 font-bold uppercase mb-3">
+                            <span>Futebol / Brasil</span>
+                            <span>${new Date(j.data).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                        </div>
+                        <h3 class="font-bold text-md mb-5">${j.times}</h3>
+                        <div class="grid grid-cols-3 gap-3">
+                            <button onclick="fazerAposta('${j.id}','Casa','${j.data}','${j.times}',${j.odds.casa})" class="bg-[#202d39] p-3 rounded-xl hover:bg-green-600 transition-all">
+                                <span class="block text-[10px] text-slate-400 mb-1">CASA</span>
+                                <span class="font-bold text-white">${j.odds.casa}</span>
+                            </button>
+                            <button onclick="fazerAposta('${j.id}','Empate','${j.data}','${j.times}',${j.odds.empate})" class="bg-[#202d39] p-3 rounded-xl hover:bg-green-600 transition-all">
+                                <span class="block text-[10px] text-slate-400 mb-1">X</span>
+                                <span class="font-bold text-white">${j.odds.empate}</span>
+                            </button>
+                            <button onclick="fazerAposta('${j.id}','Fora','${j.data}','${j.times}',${j.odds.fora})" class="bg-[#202d39] p-3 rounded-xl hover:bg-green-600 transition-all">
+                                <span class="block text-[10px] text-slate-400 mb-1">FORA</span>
+                                <span class="font-bold text-white">${j.odds.fora}</span>
+                            </button>
+                        </div>
+                    </div>
+                `).join('');
+            } catch (e) { console.error(e); }
+        }
+
+        async function fazerAposta(id, palpite, data, times, odd) {
+            const valor = prompt("Quanto deseja apostar? (R$ 5 a R$ 500)");
+            if (!valor || valor < 5) return alert("Mínimo R$ 5,00");
+
+            const res = await fetch(`${API_URL}/api/finalizar`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ valor: parseFloat(valor), palpite, jogoId: id, times, horario: data, odd })
+            });
+
+            const d = await res.json();
+            if (d.erro) return alert(d.erro);
+
+            apostaAtiva = { ...d, times, valor };
+            document.getElementById('cod-b').innerText = d.codigo;
+            document.getElementById('ret-b').innerText = d.retorno;
+            document.getElementById('modal').classList.remove('hidden');
+        }
+
+        function enviarZap() {
+            const tel = "55SEUNUMERO"; // <--- SEU WHATSAPP AQUI
+            const texto = `🦍 *GURILA BET* %0A✅ Bilhete: ${apostaAtiva.codigo} %0A⚽ Jogo: ${apostaAtiva.times} %0A💰 Valor: R$ ${apostaAtiva.valor} %0A🏆 Prêmio: R$ ${apostaAtiva.retorno}`;
+            window.open(`https://wa.me/${tel}?text=${texto}`);
+        }
+
+        carregar();
+    </script>
+</body>
+</html>
