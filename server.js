@@ -81,3 +81,4 @@ app.post('/api/finalizar', async (req, res) => {
 // Iniciar servidor
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => console.log(`🚀 Motor rodando na porta ${PORT}`));
+app.get('/teste', (req, res) => res.send("O GORILA ESTÁ VIVO"));
