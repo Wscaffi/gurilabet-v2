@@ -3,96 +3,203 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GurilaBet 🦍</title>
+    <title>GURILA BET | O Brabo</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background-color: #060a0d; color: #e2e8f0; }
+        .bg-card { background-color: #12171d; }
+        .border-green { border-color: #00ff88; }
+        .text-green { color: #00ff88; }
+        .btn-odd { background-color: #1c242c; transition: all 0.2s; }
+        .btn-odd:hover { background-color: #00ff88; color: #000; }
+    </style>
 </head>
-<body class="bg-[#0b1218] text-white p-2 font-sans">
-    <header class="py-6 text-center border-b border-slate-800 mb-6">
-        <h1 class="text-3xl font-black text-green-500 italic uppercase">Gurila Bet 🦍</h1>
+<body class="font-sans">
+
+    <header class="p-4 flex justify-between items-center sticky top-0 bg-[#060a0d] z-50 border-b border-gray-800">
+        <div class="flex items-center gap-3">
+            <i class="fas fa-bars text-xl"></i>
+            <h1 class="text-xl font-black italic tracking-tighter text-white">
+                GURILA<span class="text-green-500 italic">BET</span> 🦍
+            </h1>
+        </div>
+        <button class="bg-green-600 text-black px-4 py-1.5 rounded-lg font-bold text-sm">Entrar</button>
     </header>
 
-    <div id="lista-jogos" class="max-w-md mx-auto space-y-4 pb-24">
-        <p class="text-center text-slate-500 animate-pulse">Buscando os melhores jogos...</p>
+    <nav class="flex overflow-x-auto p-4 gap-6 no-scrollbar bg-[#0c1117] border-b border-gray-800">
+        <div class="flex flex-col items-center gap-1 min-w-[60px] text-green-500">
+            <i class="fas fa-futbol text-2xl"></i>
+            <span class="text-[10px] font-bold uppercase">Futebol</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 min-w-[60px] text-gray-500">
+            <i class="fas fa-basketball-ball text-2xl"></i>
+            <span class="text-[10px] font-bold uppercase">Basquete</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 min-w-[60px] text-gray-500">
+            <i class="fas fa-hand-fist text-2xl"></i>
+            <span class="text-[10px] font-bold uppercase">Luta</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 min-w-[60px] text-gray-500">
+            <i class="fas fa-table-tennis text-2xl"></i>
+            <span class="text-[10px] font-bold uppercase">Tênis</span>
+        </div>
+        <div class="flex flex-col items-center gap-1 min-w-[60px] text-gray-500">
+            <i class="fas fa-gamepad text-2xl"></i>
+            <span class="text-[10px] font-bold uppercase">E-sports</span>
+        </div>
+    </nav>
+
+    <div class="p-4">
+        <div class="relative bg-gradient-to-br from-green-900 to-black rounded-2xl p-6 border border-green-900/50 overflow-hidden shadow-2xl">
+            <div class="relative z-10">
+                <p class="text-[10px] font-bold text-green-400 mb-1 italic">🔥 MÚLTIPLA TURBINADA</p>
+                <h2 class="text-xl font-black italic leading-tight">BÔNUS DE 100% NO<br>PRIMEIRO DEPÓSITO</h2>
+                <button class="mt-4 bg-green-500 text-black text-[10px] font-black px-4 py-2 rounded-full uppercase tracking-widest">Aproveitar</button>
+            </div>
+            <i class="fas fa-crown absolute right-[-10px] bottom-[-10px] text-8xl text-green-500 opacity-20 rotate-12"></i>
+        </div>
     </div>
 
-    <div id="modal" class="hidden fixed inset-0 bg-black/95 flex items-center justify-center p-4 z-50">
-        <div class="bg-white p-8 rounded-[30px] w-full max-w-sm text-slate-900 shadow-2xl">
-            <h2 class="font-black text-center text-2xl mb-4">BILHETE PRONTO!</h2>
-            <div class="bg-slate-100 p-6 rounded-2xl text-center border-2 border-dashed border-slate-300">
-                <p class="text-[10px] font-bold text-slate-500 uppercase">Apresente este código</p>
-                <p id="cod-b" class="text-4xl font-black text-green-600 my-2"></p>
-                <p class="text-sm font-bold">Prêmio Estimado: R$ <span id="ret-b"></span></p>
+    <div class="px-4 mb-4">
+        <div class="bg-[#12171d] p-3 rounded-xl flex justify-between items-center border border-gray-800">
+            <span class="text-sm font-bold text-gray-400 italic">Selecionar campeonato</span>
+            <i class="fas fa-chevron-down text-gray-600 text-xs"></i>
+        </div>
+    </div>
+
+    <main class="px-4 pb-40">
+        <div class="flex items-center gap-2 mb-4">
+            <i class="fas fa-trophy text-green-500 text-sm"></i>
+            <h3 class="text-sm font-black uppercase tracking-tighter italic">Eventos em Destaque</h3>
+        </div>
+
+        <div id="games-container" class="space-y-4">
             </div>
-            <button onclick="enviarZap()" class="w-full bg-green-500 text-white font-black py-4 rounded-xl mt-6 shadow-lg uppercase">Validar no WhatsApp</button>
-            <button onclick="location.reload()" class="w-full text-slate-400 mt-4 text-[10px] font-bold uppercase">Fechar</button>
+    </main>
+
+    <footer class="fixed bottom-0 left-0 right-0 bg-[#0c1117] border-t border-gray-800 p-2 flex justify-around items-center z-[100]">
+        <div class="flex flex-col items-center text-green-500">
+            <i class="fas fa-home text-xl"></i>
+            <span class="text-[9px] font-bold">Início</span>
+        </div>
+        <div class="flex flex-col items-center text-gray-500">
+            <i class="fas fa-search text-xl"></i>
+            <span class="text-[9px] font-bold">Pesquisar</span>
+        </div>
+        <div class="relative">
+            <div class="bg-green-600 w-12 h-12 rounded-full flex items-center justify-center -mt-8 border-4 border-[#060a0d] shadow-lg">
+                <i class="fas fa-ticket-alt text-black"></i>
+            </div>
+        </div>
+        <div class="flex flex-col items-center text-gray-500">
+            <i class="fas fa-history text-xl"></i>
+            <span class="text-[9px] font-bold">Apostas</span>
+        </div>
+        <div class="flex flex-col items-center text-gray-500" onclick="window.location.href='/admin'">
+            <i class="fas fa-user text-xl"></i>
+            <span class="text-[9px] font-bold">Perfil</span>
+        </div>
+    </footer>
+
+    <div id="cart" class="fixed bottom-16 left-4 right-4 bg-[#1a222a] rounded-2xl border-t-4 border-green-500 p-5 hidden z-[110] shadow-2xl transition-all">
+        <div id="cart-info" class="mb-4"></div>
+        <div class="flex gap-2">
+            <input id="valor" type="number" placeholder="R$ 0,00" class="flex-1 bg-[#0c1117] border border-gray-700 p-3 rounded-xl text-white font-bold outline-none focus:border-green-500">
+            <button onclick="finalizar()" class="bg-green-500 text-black font-black px-6 rounded-xl uppercase italic tracking-tighter">Apostar</button>
         </div>
     </div>
 
     <script>
-        const API_URL = 'https://gurilabet-v2-production.up.railway.app'; // <--- MUDE ISTO
-        let apostaAtiva = {};
+        const API_URL = 'https://SEU-LINK-DO-RAILWAY.up.railway.app'; // <--- COLOQUE O SEU LINK AQUI
 
-        async function carregar() {
+        async function loadGames() {
             try {
-                const r = await fetch(`${API_URL}/api/jogos`);
-                const jogos = await r.json();
-                document.getElementById('lista-jogos').innerHTML = jogos.map(j => `
-                    <div class="bg-[#16202a] p-5 rounded-2xl border border-slate-800 shadow-lg">
-                        <div class="flex justify-between text-[10px] text-slate-500 font-bold uppercase mb-3">
-                            <span>Futebol / Brasil</span>
-                            <span>${new Date(j.data).toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</span>
+                const res = await fetch(`${API_URL}/api/jogos`);
+                const games = await res.json();
+                const container = document.getElementById('games-container');
+                
+                container.innerHTML = games.map(g => `
+                    <div class="bg-card rounded-2xl p-4 border border-gray-800 relative shadow-md">
+                        <div class="flex justify-between items-center mb-3">
+                            <span class="text-[9px] font-bold text-gray-500 flex items-center gap-1">
+                                <i class="fas fa-shield-alt text-green-500"></i> BRASIL / SÉRIE A
+                            </span>
+                            <span class="text-[9px] font-bold text-gray-600 italic">Hoje 20:00</span>
                         </div>
-                        <h3 class="font-bold text-md mb-5">${j.times}</h3>
-                        <div class="grid grid-cols-3 gap-3">
-                            <button onclick="fazerAposta('${j.id}','Casa','${j.data}','${j.times}',${j.odds.casa})" class="bg-[#202d39] p-3 rounded-xl hover:bg-green-600 transition-all">
-                                <span class="block text-[10px] text-slate-400 mb-1">CASA</span>
-                                <span class="font-bold text-white">${j.odds.casa}</span>
+                        
+                        <div class="text-center font-bold text-md mb-4 tracking-tight">${g.times}</div>
+                        
+                        <div class="grid grid-cols-3 gap-2">
+                            <button onclick="addToCart('${g.times}', 'Casa', ${g.odds.casa})" class="btn-odd p-3 rounded-xl flex flex-col items-center">
+                                <span class="text-[9px] text-gray-500 uppercase font-bold">1</span>
+                                <span class="text-sm font-black">${g.odds.casa}</span>
                             </button>
-                            <button onclick="fazerAposta('${j.id}','Empate','${j.data}','${j.times}',${j.odds.empate})" class="bg-[#202d39] p-3 rounded-xl hover:bg-green-600 transition-all">
-                                <span class="block text-[10px] text-slate-400 mb-1">X</span>
-                                <span class="font-bold text-white">${j.odds.empate}</span>
+                            <button onclick="addToCart('${g.times}', 'Empate', ${g.odds.empate})" class="btn-odd p-3 rounded-xl flex flex-col items-center">
+                                <span class="text-[9px] text-gray-500 uppercase font-bold">X</span>
+                                <span class="text-sm font-black">${g.odds.empate}</span>
                             </button>
-                            <button onclick="fazerAposta('${j.id}','Fora','${j.data}','${j.times}',${j.odds.fora})" class="bg-[#202d39] p-3 rounded-xl hover:bg-green-600 transition-all">
-                                <span class="block text-[10px] text-slate-400 mb-1">FORA</span>
-                                <span class="font-bold text-white">${j.odds.fora}</span>
+                            <button onclick="addToCart('${g.times}', 'Fora', ${g.odds.fora})" class="btn-odd p-3 rounded-xl flex flex-col items-center">
+                                <span class="text-[9px] text-gray-500 uppercase font-bold">2</span>
+                                <span class="text-sm font-black">${g.odds.fora}</span>
                             </button>
                         </div>
                     </div>
                 `).join('');
-            } catch (e) { console.error(e); }
+            } catch (e) { 
+                console.error(e); 
+            }
         }
 
-        async function fazerAposta(id, palpite, data, times, odd) {
-            const valor = prompt("Quanto deseja apostar? (R$ 5 a R$ 500)");
-            if (!valor || valor < 5) return alert("Mínimo R$ 5,00");
-
-            const res = await fetch(`${API_URL}/api/finalizar`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({ valor: parseFloat(valor), palpite, jogoId: id, times, horario: data, odd })
-            });
-
-            const d = await res.json();
-            if (d.erro) return alert(d.erro);
-
-            apostaAtiva = { ...d, times, valor };
-            document.getElementById('cod-b').innerText = d.codigo;
-            document.getElementById('ret-b').innerText = d.retorno;
-            document.getElementById('modal').classList.remove('hidden');
+        let cartData = null;
+        function addToCart(times, palpite, odd) {
+            cartData = { times, palpite, odd };
+            document.getElementById('cart').classList.remove('hidden');
+            document.getElementById('cart-info').innerHTML = `
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p class="text-xs font-bold text-green-500">${times}</p>
+                        <p class="text-sm font-black">${palpite}</p>
+                    </div>
+                    <span class="text-xl font-black italic">@${odd}</span>
+                </div>
+            `;
         }
 
-        function enviarZap() {
-            const tel = "55SEUNUMERO"; // <--- SEU WHATSAPP AQUI
-            const texto = `🦍 *GURILA BET* %0A✅ Bilhete: ${apostaAtiva.codigo} %0A⚽ Jogo: ${apostaAtiva.times} %0A💰 Valor: R$ ${apostaAtiva.valor} %0A🏆 Prêmio: R$ ${apostaAtiva.retorno}`;
-            window.open(`https://wa.me/${tel}?text=${texto}`);
+        async function finalizar() {
+            const valor = document.getElementById('valor').value;
+            if(!valor || valor <= 0) return alert("Digite o valor!");
+            
+            try {
+                const res = await fetch(`${API_URL}/api/finalizar`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({...cartData, valor})
+                });
+                const data = await res.json();
+                
+                // TELA DE BILHETE IGUAL APP
+                document.body.innerHTML = `
+                    <div class="h-screen flex flex-col items-center justify-center p-8 text-center bg-[#060a0d]">
+                        <div class="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(0,255,136,0.3)] mb-6">
+                            <i class="fas fa-check text-4xl text-black"></i>
+                        </div>
+                        <h2 class="text-2xl font-black italic mb-2">BILHETE REGISTRADO!</h2>
+                        <p class="text-gray-500 text-sm mb-8">Pague para validar sua aposta</p>
+                        
+                        <div class="bg-[#12171d] border-2 border-dashed border-green-500 p-6 rounded-2xl w-full">
+                            <p class="text-xs text-gray-500 mb-1 font-bold">CÓDIGO DO BILHETE</p>
+                            <p class="text-4xl font-black text-green-400 tracking-[10px] mb-4">${data.codigo}</p>
+                            <p class="text-sm font-bold">RETORNO: <span class="text-white text-lg">R$ ${data.retorno}</span></p>
+                        </div>
+                        
+                        <button onclick="location.reload()" class="mt-10 bg-white text-black font-black px-10 py-4 rounded-full uppercase italic text-sm tracking-tighter">Voltar ao Início</button>
+                    </div>
+                `;
+            } catch (e) { alert("Erro ao finalizar"); }
         }
 
-        carregar();
+        window.onload = loadGames;
     </script>
 </body>
-
 </html>
-
-
-
-
