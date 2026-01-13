@@ -39,8 +39,10 @@ const GANHO_MAXIMO = 2500.00;
 
 app.get('/api/jogos', async (req, res) => {
     try {
-        const resp = await axios.get('https://v3.football.api-sports.io/fixtures?league=71&season=2024&next=15', {
-            headers: { 'x-rapidapi-key': process.env.API_FOOTBALL_KEY }
+        // Buscando os próximos 15 jogos de QUALQUER liga importante
+const resp = await axios.get('https://v3.football.api-sports.io/fixtures?next=15', {
+    headers: { 'x-rapidapi-key': process.env.API_FOOTBALL_KEY }
+});
         });
 
         const jogos = resp.data.response.map(j => ({
@@ -77,3 +79,4 @@ app.post('/api/finalizar', async (req, res) => {
 });
 
 app.listen(process.env.PORT || 3000, () => console.log("🚀 Servidor Rodando!"));
+
