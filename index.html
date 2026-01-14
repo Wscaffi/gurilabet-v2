@@ -12,8 +12,8 @@
         .odd-btn { background: #1c242c; border: 1px solid #2d3741; transition: 0.2s; }
         .odd-btn:active { transform: scale(0.95); }
         .modal { background: rgba(0,0,0,0.95); backdrop-filter: blur(10px); }
-        /* Evita o efeito de piscar */
-        .flag-img { min-width: 20px; height: 15px; background: #1a2128; border-radius: 2px; }
+        /* Estabilizador de Bandeiras para evitar ícones quebrados */
+        .flag-container { width: 22px; height: 16px; display: flex; align-items: center; justify-content: center; background: #1a2128; border-radius: 2px; overflow: hidden; }
     </style>
 </head>
 <body class="pb-32">
@@ -39,7 +39,7 @@
             <input id="cad-email" type="email" placeholder="E-mail" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-3 text-sm outline-none">
             <input id="cad-senha" type="password" placeholder="Senha" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-6 text-sm outline-none">
             <button onclick="realizarCadastro()" class="w-full bg-green-600 text-black font-black p-4 rounded-xl uppercase italic">Finalizar Cadastro</button>
-            <button onclick="toggleModal('modal-cadastro')" class="w-full text-gray-600 text-[10px] mt-4 font-bold uppercase underline">Voltar</button>
+            <button onclick="toggleModal('modal-cadastro')" class="w-full text-gray-500 text-[10px] mt-4 font-bold uppercase underline">Voltar</button>
         </div>
     </div>
 
@@ -47,33 +47,30 @@
         const API_URL = 'https://gurilabet-v2-production.up.railway.app'; 
         let usuarioLogado = JSON.parse(localStorage.getItem('gurila_user')) || null;
 
-        // TRADUTOR DE PAÍSES E LIGAS (Corrigindo o Inglês)
+        // TRADUTOR DE PAÍSES E LIGAS
         function traduzir(texto) {
             const dicionario = {
-                'Brazil': 'Brasil',
-                'England': 'Inglaterra',
-                'Spain': 'Espanha',
-                'Italy': 'Itália',
-                'Germany': 'Alemanha',
-                'France': 'França',
-                'Portugal': 'Portugal',
-                'Argentina': 'Argentina',
-                'Netherlands': 'Holanda',
-                'Saudi-Arabia': 'Arábia Saudita',
-                'World': 'Mundial',
-                'Europe': 'Europa'
+                'Brazil': 'Brasil', 'England': 'Inglaterra', 'Spain': 'Espanha', 'Italy': 'Itália',
+                'Germany': 'Alemanha', 'France': 'França', 'Portugal': 'Portugal',
+                'Argentina': 'Argentina', 'Netherlands': 'Holanda', 'Saudi-Arabia': 'Arábia Saudita',
+                'World': 'Mundial', 'Europe': 'Europa', 'Friendly': 'Amistoso'
             };
             return dicionario[texto] || texto;
         }
 
-        function getFlag(pais) {
+        // SISTEMA DE BANDEIRA ROBUSTO
+        function getFlag(pais, logoLiga) {
             const flags = {
                 'Brazil': 'BR', 'England': 'GB', 'Spain': 'ES', 'Italy': 'IT', 'Germany': 'DE',
-                'France': 'FR', 'Portugal': 'PT', 'Argentina': 'AR', 'Netherlands': 'NL',
-                'Belgium': 'BE', 'Turkey': 'TR', 'Saudi-Arabia': 'SA', 'USA': 'US'
+                'France': 'FR', 'Portugal': 'PT', 'Argentina': 'AR', 'World': 'UN'
             };
-            const code = flags[pais] || 'UN'; 
-            return `https://flagsapi.com/${code}/flat/64.png`;
+            const code = flags[pais];
+            
+            // Se tiver código de país, usa a bandeira. Se não, usa o logo da liga direto.
+            if (code && code !== 'UN') {
+                return `https://flagsapi.com/${code}/flat/64.png`;
+            }
+            return logoLiga; // Fallback imediato para o logo da liga
         }
 
         async function carregarJogos() {
@@ -98,7 +95,11 @@
                     const jInfo = ligas[ligaNome][0];
                     html += `<div class="league-group">
                         <div class="league-header p-3 flex items-center gap-2 text-[10px] font-black uppercase italic text-gray-400">
-                            <img src="${getFlag(jInfo.pais)}" class="flag-img object-cover shadow-md" loading="lazy">
+                            <div class="flag-container">
+                                <img src="${getFlag(jInfo.pais, jInfo.bandeira)}" 
+                                     class="w-full h-full object-cover" 
+                                     onerror="this.src='https://cdn-icons-png.flaticon.com/512/33/33736.png'">
+                            </div>
                             <span>${ligaNome}</span>
                         </div>`;
                     
@@ -111,21 +112,21 @@
                             </div>
                             <div class="flex-1 flex flex-col gap-2">
                                 <div class="flex items-center gap-3 text-[11px] font-black uppercase tracking-tighter text-gray-200">
-                                    <img src="${j.home.logo}" class="w-5 h-5 object-contain"> ${j.home.name}
+                                    <img src="${j.home.logo}" class="w-5 h-5 object-contain" onerror="this.src='https://cdn-icons-png.flaticon.com/512/33/33736.png'"> ${j.home.name}
                                 </div>
                                 <div class="flex items-center gap-3 text-[11px] font-black uppercase tracking-tighter text-gray-200">
-                                    <img src="${j.away.logo}" class="w-5 h-5 object-contain"> ${j.away.name}
+                                    <img src="${j.away.logo}" class="w-5 h-5 object-contain" onerror="this.src='https://cdn-icons-png.flaticon.com/512/33/33736.png'"> ${j.away.name}
                                 </div>
                             </div>
                             <div class="flex gap-1.5 ml-2">
                                 <div class="odd-btn w-14 h-11 rounded-xl text-[12px] font-black text-green-500 flex flex-col items-center justify-center">
-                                    <span class="text-[7px] text-gray-600 font-bold uppercase mb-0.5 font-bold">1</span>${j.odds.casa}
+                                    <span class="text-[7px] text-gray-600 font-bold uppercase mb-0.5">1</span>${j.odds.casa}
                                 </div>
                                 <div class="odd-btn w-14 h-11 rounded-xl text-[12px] font-black text-green-500 flex flex-col items-center justify-center">
-                                    <span class="text-[7px] text-gray-600 font-bold uppercase mb-0.5 font-bold">X</span>${j.odds.empate}
+                                    <span class="text-[7px] text-gray-600 font-bold uppercase mb-0.5">X</span>${j.odds.empate}
                                 </div>
                                 <div class="odd-btn w-14 h-11 rounded-xl text-[12px] font-black text-green-500 flex flex-col items-center justify-center">
-                                    <span class="text-[7px] text-gray-600 font-bold uppercase mb-0.5 font-bold">2</span>${j.odds.fora}
+                                    <span class="text-[7px] text-gray-600 font-bold uppercase mb-0.5">2</span>${j.odds.fora}
                                 </div>
                             </div>
                         </div>`;
@@ -136,25 +137,7 @@
             } catch (e) { console.error(e); }
         }
 
-        async function realizarCadastro() {
-            const res = await fetch(`${API_URL}/api/cadastro`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({nome: document.getElementById('cad-nome').value, email: document.getElementById('cad-email').value, senha: document.getElementById('cad-senha').value})
-            });
-            const data = await res.json();
-            if(data.sucesso) { localStorage.setItem('gurila_user', JSON.stringify(data.usuario)); location.reload(); } else { alert(data.erro); }
-        }
-
         function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); document.getElementById(id).classList.toggle('flex'); }
-
-        if(usuarioLogado) {
-            document.getElementById('user-area').innerHTML = `
-                <button class="flex items-center gap-2 bg-[#1c242c] p-2 px-3 rounded-xl border border-gray-800">
-                    <div class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-black font-black text-[10px] uppercase">${usuarioLogado.nome.charAt(0)}</div>
-                    <span class="text-white uppercase italic tracking-tighter">CONTA</span>
-                </button>`;
-        }
 
         window.onload = carregarJogos;
     </script>
