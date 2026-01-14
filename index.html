@@ -2,94 +2,74 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GURILA BET | LIVE PRO</title>
+    <title>GURILA BET | PROFESSIONAL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background: #0b0f12; color: #fff; font-family: sans-serif; }
-        .league-title { background: #1a2128; border-left: 4px solid #00ff88; padding: 10px; font-size: 11px; font-weight: 900; text-transform: uppercase; margin-top: 15px; display: flex; align-items: center; gap: 8px; }
-        .odd-box { background: #1a2128; border: 1px solid #2d3741; border-radius: 6px; padding: 8px 0; text-align: center; width: 55px; transition: 0.2s; cursor: pointer; }
-        .odd-box:hover { border-color: #00ff88; color: #00ff88; }
-        .live-tag { background: #ef4444; color: white; padding: 2px 5px; rounded: 3px; font-size: 8px; font-weight: bold; animate: pulse 2s infinite; }
+        body { background: #060a0d; color: #fff; font-family: sans-serif; }
+        .league-header { background: #12171d; border-left: 4px solid #00ff88; padding: 10px; font-size: 11px; font-weight: 900; text-transform: uppercase; margin-top: 15px; display: flex; align-items: center; gap: 8px; }
+        .match-row { background: #11171e; border-bottom: 1px solid #1e262f; padding: 15px; display: flex; align-items: center; justify-content: space-between; }
+        .odd-btn { background: #1c242c; border: 1px solid #2d3741; border-radius: 8px; width: 55px; height: 45px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; color: #00ff88; }
     </style>
 </head>
-<body class="pb-24">
-    <header class="p-4 bg-[#0b0f12] flex justify-between items-center sticky top-0 z-50 border-b border-gray-800">
-        <h1 class="text-2xl font-black italic">GURILA<span class="text-green-500">BET</span> 🦍</h1>
-        <div class="flex gap-2">
-            <button onclick="document.getElementById('m').style.display='flex'" class="bg-green-600 text-black px-4 py-2 rounded-lg font-bold text-xs uppercase shadow-lg shadow-green-900/20">Cadastrar</button>
-        </div>
+<body class="pb-20">
+    <header class="p-4 bg-[#0b0f13] border-b border-gray-800 flex justify-between items-center sticky top-0 z-50">
+        <h1 class="text-2xl font-black italic uppercase">Gurila<span class="text-green-500">Bet</span> 🦍</h1>
     </header>
 
-    <main class="p-2 max-w-2xl mx-auto" id="lista">
-        <div class="text-center py-20 animate-pulse text-gray-500 text-xs font-bold uppercase">Sincronizando Jogos Ao Vivo...</div>
+    <main id="lista-jogos">
+        <div class="text-center py-20 text-gray-500 font-bold uppercase italic text-xs animate-pulse">Buscando Jogos Reais...</div>
     </main>
 
-    <div id="m" style="display:none;" class="fixed inset-0 bg-black/95 z-[100] items-center justify-center p-4">
-        <div class="bg-[#11171e] p-8 rounded-3xl w-full max-w-sm border border-gray-800">
-            <h2 class="text-xl font-black mb-6 uppercase italic text-green-500 text-center">Entrar na Tribo 🦍</h2>
-            <input id="n" type="text" placeholder="Nome Completo" class="w-full bg-black p-4 mb-3 rounded-xl border border-gray-800 outline-none focus:border-green-500">
-            <input id="e" type="email" placeholder="E-mail" class="w-full bg-black p-4 mb-3 rounded-xl border border-gray-800 outline-none focus:border-green-500">
-            <input id="s" type="password" placeholder="Senha" class="w-full bg-black p-4 mb-6 rounded-xl border border-gray-800 outline-none focus:border-green-500">
-            <button onclick="cadastrar()" class="w-full bg-green-600 text-black font-black p-4 rounded-xl uppercase italic shadow-lg">Começar Agora</button>
-            <button onclick="document.getElementById('m').style.display='none'" class="w-full text-gray-500 text-[10px] mt-4 uppercase font-bold underline">Fechar</button>
-        </div>
-    </div>
-
     <script>
-        const API_URL = 'https://gurilabet-v2-production.up.railway.app'; // <--- ATUALIZA COM O TEU LINK DO RAILWAY
-
-        async function cadastrar() {
-            const res = await fetch(`${API_URL}/api/cadastro`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({nome: document.getElementById('n').value, email: document.getElementById('e').value, senha: document.getElementById('s').value})
-            });
-            if(res.ok) { alert("🦍 Bem-vindo à Gurila Bet!"); location.reload(); }
-        }
+        // MUDAR PARA O SEU LINK DO RAILWAY
+        const API_URL = 'https://gurilabet-v2-production.up.railway.app'; 
 
         async function carregar() {
             try {
+                console.log("Chamando Motor...");
                 const res = await fetch(`${API_URL}/api/jogos`);
                 const jogos = await res.json();
+                
+                if(!jogos || jogos.length === 0) {
+                    document.getElementById('lista-jogos').innerHTML = "<p class='text-center py-20'>Nenhum jogo encontrado na API.</p>";
+                    return;
+                }
+
+                // Agrupar por Ligas
                 const ligas = {};
                 jogos.forEach(j => { if(!ligas[j.liga]) ligas[j.liga] = []; ligas[j.liga].push(j); });
-                
+
                 let html = '';
                 for(let liga in ligas) {
-                    html += `<div class="league-title italic"><img src="${ligas[liga][0].logo_liga}" class="w-4 h-4 object-contain"> ${ligas[liga][0].pais}: ${liga}</div>`;
+                    html += `<div class="league-header"><img src="${ligas[liga][0].logo_liga}" class="w-4 h-4"> ${ligas[liga][0].pais}: ${liga}</div>`;
                     ligas[liga].forEach(j => {
                         const dt = new Date(j.data);
-                        // Lógica de Tempo Real [Ao Vivo]
-                        const isLive = j.status !== 'NS' && j.status !== 'FT';
-                        const infoTempo = isLive 
-                            ? `<div class="live-tag mb-1">LIVE</div><b class="text-green-500 text-sm">${j.placar}</b><br><span class="text-[8px] text-green-400">${j.tempo}'</span>` 
-                            : `<span class="text-white">${dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</span><br><span class="text-[8px] text-gray-500">${dt.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}</span>`;
-
                         html += `
-                            <div class="bg-[#10161d] p-4 border-b border-gray-900 flex items-center justify-between">
-                                <div class="text-[10px] font-bold w-14 text-center uppercase leading-tight border-r border-gray-800 pr-2">
-                                    ${infoTempo}
-                                </div>
-                                <div class="flex-1 px-4">
-                                    <div class="flex items-center gap-3 text-[11px] font-black uppercase mb-2"><img src="${j.home.logo}" class="w-5 h-5 object-contain"> ${j.home.name}</div>
-                                    <div class="flex items-center gap-3 text-[11px] font-black uppercase"><img src="${j.away.logo}" class="w-5 h-5 object-contain"> ${j.away.name}</div>
-                                </div>
-                                <div class="flex gap-1.5 text-green-500 font-black text-[11px]">
-                                    <div class="odd-box"><span class="block text-[7px] text-gray-600 mb-1">1</span>${j.odds.casa}</div>
-                                    <div class="odd-box"><span class="block text-[7px] text-gray-600 mb-1">X</span>${j.odds.empate}</div>
-                                    <div class="odd-box"><span class="block text-[7px] text-gray-600 mb-1">2</span>${j.odds.fora}</div>
-                                </div>
-                            </div>`;
+                        <div class="match-row">
+                            <div class="text-[9px] text-gray-500 font-bold w-12 text-center leading-tight">
+                                ${dt.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}<br>
+                                <span class="text-white text-xs">${dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</span>
+                            </div>
+                            <div class="flex-1 px-4">
+                                <div class="flex items-center gap-3 font-bold text-[11px] mb-2 uppercase text-gray-200"><img src="${j.home.logo}" class="w-5 h-5"> ${j.home.name}</div>
+                                <div class="flex items-center gap-3 font-bold text-[11px] uppercase text-gray-200"><img src="${j.away.logo}" class="w-5 h-5"> ${j.away.name}</div>
+                            </div>
+                            <div class="flex gap-2">
+                                <div class="odd-btn"><span class="text-[7px] text-gray-600 mb-0.5">1</span>${j.odds.casa}</div>
+                                <div class="odd-btn"><span class="text-[7px] text-gray-600 mb-0.5">X</span>${j.odds.empate}</div>
+                                <div class="odd-box odd-btn"><span class="text-[7px] text-gray-600 mb-0.5">2</span>${j.odds.fora}</div>
+                            </div>
+                        </div>`;
                     });
                 }
-                document.getElementById('lista').innerHTML = html || "<div class='text-center p-10 font-bold'>AGUARDANDO JOGOS...</div>";
+                document.getElementById('lista-jogos').innerHTML = html;
             } catch (e) {
-                document.getElementById('lista').innerHTML = "<div class='text-center p-10 text-red-500 font-bold'>ERRO DE CONEXÃO</div>";
+                console.error("Erro no Front:", e);
+                document.getElementById('lista-jogos').innerHTML = "<p class='text-center py-20 text-red-500'>ERRO AO LER DADOS DO MOTOR</p>";
             }
         }
         window.onload = carregar;
-        setInterval(carregar, 60000); // Atualiza automaticamente a cada 1 minuto
     </script>
 </body>
 </html>
