@@ -2,138 +2,50 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GURILA BET | PROFESSIONAL</title>
+    <title>GURILA BET | PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        body { background: #060a0d; color: #fff; font-family: 'Inter', sans-serif; }
-        .bg-card { background: #11171e; border: 1px solid #1e262f; }
-        .selected { background: #00ff88 !important; color: #000 !important; font-weight: 900; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
-    </style>
 </head>
-<body class="pb-40">
-    <header class="p-4 bg-[#0b0f13] border-b border-gray-800 flex justify-between items-center sticky top-0 z-50">
-        <h1 class="text-2xl font-black italic text-white tracking-tighter uppercase">Gurila<span class="text-green-500 italic">Bet</span> 🦍</h1>
-        <div class="bg-green-600/10 text-green-500 px-3 py-1 rounded-full text-[10px] font-bold border border-green-500/20 uppercase">Online</div>
+<body class="bg-[#060a0d] text-white pb-40">
+    <header class="p-5 bg-[#0b0f13] border-b border-gray-800 flex justify-between items-center sticky top-0 z-50 font-black italic">
+        <h1>GURILA<span class="text-green-500">BET</span> 🦍</h1>
+        <div class="text-[10px] text-green-500 border border-green-500/20 px-2 py-1 rounded italic uppercase">Ao Vivo</div>
     </header>
 
-    <main class="p-4 max-w-xl mx-auto">
-        <div id="lista" class="space-y-6">
-            <div class="flex flex-col items-center py-20 text-gray-600">
-                <i class="fas fa-circle-notch fa-spin text-3xl mb-4 text-green-500"></i>
-                <p class="text-xs font-bold uppercase tracking-widest">Sincronizando Mercados...</p>
-            </div>
-        </div>
+    <main class="p-4 max-w-xl mx-auto" id="lista">
+        <div class="text-center py-20 text-gray-500 animate-pulse uppercase text-xs font-bold tracking-widest">Sincronizando Jogos...</div>
     </main>
 
     <script>
-        const API_URL = 'SUA_URL_DO_RAILWAY_AQUI'; // <--- OBRIGATÓRIO ATUALIZAR
+        const API_URL = 'https://gurilabet-v2-production.up.railway.app'; // <--- SEU LINK DO RAILWAY
 
         async function carregar() {
             try {
                 const res = await fetch(`${API_URL}/api/jogos`);
                 const jogos = await res.json();
-                
                 document.getElementById('lista').innerHTML = jogos.map(j => {
-                    // Formatação de data e hora BR
-                    const dataObj = new Date(j.data);
-                    const dataFormatada = dataObj.toLocaleDateString('pt-BR', {day: '2-digit', month: '2-digit'});
-                    const horaFormatada = dataObj.toLocaleTimeString('pt-BR', {hour: '2-digit', minute: '2-digit'});
-
+                    const dt = new Date(j.data);
                     return `
-                    <div class="bg-card rounded-2xl overflow-hidden shadow-2xl">
-                        <div class="bg-white/5 px-4 py-2 flex justify-between items-center border-b border-white/5">
-                            <span class="text-[9px] font-black text-gray-400 uppercase italic tracking-widest">${j.pais} | ${j.liga}</span>
-                            <span class="text-[10px] text-green-500 font-bold"><i class="far fa-calendar-alt mr-1"></i> ${dataFormatada} - ${horaFormatada}</span>
+                    <div class="bg-[#11171e] rounded-3xl border border-gray-800 overflow-hidden shadow-2xl mb-6">
+                        <div class="bg-white/5 px-4 py-2 flex justify-between text-[9px] font-black text-gray-500 uppercase italic">
+                            <span>${j.liga}</span>
+                            <span class="text-green-500">${dt.toLocaleDateString('pt-BR')} ${dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</span>
                         </div>
-                        
-                        <div class="p-5 flex justify-between items-center bg-gradient-to-b from-transparent to-black/20">
-                            <div class="flex flex-col items-center w-1/3">
-                                <img src="${j.home.logo}" class="w-12 h-12 mb-2 object-contain" alt="">
-                                <p class="text-[10px] font-black text-center uppercase leading-tight h-8 flex items-center">${j.home.name}</p>
-                            </div>
-                            <div class="text-gray-600 font-black italic text-xl">VS</div>
-                            <div class="flex flex-col items-center w-1/3">
-                                <img src="${j.away.logo}" class="w-12 h-12 mb-2 object-contain" alt="">
-                                <p class="text-[10px] font-black text-center uppercase leading-tight h-8 flex items-center">${j.away.name}</p>
-                            </div>
+                        <div class="p-6 flex justify-around items-center">
+                            <div class="text-center w-1/3"><img src="${j.home.logo}" class="w-12 h-12 mx-auto mb-2 object-contain"><p class="text-[10px] font-black uppercase">${j.home.name}</p></div>
+                            <div class="text-gray-700 font-black italic">VS</div>
+                            <div class="text-center w-1/3"><img src="${j.away.logo}" class="w-12 h-12 mx-auto mb-2 object-contain"><p class="text-[10px] font-black uppercase">${j.away.name}</p></div>
                         </div>
-
-                        <div class="px-4 pb-5 grid grid-cols-3 gap-2">
-                            <button onclick="selecionar(this, '${j.home.name} x ${j.away.name}', 'Casa', ${j.odds.casa})" class="bg-[#1e262f] p-3 rounded-xl border border-white/5 hover:bg-green-600 group transition-all">
-                                <span class="block text-[8px] text-gray-500 font-bold uppercase group-hover:text-black">Casa</span>
-                                <span class="text-sm font-black text-green-500 group-hover:text-black">${j.odds.casa}</span>
-                            </button>
-                            <button onclick="selecionar(this, '${j.home.name} x ${j.away.name}', 'Empate', ${j.odds.empate})" class="bg-[#1e262f] p-3 rounded-xl border border-white/5 hover:bg-green-600 group transition-all">
-                                <span class="block text-[8px] text-gray-500 font-bold uppercase group-hover:text-black">Empate</span>
-                                <span class="text-sm font-black text-green-500 group-hover:text-black">${j.odds.empate}</span>
-                            </button>
-                            <button onclick="selecionar(this, '${j.home.name} x ${j.away.name}', 'Fora', ${j.odds.fora})" class="bg-[#1e262f] p-3 rounded-xl border border-white/5 hover:bg-green-600 group transition-all">
-                                <span class="block text-[8px] text-gray-500 font-bold uppercase group-hover:text-black">Fora</span>
-                                <span class="text-sm font-black text-green-500 group-hover:text-black">${j.odds.fora}</span>
-                            </button>
+                        <div class="px-5 pb-6 grid grid-cols-3 gap-2">
+                            <button onclick="alert('Código: ${j.id}')" class="bg-[#1e262f] p-3 rounded-2xl text-green-500 font-black hover:bg-green-600 hover:text-black transition-all">${j.odds.casa}</button>
+                            <button onclick="alert('Código: ${j.id}')" class="bg-[#1e262f] p-3 rounded-2xl text-green-500 font-black hover:bg-green-600 hover:text-black transition-all">${j.odds.empate}</button>
+                            <button onclick="alert('Código: ${j.id}')" class="bg-[#1e262f] p-3 rounded-2xl text-green-500 font-black hover:bg-green-600 hover:text-black transition-all">${j.odds.fora}</button>
                         </div>
                     </div>`;
                 }).join('');
-            } catch (e) { 
-                document.getElementById('lista').innerHTML = "<div class='text-center p-10 text-red-500 font-black'>ERRO DE CONEXÃO COM O MOTOR</div>";
-            }
-        }
-
-        let aposta = null;
-        function selecionar(btn, times, palpite, odd) {
-            document.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
-            btn.classList.add('selected');
-            aposta = { times, palpite, odd };
-            document.getElementById('cart').classList.remove('hidden');
-            document.getElementById('info').innerHTML = `
-                <div class="flex justify-between items-center">
-                    <div><p class="text-[10px] font-black text-green-500 uppercase italic leading-none mb-1">${times}</p><p class="text-sm font-black uppercase tracking-tight text-white">${palpite}</p></div>
-                    <span class="text-2xl font-black italic text-white tracking-tighter">@${odd}</span>
-                </div>`;
-        }
-
-        async function finalizar() {
-            const v = document.getElementById('valor').value;
-            if(!v || v < 2) return alert("VALOR MÍNIMO R$ 2,00");
-            try {
-                const res = await fetch(`${API_URL}/api/finalizar`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({...aposta, valor: v})
-                });
-                const d = await res.json();
-                document.body.innerHTML = `
-                    <div class="h-screen flex flex-col items-center justify-center p-8 text-center bg-[#060a0d]">
-                        <div class="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(0,255,136,0.3)]">
-                            <i class="fas fa-check text-4xl text-black"></i>
-                        </div>
-                        <h2 class="text-2xl font-black italic mb-2 uppercase">Aposta Confirmada!</h2>
-                        <div class="bg-[#11171e] border-2 border-dashed border-green-500 p-8 rounded-2xl w-full max-w-xs">
-                            <p class="text-[10px] text-gray-500 font-black uppercase mb-2">Cód. do Bilhete</p>
-                            <p class="text-4xl font-black text-green-400 tracking-[5px] mb-4">${d.codigo}</p>
-                            <p class="text-xs font-bold text-gray-400 uppercase">Prêmio: <span class="text-white">R$ ${d.retorno}</span></p>
-                        </div>
-                        <button onclick="location.reload()" class="mt-10 bg-white text-black font-black px-10 py-3 rounded-full uppercase italic text-xs tracking-widest">Início</button>
-                    </div>`;
-            } catch (e) { alert("ERRO AO GERAR BILHETE!"); }
+            } catch (e) { document.getElementById('lista').innerHTML = "<p class='text-center text-red-500 font-black'>ERRO NO MOTOR: VERIFIQUE O RAILWAY</p>"; }
         }
         window.onload = carregar;
     </script>
-
-    <nav class="fixed bottom-0 left-0 right-0 bg-[#0b0f13] border-t border-gray-800 p-4 flex justify-around items-center z-[100] shadow-2xl">
-        <div class="flex flex-col items-center text-green-500"><i class="fas fa-home text-xl"></i><span class="text-[8px] font-bold uppercase mt-1">Home</span></div>
-        <div class="flex flex-col items-center text-gray-600"><i class="fas fa-history text-xl"></i><span class="text-[8px] font-bold uppercase mt-1">Apostas</span></div>
-        <div class="flex flex-col items-center text-gray-600" onclick="alert('Admin: /admin.html')"><i class="fas fa-cog text-xl"></i><span class="text-[8px] font-bold uppercase mt-1">Painel</span></div>
-    </nav>
-
-    <div id="cart" class="fixed bottom-20 left-4 right-4 bg-[#11171e] rounded-2xl border-t-4 border-green-500 p-5 hidden z-[110] shadow-[0_-10px_50px_rgba(0,0,0,0.8)]">
-        <div id="info" class="mb-5"></div>
-        <div class="flex gap-2">
-            <input id="valor" type="number" placeholder="R$ 0,00" class="flex-1 bg-black border border-gray-700 p-4 rounded-xl text-white font-black outline-none focus:border-green-500 text-lg">
-            <button onclick="finalizar()" class="bg-green-500 text-black font-black px-6 rounded-xl uppercase italic tracking-tighter hover:bg-green-400 active:scale-95 transition-all">Apostar</button>
-        </div>
-    </div>
 </body>
 </html>
