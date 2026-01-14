@@ -2,60 +2,56 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GURILA BET | PROFESSIONAL</title>
+    <title>GURILA BET | Oficial</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background: #060a0d; color: #fff; font-family: 'Inter', sans-serif; }
+        body { background: #060a0d; color: #fff; scrollbar-width: none; }
         .bg-card { background: #11171e; border: 1px solid #1e262f; }
-        .selected { background: #00ff88 !important; color: #000 !important; font-weight: 900; }
-        .live-tag { animation: pulse 2s infinite; }
-        @keyframes pulse { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        .selected { background: #00ff88 !important; color: #000 !important; }
     </style>
 </head>
-<body class="pb-40">
+<body class="pb-32">
     <header class="p-4 bg-[#0b0f13] border-b border-gray-800 flex justify-between items-center sticky top-0 z-50">
-        <h1 class="text-2xl font-black italic text-white tracking-tighter uppercase">Gurila<span class="text-green-500 italic">Bet</span></h1>
+        <h1 class="text-xl font-black italic text-white tracking-tighter uppercase">Gurila<span class="text-green-500">Bet</span></h1>
         <div class="flex gap-2">
-            <button class="bg-[#1e262f] text-gray-400 px-4 py-1.5 rounded-lg font-bold text-xs uppercase">Login</button>
-            <button class="bg-green-600 text-black px-4 py-1.5 rounded-lg font-bold text-xs uppercase">Cadastrar</button>
+            <button onclick="alert('Sistema de Login em manutenção')" class="bg-[#1e262f] text-gray-400 px-3 py-1.5 rounded-lg font-bold text-xs uppercase hover:text-white transition">Login</button>
+            <button onclick="alert('Cadastros em breve!')" class="bg-green-600 text-black px-4 py-1.5 rounded-lg font-bold text-xs uppercase active:scale-95 transition">Cadastrar</button>
         </div>
     </header>
 
-    <div class="p-4 bg-[#11171e] border-b border-gray-800 flex gap-6 overflow-x-auto no-scrollbar">
-        <div class="flex flex-col items-center gap-1 text-green-500 border-b-2 border-green-500 pb-2 min-w-[60px]">
-            <i class="fas fa-futbol text-xl"></i><span class="text-[10px] font-black uppercase italic">Futebol</span>
+    <div class="p-4 bg-[#11171e] border-b border-gray-800 flex gap-4">
+        <div class="flex items-center gap-2 text-green-500 border-b-2 border-green-500 pb-2">
+            <i class="fas fa-futbol"></i><span class="text-[10px] font-black uppercase italic tracking-widest">Futebol</span>
         </div>
     </div>
 
     <main class="p-4 max-w-xl mx-auto">
-        <div class="flex items-center justify-between mb-6">
-            <h2 class="text-xs font-black uppercase tracking-widest text-gray-500 italic flex items-center gap-2">
-                <span class="w-2 h-2 bg-green-500 rounded-full live-tag"></span> Principais Eventos
-            </h2>
-        </div>
-
+        <h2 class="text-[10px] font-black uppercase tracking-widest text-gray-500 italic mb-4 flex items-center gap-2">
+            <span class="w-2 h-2 bg-green-500 rounded-full"></span> Principais Eventos
+        </h2>
         <div id="lista" class="space-y-4">
-            <div class="flex justify-center py-20"><i class="fas fa-spinner fa-spin text-3xl text-green-500"></i></div>
+            <div class="text-center py-20"><i class="fas fa-circle-notch fa-spin text-2xl text-green-500"></i></div>
         </div>
     </main>
 
-    <nav class="fixed bottom-0 left-0 right-0 bg-[#0b0f13] border-t border-gray-800 p-3 flex justify-around items-center z-50">
+    <nav class="fixed bottom-0 left-0 right-0 bg-[#0b0f13] border-t border-gray-800 p-3 flex justify-around items-center z-50 shadow-2xl">
         <div class="flex flex-col items-center text-green-500"><i class="fas fa-home text-xl"></i><span class="text-[9px] font-bold">Início</span></div>
-        <div class="flex flex-col items-center text-gray-400"><i class="fas fa-search text-xl"></i><span class="text-[9px] font-bold">Busca</span></div>
-        <div class="flex flex-col items-center text-gray-400" onclick="location.href='/admin.html'"><i class="fas fa-user-shield text-xl"></i><span class="text-[9px] font-bold">Admin</span></div>
+        <div class="flex flex-col items-center text-gray-400" onclick="alert('Em breve!')"><i class="fas fa-search text-xl"></i><span class="text-[9px] font-bold">Busca</span></div>
+        <div class="flex flex-col items-center text-gray-400" onclick="alert('Acesse /admin para ver bilhetes')"><i class="fas fa-user-shield text-xl"></i><span class="text-[9px] font-bold">Admin</span></div>
     </nav>
 
     <div id="cart" class="fixed bottom-16 left-4 right-4 bg-[#11171e] rounded-2xl border-t-4 border-green-500 p-5 hidden z-[60] shadow-2xl">
         <div id="info" class="mb-4"></div>
         <div class="flex gap-2">
             <input id="valor" type="number" placeholder="Valor R$" class="flex-1 bg-black border border-gray-700 p-4 rounded-xl text-white font-bold outline-none focus:border-green-500">
-            <button onclick="finalizar()" class="bg-green-500 text-black font-black px-8 rounded-xl uppercase italic tracking-tighter">Finalizar</button>
+            <button onclick="finalizar()" class="bg-green-500 text-black font-black px-8 rounded-xl uppercase italic">Apostar</button>
         </div>
     </div>
 
     <script>
-        const API_URL = 'https://SUA-URL-DO-RAILWAY.up.railway.app'; // <--- OBRIGATÓRIO MUDAR
+        // --- COLOQUE O SEU LINK DO RAILWAY ABAIXO ---
+        const API_URL = 'https://gurilabet-v2-production.up.railway.app'; 
 
         async function carregar() {
             try {
@@ -63,31 +59,19 @@
                 const jogos = await res.json();
                 document.getElementById('lista').innerHTML = jogos.map(j => `
                     <div class="bg-card rounded-2xl p-4 shadow-xl">
-                        <div class="flex justify-between items-center mb-3">
-                            <span class="text-[9px] font-black text-gray-500 uppercase tracking-widest italic">${j.pais} / ${j.liga}</span>
-                            <span class="text-[10px] bg-gray-800 px-2 py-0.5 rounded text-green-400 font-bold">${j.status}</span>
+                        <div class="flex justify-between text-[9px] font-black text-gray-500 mb-2 uppercase italic">
+                            <span>${j.liga}</span><span>${j.status}</span>
                         </div>
-                        <div class="flex justify-between items-center mb-5">
-                            <div class="text-sm font-black text-white uppercase italic w-full text-center">${j.times}</div>
-                        </div>
+                        <div class="text-center font-bold text-sm mb-4 text-white uppercase italic tracking-tighter">${j.times}</div>
                         <div class="grid grid-cols-3 gap-2">
-                            <button onclick="selecionar(this, '${j.times}', 'Casa', ${j.odds.casa})" class="bg-[#1e262f] p-3 rounded-xl hover:bg-gray-700 transition">
-                                <p class="text-[9px] text-gray-500 font-bold uppercase mb-1">1</p>
-                                <p class="text-sm font-black text-green-500">${j.odds.casa}</p>
-                            </button>
-                            <button onclick="selecionar(this, '${j.times}', 'Empate', ${j.odds.empate})" class="bg-[#1e262f] p-3 rounded-xl hover:bg-gray-700 transition">
-                                <p class="text-[9px] text-gray-500 font-bold uppercase mb-1">X</p>
-                                <p class="text-sm font-black text-green-500">${j.odds.empate}</p>
-                            </button>
-                            <button onclick="selecionar(this, '${j.times}', 'Fora', ${j.odds.fora})" class="bg-[#1e262f] p-3 rounded-xl hover:bg-gray-700 transition">
-                                <p class="text-[9px] text-gray-500 font-bold uppercase mb-1">2</p>
-                                <p class="text-sm font-black text-green-500">${j.odds.fora}</p>
-                            </button>
+                            <button onclick="selecionar(this, '${j.times}', 'Casa', ${j.odds.casa})" class="bg-[#1e262f] p-3 rounded-xl hover:bg-gray-700 transition"><span class="block text-[8px] text-gray-500">1</span><span class="text-green-500 font-black">${j.odds.casa}</span></button>
+                            <button onclick="selecionar(this, '${j.times}', 'Empate', ${j.odds.empate})" class="bg-[#1e262f] p-3 rounded-xl hover:bg-gray-700 transition"><span class="block text-[8px] text-gray-500">X</span><span class="text-green-500 font-black">${j.odds.empate}</span></button>
+                            <button onclick="selecionar(this, '${j.times}', 'Fora', ${j.odds.fora})" class="bg-[#1e262f] p-3 rounded-xl hover:bg-gray-700 transition"><span class="block text-[8px] text-gray-500">2</span><span class="text-green-500 font-black">${j.odds.fora}</span></button>
                         </div>
                     </div>
                 `).join('');
-            } catch (e) { 
-                document.getElementById('lista').innerHTML = "<p class='text-center text-red-500 font-bold'>ERRO AO CONECTAR COM O MOTOR</p>";
+            } catch (e) {
+                document.getElementById('lista').innerHTML = "<p class='text-center text-red-500 font-bold uppercase text-xs italic py-10'>Falha na conexão com o motor</p>";
             }
         }
 
@@ -97,16 +81,12 @@
             btn.classList.add('selected');
             aposta = { times, palpite, odd };
             document.getElementById('cart').classList.remove('hidden');
-            document.getElementById('info').innerHTML = `
-                <div class="flex justify-between items-center">
-                    <div><p class="text-xs font-black text-green-500 uppercase italic">${times}</p><p class="text-sm font-black">${palpite}</p></div>
-                    <span class="text-2xl font-black italic">@${odd}</span>
-                </div>`;
+            document.getElementById('info').innerHTML = `<p class="text-xs font-black text-green-500 uppercase italic">${times}</p><p class="text-lg font-black">${palpite} @${odd}</p>`;
         }
 
         async function finalizar() {
             const v = document.getElementById('valor').value;
-            if(!v || v < 2) return alert("VALOR MÍNIMO R$ 2,00");
+            if(!v || v < 2) return alert("MÍNIMO R$ 2,00");
             try {
                 const res = await fetch(`${API_URL}/api/finalizar`, {
                     method: 'POST',
@@ -114,21 +94,8 @@
                     body: JSON.stringify({...aposta, valor: v})
                 });
                 const d = await res.json();
-                document.body.innerHTML = `
-                    <div class="h-screen flex flex-col items-center justify-center p-8 text-center">
-                        <div class="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center mb-6 shadow-[0_0_30px_rgba(0,255,136,0.3)]">
-                            <i class="fas fa-check text-4xl text-black"></i>
-                        </div>
-                        <h2 class="text-2xl font-black italic mb-2 uppercase">Aposta Confirmada!</h2>
-                        <p class="text-gray-500 text-sm mb-8">Apresente este código para pagar</p>
-                        <div class="bg-[#11171e] border-2 border-dashed border-green-500 p-8 rounded-2xl w-full max-w-xs">
-                            <p class="text-[10px] text-gray-500 font-black uppercase mb-2">Código do Bilhete</p>
-                            <p class="text-5xl font-black text-green-400 tracking-[5px] mb-4">${d.codigo}</p>
-                            <p class="text-xs font-bold text-gray-400 uppercase">Prêmio Estimado: <span class="text-white">R$ ${d.retorno}</span></p>
-                        </div>
-                        <button onclick="location.reload()" class="mt-10 text-white font-black uppercase italic text-xs underline decoration-green-500 underline-offset-8">Voltar ao Início</button>
-                    </div>`;
-            } catch (e) { alert("ERRO AO GERAR BILHETE!"); }
+                document.body.innerHTML = `<div class="h-screen flex flex-col items-center justify-center p-8 text-center"><div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mb-6 shadow-lg"><i class="fas fa-check text-2xl text-black"></i></div><h2 class="text-xl font-black italic mb-2">BILHETE GERADO!</h2><div class="bg-[#11171e] border-2 border-dashed border-green-500 p-6 rounded-2xl w-full max-w-xs mb-8"><p class="text-[10px] text-gray-500 font-bold uppercase mb-2">Código de Validação</p><p class="text-4xl font-black text-green-400 tracking-[8px] mb-4">${d.codigo}</p><p class="text-xs font-bold text-gray-400 uppercase italic">Prêmio: <span class="text-white">R$ ${d.retorno}</span></p></div><button onclick="location.reload()" class="bg-white text-black font-black px-10 py-3 rounded-full uppercase italic text-[10px]">Voltar</button></div>`;
+            } catch (e) { alert("Erro ao salvar bilhete!"); }
         }
         window.onload = carregar;
     </script>
