@@ -1,0 +1,18 @@
+<body style="background:#000; color:#0f0; font-family:monospace; padding:20px;">
+    <h2>SISTEMA GURILA BET - BILHETES GERADOS</h2>
+    <div id="lista"></div>
+    <script>
+        const API_URL = 'SUA_URL_DO_RAILWAY';
+        async function load() {
+            const res = await fetch(API_URL + '/api/admin/bilhetes');
+            const data = await res.json();
+            document.getElementById('lista').innerHTML = data.map(b => `
+                <div style="border:1px solid #333; padding:10px; margin-bottom:10px;">
+                    <b>COD: ${b.codigo}</b> | R$ ${b.valor} -> Retorno: R$ ${b.retorno}<br>
+                    Jogo: ${b.times} | Palpite: ${b.palpite} | Status: ${b.status}
+                </div>
+            `).join('');
+        }
+        load();
+    </script>
+</body>
