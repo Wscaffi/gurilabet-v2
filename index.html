@@ -7,9 +7,15 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { background: #060a0d; color: #fff; font-family: 'Inter', sans-serif; }
-        /* Mantendo seu estilo de ligas, apenas garantindo a separação */
-        .league-row { background: linear-gradient(90deg, #12171d 0%, #060a0d 100%); border-left: 4px solid #00ff88; margin-top: 15px; }
+        .league-group { margin-bottom: 25px; overflow: hidden; border-radius: 12px; border: 1px solid #1e262f; }
+        .league-header { background: linear-gradient(90deg, #12171d 0%, #060a0d 100%); border-left: 4px solid #00ff88; }
         .odd-btn { background: #1c242c; border: 1px solid #2d3741; transition: 0.2s; }
+        .odd-btn:active { transform: scale(0.95); }
+        .modal { background: rgba(0,0,0,0.95); backdrop-filter: blur(10px); }
+        /* Estilo para a Barra de Ligas */
+        .camp-btn { background: #11171e; border: 1px solid #2d3741; padding: 8px 15px; border-radius: 50px; white-space: nowrap; font-size: 10px; font-weight: 900; color: #94a3b8; transition: 0.3s; }
+        .camp-btn.active { background: #00ff88; color: #000; border-color: #00ff88; }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body class="pb-32">
@@ -22,103 +28,37 @@
         </div>
     </header>
 
+    <div class="p-3 bg-[#0b0f13] sticky top-[65px] z-40 border-b border-gray-900">
+        <div id="menu-campeonatos" class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+            <button onclick="filtrarLiga('Todos')" id="btn-todos" class="camp-btn active uppercase">Todos</button>
+            </div>
+    </div>
+
     <main class="p-2 max-w-2xl mx-auto" id="lista-jogos">
-        <div class="text-center py-20 text-gray-600 animate-pulse font-bold text-xs uppercase italic">
+        <div class="text-center py-20 text-gray-600 animate-pulse font-bold text-xs uppercase italic tracking-widest">
             Sincronizando Mercados Reais...
         </div>
     </main>
 
-    <div id="modal-cadastro" class="fixed inset-0 bg-black/95 z-[400] hidden items-center justify-center p-4">
-        <div class="bg-[#11171e] p-8 rounded-3xl w-full max-w-sm border border-gray-800">
-            <h2 class="text-xl font-black italic mb-6 uppercase">Criar Conta 🦍</h2>
-            <input id="cad-nome" type="text" placeholder="Nome" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-3 text-sm outline-none">
-            <input id="cad-email" type="email" placeholder="E-mail" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-3 text-sm outline-none">
-            <input id="cad-senha" type="password" placeholder="Senha" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-6 text-sm outline-none">
-            <button onclick="realizarCadastro()" class="w-full bg-green-600 text-black font-black p-4 rounded-xl uppercase italic">Cadastrar</button>
-        </div>
+    <div id="modal-extras" class="fixed inset-0 bg-black/98 z-[600] hidden flex-col">
+        <header class="p-5 border-b border-gray-800 flex justify-between items-center">
+            <h3 id="modal-titulo" class="text-sm font-black uppercase text-green-500 italic"></h3>
+            <button onclick="fecharMercados()" class="text-2xl text-white">&times;</button>
+        </header>
+        <div id="modal-corpo" class="p-4 overflow-y-auto space-y-4">
+            </div>
     </div>
 
-    <script>
-        const API_URL = 'https://gurilabet-v2-production.up.railway.app'; 
+    <div id="pagina-perfil" class="fixed inset-0 bg-[#060a0d] z-[300] hidden flex-col">
+        <header class="p-5 bg-[#0b0f13] border-b border-gray-800 flex items-center gap-4">
+            <button onclick="togglePerfil()" class="text-xl"><i class="fas fa-arrow-left"></i></button>
+            <h2 class="text-lg font-black uppercase italic">Minha Conta</h2>
+        </header>
+        <div class="p-6 overflow-y-auto" id="perfil-content"></div>
+    </div>
 
-        // 1. TRADUTOR AUTOMÁTICO (Acrescentado)
-        function traduzir(texto) {
-            const dic = {
-                'Brazil': 'Brasil', 'England': 'Inglaterra', 'Spain': 'Espanha', 'Italy': 'Itália',
-                'Germany': 'Alemanha', 'France': 'França', 'Portugal': 'Portugal', 'World': 'Mundial'
-            };
-            return dic[texto] || texto;
-        }
-
-        // 2. BUSCA DE BANDEIRAS COM CORREÇÃO DE ERRO (Acrescentado)
-        function getFlag(pais, logoLiga) {
-            const flags = { 'Brazil': 'BR', 'England': 'GB', 'Spain': 'ES', 'Italy': 'IT', 'Germany': 'DE', 'France': 'FR', 'Portugal': 'PT' };
-            const code = flags[pais];
-            // Se o país tiver bandeira, usa. Se for "World" ou não tiver, usa o logo da liga.
-            return code ? `https://flagsapi.com/${code}/flat/64.png` : logoLiga;
-        }
-
-        async function carregarJogos() {
-            try {
-                const res = await fetch(`${API_URL}/api/jogos`);
-                const jogos = await res.json();
-                
-                if(!jogos || jogos.length === 0) {
-                    document.getElementById('lista-jogos').innerHTML = "<div class='text-center py-20 font-bold uppercase italic text-xs text-gray-500'>Aguardando abertura dos mercados...</div>";
-                    return;
-                }
-
-                // 3. SEPARAÇÃO POR LIGAS (Corrigido para não misturar)
-                const grupos = {};
-                jogos.forEach(j => {
-                    const chave = `${traduzir(j.pais)} - ${j.liga}`;
-                    if(!grupos[chave]) grupos[chave] = [];
-                    grupos[chave].push(j);
-                });
-
-                let html = '';
-                for(let liga in grupos) {
-                    const info = grupos[liga][0];
-                    html += `<div class="league-row p-3 mb-1 mt-4 text-[10px] font-black uppercase italic flex items-center gap-2 text-gray-400">
-                        <img src="${getFlag(info.pais, info.bandeira)}" class="w-5 h-4 object-cover rounded-sm shadow-md">
-                        <span>${liga}</span>
-                    </div>`;
-                    
-                    grupos[liga].forEach(j => {
-                        const dt = new Date(j.data);
-                        html += `
-                        <div class="bg-[#11171e] p-4 border-b border-gray-900 flex items-center justify-between gap-3 shadow-lg">
-                            <div class="text-[9px] text-gray-500 font-bold w-12 text-center uppercase leading-tight border-r border-gray-800 pr-2">
-                                ${dt.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}<br><span class="text-white">${dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</span>
-                            </div>
-                            <div class="flex-1 flex flex-col gap-2">
-                                <div class="flex items-center gap-3 text-[11px] font-black uppercase tracking-tighter text-gray-200">
-                                    <img src="${j.home.logo}" class="w-5 h-5 object-contain"> ${j.home.name}
-                                </div>
-                                <div class="flex items-center gap-3 text-[11px] font-black uppercase tracking-tighter text-gray-200">
-                                    <img src="${j.away.logo}" class="w-5 h-5 object-contain"> ${j.away.name}
-                                </div>
-                            </div>
-                            <div class="flex gap-1.5 ml-2">
-                                <div class="odd-btn w-14 h-11 rounded-xl text-[12px] font-black text-green-500 flex flex-col items-center justify-center">
-                                    <span class="text-[7px] text-gray-500 font-bold uppercase mb-0.5">1</span>${j.odds.casa}
-                                </div>
-                                <div class="odd-btn w-14 h-11 rounded-xl text-[12px] font-black text-green-500 flex flex-col items-center justify-center">
-                                    <span class="text-[7px] text-gray-500 font-bold uppercase mb-0.5">X</span>${j.odds.empate}
-                                </div>
-                                <div class="odd-btn w-14 h-11 rounded-xl text-[12px] font-black text-green-500 flex flex-col items-center justify-center">
-                                    <span class="text-[7px] text-gray-500 font-bold uppercase mb-0.5">2</span>${j.odds.fora}
-                                </div>
-                            </div>
-                        </div>`;
-                    });
-                }
-                document.getElementById('lista-jogos').innerHTML = html;
-            } catch (e) { console.error(e); }
-        }
-
-        function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); document.getElementById(id).classList.toggle('flex'); }
-        window.onload = carregarJogos;
-    </script>
-</body>
-</html>
+    <div id="modal-cadastro" class="fixed inset-0 modal z-[400] hidden items-center justify-center p-4">
+        <div class="bg-[#11171e] p-8 rounded-3xl w-full max-w-sm border border-gray-800 text-center">
+            <h2 class="text-xl font-black italic mb-6 uppercase">Criar Conta 🦍</h2>
+            <input id="cad-nome" type="text" placeholder="Nome Completo" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-3 text-sm outline-none">
+            <input id="cad-email" type="email" placeholder="E-mail" class="w-full bg-black border border-gray-800
