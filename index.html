@@ -5,15 +5,21 @@
     <title>GURILA BET | PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        body { background: #0b0f12; color: #fff; font-family: sans-serif; }
+        .odd-btn { background: #1a2128; border: 1px solid #2d3741; transition: 0.2s; }
+        .odd-btn:hover { border-color: #00ff88; }
+        .league-row { background: #151c24; border-left: 4px solid #00ff88; }
+    </style>
 </head>
-<body class="bg-[#060a0d] text-white pb-40">
-    <header class="p-5 bg-[#0b0f13] border-b border-gray-800 flex justify-between items-center sticky top-0 z-50 font-black italic">
-        <h1>GURILA<span class="text-green-500">BET</span> 🦍</h1>
-        <div class="text-[10px] text-green-500 border border-green-500/20 px-2 py-1 rounded italic uppercase">Ao Vivo</div>
+<body class="pb-20">
+    <header class="p-4 bg-[#0b0f12] flex justify-between items-center sticky top-0 z-50 border-b border-gray-800">
+        <h1 class="text-xl font-black italic uppercase tracking-tighter">GOL DA <span class="text-green-500 italic">SORTE</span></h1>
+        <button class="bg-green-600 text-black px-4 py-1.5 rounded font-bold text-xs uppercase">Entrar</button>
     </header>
 
-    <main class="p-4 max-w-xl mx-auto" id="lista">
-        <div class="text-center py-20 text-gray-500 animate-pulse uppercase text-xs font-bold tracking-widest">Sincronizando Jogos...</div>
+    <main class="p-2 max-w-2xl mx-auto" id="lista">
+        <div class="flex justify-center py-20 animate-pulse text-gray-600 font-bold uppercase italic text-xs">Sincronizando Mercados...</div>
     </main>
 
     <script>
@@ -23,27 +29,53 @@
             try {
                 const res = await fetch(`${API_URL}/api/jogos`);
                 const jogos = await res.json();
-                document.getElementById('lista').innerHTML = jogos.map(j => {
-                    const dt = new Date(j.data);
-                    return `
-                    <div class="bg-[#11171e] rounded-3xl border border-gray-800 overflow-hidden shadow-2xl mb-6">
-                        <div class="bg-white/5 px-4 py-2 flex justify-between text-[9px] font-black text-gray-500 uppercase italic">
-                            <span>${j.liga}</span>
-                            <span class="text-green-500">${dt.toLocaleDateString('pt-BR')} ${dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</span>
-                        </div>
-                        <div class="p-6 flex justify-around items-center">
-                            <div class="text-center w-1/3"><img src="${j.home.logo}" class="w-12 h-12 mx-auto mb-2 object-contain"><p class="text-[10px] font-black uppercase">${j.home.name}</p></div>
-                            <div class="text-gray-700 font-black italic">VS</div>
-                            <div class="text-center w-1/3"><img src="${j.away.logo}" class="w-12 h-12 mx-auto mb-2 object-contain"><p class="text-[10px] font-black uppercase">${j.away.name}</p></div>
-                        </div>
-                        <div class="px-5 pb-6 grid grid-cols-3 gap-2">
-                            <button onclick="alert('Código: ${j.id}')" class="bg-[#1e262f] p-3 rounded-2xl text-green-500 font-black hover:bg-green-600 hover:text-black transition-all">${j.odds.casa}</button>
-                            <button onclick="alert('Código: ${j.id}')" class="bg-[#1e262f] p-3 rounded-2xl text-green-500 font-black hover:bg-green-600 hover:text-black transition-all">${j.odds.empate}</button>
-                            <button onclick="alert('Código: ${j.id}')" class="bg-[#1e262f] p-3 rounded-2xl text-green-500 font-black hover:bg-green-600 hover:text-black transition-all">${j.odds.fora}</button>
-                        </div>
+                
+                // Agrupar jogos por liga
+                const ligas = {};
+                jogos.forEach(j => {
+                    if (!ligas[j.liga]) ligas[j.liga] = [];
+                    ligas[j.liga].push(j);
+                });
+
+                let html = '';
+                for (const liga in ligas) {
+                    html += `<div class="league-row p-2 mb-1 mt-4 text-[10px] font-bold uppercase italic flex items-center gap-2">
+                        <img src="${ligas[liga][0].bandeira}" class="w-4 h-4"> ${liga}
                     </div>`;
-                }).join('');
-            } catch (e) { document.getElementById('lista').innerHTML = "<p class='text-center text-red-500 font-black'>ERRO NO MOTOR: VERIFIQUE O RAILWAY</p>"; }
+                    
+                    ligas[liga].forEach(j => {
+                        const dt = new Date(j.data);
+                        html += `
+                        <div class="bg-[#10161d] p-3 border-b border-gray-800 flex items-center justify-between gap-2">
+                            <div class="text-[9px] text-gray-500 font-bold w-10 text-center uppercase leading-tight">
+                                ${dt.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}<br>${dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}
+                            </div>
+                            <div class="flex-1 flex flex-col gap-1">
+                                <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-tighter">
+                                    <img src="${j.home.logo}" class="w-4 h-4 object-contain"> ${j.home.name}
+                                </div>
+                                <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-tighter">
+                                    <img src="${j.away.logo}" class="w-4 h-4 object-contain"> ${j.away.name}
+                                </div>
+                            </div>
+                            <div class="flex gap-1">
+                                <button class="odd-btn w-12 h-10 rounded text-[11px] font-black text-green-500 flex flex-col items-center justify-center">
+                                    <span class="text-[7px] text-gray-500 font-bold uppercase">1</span>${j.odds.casa}
+                                </button>
+                                <button class="odd-btn w-12 h-10 rounded text-[11px] font-black text-green-500 flex flex-col items-center justify-center">
+                                    <span class="text-[7px] text-gray-500 font-bold uppercase">X</span>${j.odds.empate}
+                                </button>
+                                <button class="odd-btn w-12 h-10 rounded text-[11px] font-black text-green-500 flex flex-col items-center justify-center">
+                                    <span class="text-[7px] text-gray-500 font-bold uppercase">2</span>${j.odds.fora}
+                                </button>
+                            </div>
+                        </div>`;
+                    });
+                }
+                document.getElementById('lista').innerHTML = html || "<p class='text-center p-10 font-bold'>SEM JOGOS NO MOMENTO</p>";
+            } catch (e) { 
+                document.getElementById('lista').innerHTML = "<p class='text-center p-10 text-red-500 font-bold italic uppercase text-xs'>Erro de Conexão com o Motor</p>";
+            }
         }
         window.onload = carregar;
     </script>
