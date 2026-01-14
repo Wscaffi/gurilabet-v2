@@ -7,51 +7,25 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { background: #060a0d; color: #fff; font-family: 'Inter', sans-serif; }
-        .league-group { margin-bottom: 20px; }
-        .league-header { 
-            background: #12171d; 
-            border-left: 4px solid #00ff88; 
-            padding: 12px; 
-            font-size: 11px; 
-            font-weight: 900; 
-            text-transform: uppercase; 
-            display: flex; 
-            align-items: center; 
-            gap: 10px;
-            color: #94a3b8;
-        }
-        .match-card { 
-            background: #0f141a; 
-            border-bottom: 1px solid #1e262f; 
-            padding: 15px; 
-            display: flex; 
-            align-items: center; 
-            justify-content: space-between; 
-        }
-        .odd-btn { 
-            background: #1c242c; 
-            border: 1px solid #2d3741; 
-            border-radius: 6px; 
-            width: 50px; 
-            height: 42px; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            font-size: 11px; 
-            font-weight: 800; 
-            color: #00ff88; 
-            transition: 0.2s;
-        }
-        /* Barra de Ligas */
+        .league-header { background: #12171d; border-left: 4px solid #00ff88; padding: 12px; font-size: 11px; font-weight: 900; text-transform: uppercase; display: flex; align-items: center; gap: 10px; color: #94a3b8; }
+        .match-card { background: #0f141a; border-bottom: 1px solid #1e262f; padding: 15px; display: flex; align-items: center; justify-content: space-between; }
+        .odd-btn { background: #1c242c; border: 1px solid #2d3741; border-radius: 6px; width: 50px; height: 42px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #00ff88; transition: 0.2s; }
+        .odd-btn:hover { background: #2d3741; transform: scale(1.05); }
         .camp-btn { background: #11171e; border: 1px solid #2d3741; padding: 8px 15px; border-radius: 50px; white-space: nowrap; font-size: 10px; font-weight: 900; color: #94a3b8; }
         .camp-btn.active { background: #00ff88; color: #000; border-color: #00ff88; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        /* Estilo dos Mercados Extras */
+        .market-box { background: #161b22; border: 1px solid #2d3741; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
+        .market-title { font-size: 10px; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid #2d3741; padding-bottom: 4px; }
+        .market-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .market-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .market-btn { background: #0d1117; color: #fff; padding: 10px; border-radius: 6px; text-align: center; font-size: 11px; font-bold; border: 1px solid #30363d; display: flex; justify-content: space-between; }
+        .market-btn span { color: #00ff88; }
     </style>
 </head>
 <body class="pb-20">
     <header class="p-4 bg-[#0b0f13] border-b border-gray-800 flex justify-between items-center sticky top-0 z-50">
-        <h1 class="text-2xl font-black italic uppercase tracking-tighter text-white">Gurila<span class="text-green-500">Bet</span> 🦍</h1>
+        <h1 class="text-2xl font-black italic uppercase text-white">Gurila<span class="text-green-500">Bet</span> 🦍</h1>
     </header>
 
     <div class="p-3 bg-[#0b0f13] sticky top-[65px] z-40 border-b border-gray-900 overflow-x-auto no-scrollbar flex gap-2" id="menu-campeonatos">
@@ -59,15 +33,18 @@
     </div>
 
     <main id="container-jogos" class="max-w-3xl mx-auto p-2">
-        <div class="text-center py-20 text-gray-600 animate-pulse font-bold uppercase italic text-xs">Organizando Ligas Globais...</div>
+        <div class="text-center py-20 text-gray-600 animate-pulse font-bold uppercase italic text-xs">Carregando Mercados...</div>
     </main>
 
-    <div id="modal-extras" class="fixed inset-0 bg-black/98 z-[600] hidden flex-col">
-        <header class="p-5 border-b border-gray-800 flex justify-between items-center">
-            <h3 id="modal-titulo" class="text-sm font-black uppercase text-green-500 italic"></h3>
-            <button onclick="fecharMercados()" class="text-2xl text-white">&times;</button>
+    <div id="modal-extras" class="fixed inset-0 bg-[#060a0d] z-[600] hidden flex-col">
+        <header class="p-4 bg-[#0b0f13] border-b border-gray-800 flex justify-between items-center sticky top-0">
+            <div>
+                <h3 id="modal-titulo" class="text-xs font-black uppercase text-white"></h3>
+                <span class="text-[10px] text-gray-500 font-bold uppercase">Mercados Principais</span>
+            </div>
+            <button onclick="fecharMercados()" class="w-8 h-8 bg-gray-800 rounded-full text-white flex items-center justify-center font-bold">&times;</button>
         </header>
-        <div id="modal-corpo" class="p-4 overflow-y-auto space-y-4"></div>
+        <div id="modal-corpo" class="p-3 overflow-y-auto pb-20"></div>
     </div>
 
     <script>
@@ -100,11 +77,7 @@
             document.getElementById('menu-campeonatos').innerHTML = html;
         }
 
-        function filtrarLiga(liga) {
-            ligaAtiva = liga;
-            renderizarMenuLigas();
-            renderizarVitrine();
-        }
+        function filtrarLiga(liga) { ligaAtiva = liga; renderizarMenuLigas(); renderizarVitrine(); }
 
         function renderizarVitrine() {
             const filtrados = ligaAtiva === 'Todos' ? todosJogos : todosJogos.filter(j => traduzir(j.pais) === ligaAtiva);
@@ -117,61 +90,94 @@
 
             let html = '';
             for(let ligaNome in grupos) {
-                const info = grupos[ligaNome][0];
-                html += `
-                <div class="league-group">
-                    <div class="league-header">
-                        <img src="${info.logo_liga}" class="w-5 h-5 object-contain">
-                        <span>${ligaNome}</span>
-                    </div>`;
-                
+                html += `<div class="mb-4 rounded-lg overflow-hidden border border-[#1e262f]"><div class="league-header"><img src="${grupos[ligaNome][0].logo_liga}" class="w-5 h-5 object-contain"><span>${ligaNome}</span></div>`;
                 grupos[ligaNome].forEach(j => {
                     const dt = new Date(j.data);
                     html += `
                     <div class="match-card">
                         <div class="text-[10px] text-gray-500 font-bold w-12 text-center leading-tight">
-                            ${dt.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}<br>
-                            <span class="text-white text-xs font-black">${dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</span>
+                            ${dt.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}<br><span class="text-white text-xs font-black">${dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</span>
                         </div>
                         <div class="flex-1 px-4 border-l border-gray-800 ml-2">
-                            <div class="flex items-center gap-3 font-bold text-[10px] mb-2 uppercase text-gray-200">
-                                <img src="${j.home.logo}" class="w-4 h-4"> ${j.home.name}
-                            </div>
-                            <div class="flex items-center gap-3 font-bold text-[10px] uppercase text-gray-200">
-                                <img src="${j.away.logo}" class="w-4 h-4"> ${j.away.name}
-                            </div>
+                            <div class="flex items-center gap-2 font-bold text-[10px] mb-2 uppercase text-gray-200"><img src="${j.home.logo}" class="w-4 h-4"> ${j.home.name}</div>
+                            <div class="flex items-center gap-2 font-bold text-[10px] uppercase text-gray-200"><img src="${j.away.logo}" class="w-4 h-4"> ${j.away.name}</div>
                         </div>
                         <div class="flex gap-1 items-center">
                             <button class="odd-btn"><span class="text-[6px] text-gray-500 mb-0.5">1</span>${j.odds.casa}</button>
                             <button class="odd-btn"><span class="text-[6px] text-gray-500 mb-0.5">X</span>${j.odds.empate}</button>
                             <button class="odd-btn"><span class="text-[6px] text-gray-500 mb-0.5">2</span>${j.odds.fora}</button>
-                            <button onclick="abrirMercados(${j.id})" class="w-8 h-10 bg-gray-800 rounded-lg text-white font-black text-sm">+</button>
+                            <button onclick="abrirMercados(${j.id})" class="w-8 h-10 bg-[#2d3741] hover:bg-green-600 hover:text-black rounded-lg text-white font-black text-xs ml-1 transition flex items-center justify-center">+${Object.keys(j.mercados || {}).length * 3}</button>
                         </div>
                     </div>`;
                 });
                 html += `</div>`;
             }
-            document.getElementById('container-jogos').innerHTML = html || "<p class='text-center py-20 uppercase font-black text-gray-600'>Nenhum mercado aberto agora.</p>";
+            document.getElementById('container-jogos').innerHTML = html;
         }
 
         function abrirMercados(id) {
             const j = todosJogos.find(item => item.id === id);
-            if(!j) return;
+            if(!j || !j.mercados) return;
+
             document.getElementById('modal-titulo').innerText = `${j.home.name} X ${j.away.name}`;
+            const m = j.mercados;
             
             let html = `
-                <div class="bg-[#1c242c] p-5 rounded-2xl border border-gray-800 mb-4 text-center">
-                    <p class="text-[10px] font-black uppercase text-gray-500 mb-3 tracking-widest italic">Total de Gols (Mais/Menos)</p>
-                    <div class="flex gap-3">
-                        <button class="odd-btn flex-1 py-4 h-auto text-green-500 font-black">MAIS 2.5: ${j.mercados_extras ? j.mercados_extras.gols.mais : '1.80'}</button>
-                        <button class="odd-btn flex-1 py-4 h-auto text-green-500 font-black">MENOS 2.5: ${j.mercados_extras ? j.mercados_extras.gols.menos : '1.90'}</button>
+                <div class="market-box">
+                    <div class="market-title">Dupla Chance</div>
+                    <div class="market-grid-3">
+                        <div class="market-btn">Casa/Empate <span>${m.dupla_chance.casa_empate}</span></div>
+                        <div class="market-btn">Casa/Fora <span>${m.dupla_chance.casa_fora}</span></div>
+                        <div class="market-btn">Empate/Fora <span>${m.dupla_chance.empate_fora}</span></div>
                     </div>
                 </div>
-                <div class="bg-[#1c242c] p-5 rounded-2xl border border-gray-800 text-center">
-                    <p class="text-[10px] font-black uppercase text-gray-500 mb-3 tracking-widest italic">Ambas Equipes Marcam</p>
-                    <div class="flex gap-3">
-                        <button class="odd-btn flex-1 py-4 h-auto text-green-500 font-black">SIM: ${j.mercados_extras ? j.mercados_extras.ambas.sim : '1.70'}</button>
-                        <button class="odd-btn flex-1 py-4 h-auto text-green-500 font-black">NÃO: ${j.mercados_extras ? j.mercados_extras.ambas.nao : '2.00'}</button>
+
+                <div class="market-box">
+                    <div class="market-title">Ambas Equipes Marcam</div>
+                    <div class="market-grid">
+                        <div class="market-btn">Sim <span>${m.ambas_marcam.sim}</span></div>
+                        <div class="market-btn">Não <span>${m.ambas_marcam.nao}</span></div>
+                    </div>
+                </div>
+
+                <div class="market-box">
+                    <div class="market-title">Total de Gols</div>
+                    <div class="market-grid">
+                        <div class="market-btn">Mais 1.5 <span>${m.total_gols.mais_15}</span></div>
+                        <div class="market-btn">Menos 1.5 <span>${m.total_gols.menos_15}</span></div>
+                        <div class="market-btn">Mais 2.5 <span>${m.total_gols.mais_25}</span></div>
+                        <div class="market-btn">Menos 2.5 <span>${m.total_gols.menos_25}</span></div>
+                        <div class="market-btn">Mais 3.5 <span>${m.total_gols.mais_35}</span></div>
+                        <div class="market-btn">Menos 3.5 <span>${m.total_gols.menos_35}</span></div>
+                    </div>
+                </div>
+
+                <div class="market-box">
+                    <div class="market-title">Placar Exato (Principais)</div>
+                    <div class="market-grid-3">
+                        <div class="market-btn">1-0 <span>${m.placar_exato["1-0"]}</span></div>
+                        <div class="market-btn">2-0 <span>${m.placar_exato["2-0"]}</span></div>
+                        <div class="market-btn">2-1 <span>${m.placar_exato["2-1"]}</span></div>
+                        <div class="market-btn">0-0 <span>${m.placar_exato["0-0"]}</span></div>
+                        <div class="market-btn">0-1 <span>${m.placar_exato["0-1"]}</span></div>
+                        <div class="market-btn">Outros <span>--</span></div>
+                    </div>
+                </div>
+
+                <div class="market-box">
+                    <div class="market-title">Resultado no Intervalo</div>
+                    <div class="market-grid-3">
+                        <div class="market-btn">Casa <span>${m.intervalo.casa_ht}</span></div>
+                        <div class="market-btn">Empate <span>${m.intervalo.empate_ht}</span></div>
+                        <div class="market-btn">Fora <span>${m.intervalo.fora_ht}</span></div>
+                    </div>
+                </div>
+
+                <div class="market-box">
+                    <div class="market-title">Escanteios</div>
+                    <div class="market-grid">
+                        <div class="market-btn">Mais de 8.0 <span>${m.escanteios.mais_8}</span></div>
+                        <div class="market-btn">Mais de 10.0 <span>${m.escanteios.mais_10}</span></div>
                     </div>
                 </div>`;
             
