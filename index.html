@@ -1,145 +1,154 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GURILA BET | PROFESSIONAL</title>
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        body { background: #060a0d; color: #fff; font-family: 'Inter', sans-serif; }
-        .league-group { margin-bottom: 25px; overflow: hidden; border-radius: 12px; border: 1px solid #1e262f; }
-        .league-header { background: linear-gradient(90deg, #12171d 0%, #060a0d 100%); border-left: 4px solid #00ff88; }
-        .odd-btn { background: #1c242c; border: 1px solid #2d3741; transition: 0.2s; }
-        .odd-btn:active { transform: scale(0.95); }
-        .modal { background: rgba(0,0,0,0.95); backdrop-filter: blur(10px); }
-        /* Estabilizador de Bandeiras para evitar ícones quebrados */
-        .flag-container { width: 22px; height: 16px; display: flex; align-items: center; justify-content: center; background: #1a2128; border-radius: 2px; overflow: hidden; }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>GURILA BET | PROFESSIONAL</title>
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+  <style>
+    body { background:#060a0d; color:#fff; font-family:'Inter',sans-serif; }
+    .league-group { margin-bottom:25px; border-radius:12px; overflow:hidden; border:1px solid #1e262f; }
+    .league-header { background:linear-gradient(90deg,#12171d,#060a0d); border-left:4px solid #00ff88; }
+    .odd-btn { background:#1c242c; border:1px solid #2d3741; transition:.2s; }
+    .odd-btn:active { transform:scale(.95); }
+    .modal { background:rgba(0,0,0,.95); backdrop-filter:blur(10px); }
+    .flag-container { width:22px; height:16px; background:#1a2128; border-radius:2px; overflow:hidden; }
+  </style>
 </head>
+
 <body class="pb-32">
 
-    <header class="p-4 bg-[#0b0f13] border-b border-gray-800 flex justify-between items-center sticky top-0 z-50">
-        <h1 class="text-2xl font-black italic uppercase text-white tracking-tighter">Gurila<span class="text-green-500">Bet</span> 🦍</h1>
-        <div id="user-area" class="flex gap-2 text-[10px] font-bold">
-            <button onclick="toggleModal('modal-cadastro')" class="text-gray-400 px-2 uppercase tracking-widest">Cadastrar</button>
-            <button class="bg-green-600 text-black px-4 py-2 rounded-lg uppercase italic font-black">Entrar</button>
-        </div>
-    </header>
+<header class="p-4 bg-[#0b0f13] border-b border-gray-800 flex justify-between items-center sticky top-0 z-50">
+  <h1 class="text-2xl font-black italic uppercase">Gurila<span class="text-green-500">Bet</span> 🦍</h1>
+  <div class="flex gap-2 text-[10px] font-bold">
+    <button class="text-gray-400 uppercase">Cadastrar</button>
+    <button class="bg-green-600 text-black px-4 py-2 rounded-lg uppercase italic font-black">Entrar</button>
+  </div>
+</header>
 
-    <main class="p-2 max-w-2xl mx-auto" id="lista-jogos">
-        <div class="text-center py-20 text-gray-600 animate-pulse font-bold text-xs uppercase italic tracking-widest">
-            Sincronizando Mercados Reais...
-        </div>
-    </main>
+<main id="lista-jogos" class="p-2 max-w-2xl mx-auto">
+  <div class="text-center py-20 text-gray-600 animate-pulse text-xs font-bold uppercase">
+    Sincronizando Mercados Reais...
+  </div>
+</main>
 
-    <div id="modal-cadastro" class="fixed inset-0 modal z-[400] hidden items-center justify-center p-4">
-        <div class="bg-[#11171e] p-8 rounded-3xl w-full max-w-sm border border-gray-800">
-            <h2 class="text-xl font-black italic mb-6 uppercase">Criar Conta 🦍</h2>
-            <input id="cad-nome" type="text" placeholder="Nome Completo" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-3 text-sm outline-none">
-            <input id="cad-email" type="email" placeholder="E-mail" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-3 text-sm outline-none">
-            <input id="cad-senha" type="password" placeholder="Senha" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-6 text-sm outline-none">
-            <button onclick="realizarCadastro()" class="w-full bg-green-600 text-black font-black p-4 rounded-xl uppercase italic">Finalizar Cadastro</button>
-            <button onclick="toggleModal('modal-cadastro')" class="w-full text-gray-500 text-[10px] mt-4 font-bold uppercase underline">Voltar</button>
-        </div>
-    </div>
+<script>
+const API_URL = 'https://gurilabet-v2-production.up.railway.app';
 
-    <script>
-        const API_URL = 'https://gurilabet-v2-production.up.railway.app'; 
-        let usuarioLogado = JSON.parse(localStorage.getItem('gurila_user')) || null;
+/* ===== SISTEMA DE BANDEIRAS DEFINITIVO ===== */
+function getFlag(pais) {
+  if (!pais) return fallbackFlag();
 
-        // TRADUTOR DE PAÍSES E LIGAS
-        function traduzir(texto) {
-            const dicionario = {
-                'Brazil': 'Brasil', 'England': 'Inglaterra', 'Spain': 'Espanha', 'Italy': 'Itália',
-                'Germany': 'Alemanha', 'France': 'França', 'Portugal': 'Portugal',
-                'Argentina': 'Argentina', 'Netherlands': 'Holanda', 'Saudi-Arabia': 'Arábia Saudita',
-                'World': 'Mundial', 'Europe': 'Europa', 'Friendly': 'Amistoso'
-            };
-            return dicionario[texto] || texto;
-        }
+  const normalized = pais
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toUpperCase();
 
-        // SISTEMA DE BANDEIRA ROBUSTO
-        function getFlag(pais, logoLiga) {
-            const flags = {
-                'Brazil': 'BR', 'England': 'GB', 'Spain': 'ES', 'Italy': 'IT', 'Germany': 'DE',
-                'France': 'FR', 'Portugal': 'PT', 'Argentina': 'AR', 'World': 'UN'
-            };
-            const code = flags[pais];
-            
-            // Se tiver código de país, usa a bandeira. Se não, usa o logo da liga direto.
-            if (code && code !== 'UN') {
-                return `https://flagsapi.com/${code}/flat/64.png`;
-            }
-            return logoLiga; // Fallback imediato para o logo da liga
-        }
+  const map = {
+    BRAZIL:"BR", COLOMBIA:"CO", JAPAN:"JP", POLAND:"PL",
+    AUSTRIA:"AT", ARGENTINA:"AR", ENGLAND:"GB", SPAIN:"ES",
+    ITALY:"IT", GERMANY:"DE", FRANCE:"FR", PORTUGAL:"PT",
+    NETHERLANDS:"NL", WORLD:"UN"
+  };
 
-        async function carregarJogos() {
-            try {
-                const res = await fetch(`${API_URL}/api/jogos`);
-                const jogos = await res.json();
-                
-                if(!jogos || jogos.length === 0) {
-                    document.getElementById('lista-jogos').innerHTML = "<div class='text-center py-20 text-gray-500'>Aguardando mercados...</div>";
-                    return;
-                }
+  const iso = map[normalized] || "UN";
+  return `https://flagsapi.com/${iso}/flat/64.png`;
+}
 
-                const ligas = {};
-                jogos.forEach(j => { 
-                    const chave = `${traduzir(j.pais)} - ${j.liga}`;
-                    if(!ligas[chave]) ligas[chave] = []; 
-                    ligas[chave].push(j); 
-                });
-                
-                let html = '';
-                for(let ligaNome in ligas) {
-                    const jInfo = ligas[ligaNome][0];
-                    html += `<div class="league-group">
-                        <div class="league-header p-3 flex items-center gap-2 text-[10px] font-black uppercase italic text-gray-400">
-                            <div class="flag-container">
-                                <img src="${getFlag(jInfo.pais, jInfo.bandeira)}" 
-                                     class="w-full h-full object-cover" 
-                                     onerror="this.src='https://cdn-icons-png.flaticon.com/512/33/33736.png'">
-                            </div>
-                            <span>${ligaNome}</span>
-                        </div>`;
-                    
-                    ligas[ligaNome].forEach(j => {
-                        const dt = new Date(j.data);
-                        html += `
-                        <div class="bg-[#11171e] p-4 border-t border-gray-900 flex items-center justify-between gap-3 shadow-lg">
-                            <div class="text-[9px] text-gray-500 font-bold w-12 text-center border-r border-gray-800 pr-2">
-                                ${dt.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}<br><span class="text-white">${dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</span>
-                            </div>
-                            <div class="flex-1 flex flex-col gap-2">
-                                <div class="flex items-center gap-3 text-[11px] font-black uppercase tracking-tighter text-gray-200">
-                                    <img src="${j.home.logo}" class="w-5 h-5 object-contain" onerror="this.src='https://cdn-icons-png.flaticon.com/512/33/33736.png'"> ${j.home.name}
-                                </div>
-                                <div class="flex items-center gap-3 text-[11px] font-black uppercase tracking-tighter text-gray-200">
-                                    <img src="${j.away.logo}" class="w-5 h-5 object-contain" onerror="this.src='https://cdn-icons-png.flaticon.com/512/33/33736.png'"> ${j.away.name}
-                                </div>
-                            </div>
-                            <div class="flex gap-1.5 ml-2">
-                                <div class="odd-btn w-14 h-11 rounded-xl text-[12px] font-black text-green-500 flex flex-col items-center justify-center">
-                                    <span class="text-[7px] text-gray-600 font-bold uppercase mb-0.5">1</span>${j.odds.casa}
-                                </div>
-                                <div class="odd-btn w-14 h-11 rounded-xl text-[12px] font-black text-green-500 flex flex-col items-center justify-center">
-                                    <span class="text-[7px] text-gray-600 font-bold uppercase mb-0.5">X</span>${j.odds.empate}
-                                </div>
-                                <div class="odd-btn w-14 h-11 rounded-xl text-[12px] font-black text-green-500 flex flex-col items-center justify-center">
-                                    <span class="text-[7px] text-gray-600 font-bold uppercase mb-0.5">2</span>${j.odds.fora}
-                                </div>
-                            </div>
-                        </div>`;
-                    });
-                    html += `</div>`;
-                }
-                document.getElementById('lista-jogos').innerHTML = html;
-            } catch (e) { console.error(e); }
-        }
+function fallbackFlag() {
+  return "https://cdn-icons-png.flaticon.com/512/33/33736.png";
+}
 
-        function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); document.getElementById(id).classList.toggle('flex'); }
+/* ===== TRADUTOR ===== */
+function traduzir(txt) {
+  const d = {
+    World:'Mundial', Friendly:'Amistoso',
+    Brazil:'Brasil', Colombia:'Colômbia', Japan:'Japão'
+  };
+  return d[txt] || txt;
+}
 
-        window.onload = carregarJogos;
-    </script>
+/* ===== CARREGAR JOGOS ===== */
+async function carregarJogos() {
+  try {
+    const res = await fetch(`${API_URL}/api/jogos`);
+    const jogos = await res.json();
+
+    if (!jogos || !jogos.length) {
+      lista.innerHTML = "<div class='text-center py-20 text-gray-500'>Sem jogos</div>";
+      return;
+    }
+
+    const ligas = {};
+    jogos.forEach(j => {
+      const key = `${traduzir(j.pais)} - ${j.liga}`;
+      if (!ligas[key]) ligas[key] = [];
+      ligas[key].push(j);
+    });
+
+    let html = "";
+    for (const liga in ligas) {
+      const info = ligas[liga][0];
+      html += `
+      <div class="league-group">
+        <div class="league-header p-3 flex items-center gap-2 text-[10px] font-black uppercase text-gray-400">
+          <div class="flag-container">
+            <img src="${getFlag(info.pais)}"
+              class="w-full h-full object-cover"
+              loading="lazy"
+              onerror="this.onerror=null;this.src='${fallbackFlag()}'">
+          </div>
+          <span>${liga}</span>
+        </div>`;
+
+      ligas[liga].forEach(j => {
+        const d = new Date(j.data);
+        html += `
+        <div class="bg-[#11171e] p-4 border-t border-gray-900 flex gap-3">
+          <div class="text-[9px] text-gray-500 font-bold w-12 text-center border-r border-gray-800">
+            ${d.toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit'})}<br>
+            <span class="text-white">${d.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})}</span>
+          </div>
+
+          <div class="flex-1 flex flex-col gap-2">
+            <div class="flex items-center gap-2 text-[11px] font-black uppercase">
+              <img src="${j.home.logo}" class="w-5 h-5 object-contain"
+                   onerror="this.src='${fallbackFlag()}'"> ${j.home.name}
+            </div>
+            <div class="flex items-center gap-2 text-[11px] font-black uppercase">
+              <img src="${j.away.logo}" class="w-5 h-5 object-contain"
+                   onerror="this.src='${fallbackFlag()}'"> ${j.away.name}
+            </div>
+          </div>
+
+          <div class="flex gap-1.5">
+            <div class="odd-btn w-14 h-11 rounded-xl flex flex-col items-center justify-center text-green-500 font-black">
+              <span class="text-[7px] text-gray-600">1</span>${j.odds.casa}
+            </div>
+            <div class="odd-btn w-14 h-11 rounded-xl flex flex-col items-center justify-center text-green-500 font-black">
+              <span class="text-[7px] text-gray-600">X</span>${j.odds.empate}
+            </div>
+            <div class="odd-btn w-14 h-11 rounded-xl flex flex-col items-center justify-center text-green-500 font-black">
+              <span class="text-[7px] text-gray-600">2</span>${j.odds.fora}
+            </div>
+          </div>
+        </div>`;
+      });
+
+      html += "</div>";
+    }
+
+    document.getElementById("lista-jogos").innerHTML = html;
+  } catch (e) {
+    console.error(e);
+  }
+}
+
+window.onload = carregarJogos;
+</script>
+
 </body>
 </html>
