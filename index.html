@@ -22,12 +22,10 @@
         .live-pulse { animation: pulseRed 1.5s infinite; color: #ef4444; }
         @keyframes pulseRed { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
         
-        /* Ícones e Busca */
-        .sport-icon { display: flex; flex-direction: column; align-items: center; gap: 5px; color: #94a3b8; width: 60px; }
-        .sport-icon i { font-size: 20px; }
-        .sport-icon span { font-size: 9px; font-weight: bold; }
-        .sport-active { color: #00ff88; }
-        .sport-active i { color: #fff; }
+        /* Cabeçalho Esporte Único */
+        .sport-title { background: #0f141a; padding: 10px; border-bottom: 1px solid #1e262f; text-align: center; font-size: 12px; font-weight: 900; color: #00ff88; letter-spacing: 1px; }
+
+        /* Busca */
         .search-container { padding: 10px; background: #0b0f13; position: relative; }
         .search-input { width: 100%; background: #161b22; border: 1px solid #2d3741; padding: 10px 10px 10px 40px; border-radius: 8px; color: white; outline: none; font-size: 12px; font-weight: bold; }
         .search-icon { position: absolute; left: 22px; top: 22px; color: #94a3b8; font-size: 14px; }
@@ -43,10 +41,16 @@
         .market-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
         .market-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
 
+        /* Botões Login/Cadastro */
+        .auth-btn { font-size: 10px; font-weight: 900; text-transform: uppercase; padding: 6px 12px; border-radius: 4px; transition: 0.2s; cursor: pointer; }
+        .btn-login { background: #161b22; border: 1px solid #2d3741; color: #fff; }
+        .btn-register { background: #00ff88; border: 1px solid #00ff88; color: #000; margin-left: 5px; }
+        .btn-logout { color: #ef4444; margin-left: 10px; font-size: 12px; cursor: pointer; }
+
         /* CUPOM BAR (Flutuante) */
         .cupom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #11171e; border-top: 1px solid #00ff88; padding: 15px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; box-shadow: 0 -5px 30px rgba(0,0,0,0.9); }
         
-        /* ESTILOS DO MODAL CUPOM (Inspirado na Gold) */
+        /* ESTILOS DO MODAL CUPOM */
         .bet-item { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
         .bet-info h4 { font-size: 11px; font-weight: 900; color: #fff; text-transform: uppercase; }
         .bet-info p { font-size: 10px; color: #00ff88; font-weight: bold; }
@@ -66,15 +70,12 @@
 
     <header class="p-4 bg-[#0b0f13] border-b border-gray-800 flex justify-between items-center sticky top-0 z-50">
         <h1 class="text-2xl font-black italic uppercase text-white tracking-tighter">Gurila<span class="text-green-500">Bet</span> 🦍</h1>
-        <div id="user-area"></div>
+        <div id="user-area" class="flex items-center">
+            </div>
     </header>
 
-    <div class="bg-[#0f141a] py-3 border-b border-gray-800 flex justify-around overflow-x-auto no-scrollbar">
-        <div class="sport-icon sport-active"><i class="fas fa-futbol"></i><span>FUTEBOL</span></div>
-        <div class="sport-icon"><i class="fas fa-basketball-ball"></i><span>BASQUETE</span></div>
-        <div class="sport-icon"><i class="fas fa-hand-rock"></i><span>LUTA</span></div>
-        <div class="sport-icon"><i class="fas fa-table-tennis"></i><span>TÊNIS</span></div>
-        <div class="sport-icon"><i class="fas fa-gamepad"></i><span>E-SPORTS</span></div>
+    <div class="sport-title">
+        <i class="fas fa-futbol mr-2"></i> FUTEBOL
     </div>
 
     <div class="flex border-b border-gray-800 bg-[#0b0f13]">
@@ -193,6 +194,37 @@
         </div>
     </div>
 
+    <div id="modal-login" class="fixed inset-0 bg-black/95 z-[1000] hidden flex items-center justify-center p-4">
+        <div class="bg-[#161b22] p-6 rounded-2xl w-full max-w-sm border border-gray-800 relative">
+            <button onclick="toggleLogin()" class="absolute top-4 right-4 text-gray-500 hover:text-white font-bold">X</button>
+            <h2 class="text-lg font-black text-white uppercase mb-4 text-center">Entrar na Conta</h2>
+            <div class="space-y-3">
+                <input type="text" id="login-user" class="input-dark" placeholder="Usuário">
+                <input type="password" id="login-pass" class="input-dark" placeholder="Senha">
+                <button onclick="fazerLogin()" class="w-full bg-green-600 text-black font-bold p-3 rounded-lg uppercase mt-2 hover:bg-white transition">ENTRAR</button>
+            </div>
+            <div class="mt-4 text-center">
+                <button onclick="toggleLogin(); toggleCadastro()" class="text-xs text-green-500 font-bold uppercase underline">Criar Conta</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="modal-cadastro" class="fixed inset-0 bg-black/95 z-[1000] hidden flex items-center justify-center p-4">
+        <div class="bg-[#161b22] p-6 rounded-2xl w-full max-w-sm border border-gray-800 relative">
+            <button onclick="toggleCadastro()" class="absolute top-4 right-4 text-gray-500 hover:text-white font-bold">X</button>
+            <h2 class="text-lg font-black text-white uppercase mb-4 text-center">Criar Nova Conta</h2>
+            <div class="space-y-3">
+                <input type="text" id="cad-nome" class="input-dark" placeholder="Nome Completo">
+                <input type="tel" id="cad-tel" class="input-dark" placeholder="WhatsApp">
+                <input type="password" id="cad-pass" class="input-dark" placeholder="Senha">
+                <button onclick="fazerCadastro()" class="w-full bg-white text-black font-bold p-3 rounded-lg uppercase mt-2 hover:bg-green-500 transition">CADASTRAR</button>
+            </div>
+            <div class="mt-4 text-center">
+                <button onclick="toggleCadastro(); toggleLogin()" class="text-xs text-gray-500 font-bold uppercase underline">Já tenho conta</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const API_URL = 'https://gurilabet-v2-production.up.railway.app'; 
         let todosJogos = [];
@@ -201,6 +233,8 @@
         let ligaAtiva = 'Todos';
         let modoAtual = 'hoje';
         let dataAtiva = new Date().toISOString().split('T')[0];
+        
+        // Carrega usuário do localStorage
         let usuario = JSON.parse(localStorage.getItem('gurila_user'));
         
         const LIMITE_JOGOS = 10;
@@ -213,9 +247,63 @@
         
         document.getElementById('btn-depois').innerText = `DIA ${depois.getDate()}/${depois.getMonth()+1}`;
 
-        if(usuario && usuario.nome) {
-            document.getElementById('user-area').innerHTML = `<span class="text-xs font-bold text-green-500 uppercase">${usuario.nome}</span>`;
+        /* --- LÓGICA DE LOGIN / CADASTRO --- */
+        function atualizarUserArea() {
+            const area = document.getElementById('user-area');
+            if(usuario && usuario.nome) {
+                // Se estiver logado
+                area.innerHTML = `
+                    <div class="flex flex-col text-right mr-3">
+                        <span class="text-[9px] text-gray-400">Olá,</span>
+                        <span class="text-xs font-black text-green-500 uppercase leading-none">${usuario.nome.split(' ')[0]}</span>
+                    </div>
+                    <i onclick="logout()" class="fas fa-sign-out-alt btn-logout" title="Sair"></i>
+                `;
+            } else {
+                // Se não estiver logado
+                area.innerHTML = `
+                    <button onclick="toggleLogin()" class="auth-btn btn-login">ENTRAR</button>
+                    <button onclick="toggleCadastro()" class="auth-btn btn-register">CADASTRAR</button>
+                `;
+            }
         }
+
+        function toggleLogin() { document.getElementById('modal-login').classList.toggle('hidden'); }
+        function toggleCadastro() { document.getElementById('modal-cadastro').classList.toggle('hidden'); }
+
+        function fazerLogin() {
+            const user = document.getElementById('login-user').value;
+            if(!user) return alert("Digite o usuário!");
+            
+            // Simulação de login
+            usuario = { nome: user, saldo: 0 };
+            localStorage.setItem('gurila_user', JSON.stringify(usuario));
+            toggleLogin();
+            atualizarUserArea();
+            
+            // Preenche o nome no bilhete se estiver aberto
+            if(document.getElementById('cliente-nome')) document.getElementById('cliente-nome').value = usuario.nome;
+        }
+
+        function fazerCadastro() {
+            const nome = document.getElementById('cad-nome').value;
+            if(!nome) return alert("Digite seu nome!");
+            
+            alert("Cadastro realizado com sucesso! Faça login.");
+            toggleCadastro();
+            toggleLogin();
+            document.getElementById('login-user').value = nome;
+        }
+
+        function logout() {
+            localStorage.removeItem('gurila_user');
+            usuario = null;
+            atualizarUserArea();
+        }
+        
+        // Inicializa o cabeçalho
+        atualizarUserArea();
+        /* ---------------------------------- */
 
         function mudarData(tipo) {
             document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
@@ -301,7 +389,6 @@
             document.getElementById('container-jogos').innerHTML = html || "<div class='text-center py-10 text-gray-500'>Nenhum jogo encontrado.</div>";
         }
 
-        // --- SISTEMA DE CUPOM CORRIGIDO ---
         function addAposta(el, id, mercado, opcao, odd, nome) {
             if (odd == 0 || odd == "Bloq") return;
             document.querySelectorAll('.odd-active').forEach(btn => { if(btn.getAttribute('onclick').includes(`, ${id},`)) btn.classList.remove('odd-active'); });
@@ -325,7 +412,6 @@
         function atualizarBarraCupom() {
             const qtd = carrinho.length;
             if(qtd > 0) { 
-                // Se modal estiver FECHADO, mostra a barra pequena
                 if(document.getElementById('modal-cupom').classList.contains('hidden')){
                     document.getElementById('cupom-bar').classList.remove('hidden'); 
                 }
@@ -339,7 +425,6 @@
             }
         }
 
-        // AQUI ESTÁ A CORREÇÃO DO SOBREPOSIÇÃO:
         function abrirCupomDetalhado() {
             const lista = document.getElementById('lista-apostas'); 
             lista.innerHTML = '';
@@ -357,18 +442,17 @@
                 </div>`; 
             });
             
+            // Auto-preencher nome se logado
             if(usuario && usuario.nome) document.getElementById('cliente-nome').value = usuario.nome;
             
             calcularRetorno(); 
             
-            // ESCONDE A BARRA PEQUENA E MOSTRA O MODAL
             document.getElementById('cupom-bar').classList.add('hidden');
             document.getElementById('modal-cupom').classList.remove('hidden');
         }
 
         function fecharModalCupom() {
             document.getElementById('modal-cupom').classList.add('hidden');
-            // SE TIVER CARRINHO, VOLTA A BARRA PEQUENA
             if(carrinho.length > 0) document.getElementById('cupom-bar').classList.remove('hidden');
         }
 
@@ -378,7 +462,7 @@
             carrinho = [];
             document.querySelectorAll('.odd-active').forEach(btn => btn.classList.remove('odd-active'));
             atualizarBarraCupom();
-            fecharModalCupom(); // Fecha modal se limpar
+            fecharModalCupom(); 
         }
 
         function calcularRetorno() {
@@ -401,7 +485,14 @@
             if(carrinho.length > LIMITE_JOGOS) return;
             const oddTotal = document.getElementById('odd-final').innerText;
             const retornoPotencial = document.getElementById('retorno-liquido').innerText;
-            if(!usuario) { usuario = { nome: nomeCliente, saldo: '0.00' }; localStorage.setItem('gurila_user', JSON.stringify(usuario)); }
+            
+            // Se usuário não existir, cria um temporário
+            if(!usuario) { 
+                usuario = { nome: nomeCliente, saldo: '0.00' }; 
+                localStorage.setItem('gurila_user', JSON.stringify(usuario));
+                atualizarUserArea();
+            }
+
             const res = await fetch(`${API_URL}/api/finalizar`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ usuario_id: 1, valor, apostas: carrinho, odd_total: oddTotal }) });
             const data = await res.json();
             if(data.sucesso) {
