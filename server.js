@@ -3,17 +3,27 @@ const axios = require('axios');
 const { Pool } = require('pg');
 const cors = require('cors');
 const crypto = require('crypto');
+const path = require('path'); // MÓDULO NECESSÁRIO PARA LER O ARQUIVO NOVO
 
 const app = express();
 app.use(express.json());
 app.use(cors({ origin: '*' }));
+
+// --- COMANDO PARA FORÇAR O SITE NOVO A APARECER ---
+app.use(express.static(path.join(__dirname)));
+
+app.get('/', (req, res) => {
+    // Isso obriga o servidor a entregar o index.html que está na pasta
+    res.sendFile(path.join(__dirname, 'index.html'));
+});
+// --------------------------------------------------
 
 const pool = new Pool({ 
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
 });
 
-// Inicializa o Banco (Cria tabelas se não existirem)
+// Inicializa Banco
 async function initDb() {
     try {
         await pool.query(`CREATE TABLE IF NOT EXISTS usuarios (
@@ -24,12 +34,12 @@ async function initDb() {
             valor NUMERIC, retorno NUMERIC, odds_total NUMERIC, status TEXT DEFAULT 'pendente', 
             detalhes JSONB, data TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )`);
-        console.log("✅ Banco Gurila Bet Conectado!");
+        console.log("✅ Banco Conectado!");
     } catch (e) { console.error("Erro Banco:", e.message); }
 }
 initDb();
 
-// --- ROTA DE JOGOS (COM FILTRO DE DATA E AO VIVO) ---
+// --- ROTA DE JOGOS (COM BACKUP AUTOMÁTICO SE A API FALHAR) ---
 app.get('/api/jogos', async (req, res) => {
     try {
         const headers = { 
@@ -38,35 +48,28 @@ app.get('/api/jogos', async (req, res) => {
         };
         
         let url = '';
-        const isAoVivo = req.query.aovivo === 'true';
-
+        let isAoVivo = req.query.aovivo === 'true';
+        
         if (isAoVivo) {
             url = `https://v3.football.api-sports.io/fixtures?live=all`;
         } else {
-            // Pega a data que veio do site ou usa a de hoje
-            const dataFiltro = req.query.data || new Date().toISOString().split('T')[0];
+            const hoje = new Date().toISOString().split('T')[0];
+            const dataFiltro = req.query.data || hoje;
             url = `https://v3.football.api-sports.io/fixtures?date=${dataFiltro}`;
         }
 
-        // Timeout de 15s
-        const resp = await axios.get(url, { headers, timeout: 15000 });
+        const resp = await axios.get(url, { headers, timeout: 10000 });
         
-        let fixtures = resp.data.response;
-        
-        // Se a API bloquear ou vier vazia, usa o modo de emergência
-        if (!fixtures || (fixtures.length === 0 && !isAoVivo && resp.data.errors && Object.keys(resp.data.errors).length > 0)) {
-            throw new Error("Limite API ou Vazio");
+        // Se a API estiver bloqueada ou vazia
+        if ((!resp.data.response || resp.data.response.length === 0) && !isAoVivo) {
+            throw new Error("API Limite ou Vazia");
         }
-        
-        if (!fixtures) fixtures = [];
 
-        res.json(formatar(fixtures));
+        res.json(formatar(resp.data.response));
 
     } catch (e) {
-        console.log("⚠️ Usando Backup de Jogos (API Off ou Limite)");
-        // Se a API falhar, gera jogos para o dia solicitado para não ficar tela branca
-        const dataBackup = req.query.data || new Date().toISOString().split('T')[0];
-        res.json(gerarJogosBackup(dataBackup));
+        console.log("⚠️ API falhou. Ativando JOGOS DE SEGURANÇA.");
+        res.json(gerarJogosFalsos(req.query.data || new Date().toISOString().split('T')[0]));
     }
 });
 
@@ -78,16 +81,12 @@ function formatar(data) {
         const isFuturo = status === 'NS' || status === 'TBD';
         const isAoVivo = ['1H', '2H', 'HT', 'ET', 'P', 'BT'].includes(status);
 
-        // Filtro básico: Mostra se for futuro ou ao vivo
-        if (!isFuturo && !isAoVivo && status !== 'FT') return null;
-
-        return montarObjeto(j);
+        if (!isFuturo && !isAoVivo) return null;
+        return montarObjetoJogo(j);
     }).filter(j => j !== null);
 }
 
-function montarObjeto(j) {
-    const ativo = ['NS', '1H', '2H', 'HT'].includes(j.fixture.status.short);
-    
+function montarObjetoJogo(j) {
     return {
         id: j.fixture.id,
         liga: j.league.name,
@@ -98,7 +97,7 @@ function montarObjeto(j) {
         away: { name: j.teams.away.name, logo: j.teams.away.logo },
         data: j.fixture.date,
         status: j.fixture.status.short,
-        ativo: ativo,
+        ativo: true,
         odds: { 
             casa: (1.5 + Math.random()).toFixed(2), 
             empate: (3.0 + Math.random()).toFixed(2), 
@@ -107,112 +106,91 @@ function montarObjeto(j) {
         mercados: {
             dupla_chance: { casa_empate: "1.25", casa_fora: "1.30", empate_fora: "1.60" },
             ambas_marcam: { sim: "1.75", nao: "1.95" },
-            total_gols: { mais_05: "1.05", menos_05: "8.00", mais_15: "1.30", menos_15: "3.20", mais_25: "1.80", menos_25: "1.90", mais_35: "3.00", menos_35: "1.30" },
-            placar_exato: { "1-0": "6.00", "2-0": "9.00", "2-1": "9.50", "0-0": "8.00", "0-1": "7.50" },
-            intervalo_final: { "Casa/Casa": "2.50", "Empate/Empate": "4.50", "Fora/Fora": "5.00" },
-            handicap: { "Casa -1": "2.80", "Empate -1": "3.40", "Fora +1": "1.45" },
-            escanteios: { mais_8: "1.50", mais_10: "2.10", menos_10: "1.65" }
+            total_gols: { mais_15: "1.30", menos_15: "3.20", mais_25: "1.90", menos_25: "1.80" },
+            placar_exato: { "1-0": "6.00", "2-0": "9.00", "2-1": "9.50", "0-0": "8.00" },
+            intervalo_final: { "Casa/Casa": "2.50", "Empate/Empate": "4.50", "Fora/Fora": "5.00" }
         }
     };
 }
 
-// --- ROTA DE LOGIN (ESSENCIAL) ---
-app.post('/api/login', async (req, res) => {
-    try {
-        const { email, senha } = req.body;
-        // Criptografa a senha enviada para comparar com o banco
-        const hash = crypto.createHash('sha256').update(senha).digest('hex');
-        
-        const result = await pool.query(
-            'SELECT id, nome, saldo FROM usuarios WHERE email = $1 AND senha = $2', 
-            [email, hash]
-        );
-        
-        if (result.rows.length > 0) {
-            res.json({ sucesso: true, usuario: result.rows[0] });
-        } else {
-            res.status(401).json({ erro: "Email ou senha incorretos." });
-        }
-    } catch (e) {
-        res.status(500).json({ erro: "Erro no servidor." });
-    }
-});
-
-// Rota de Cadastro
-app.post('/api/cadastro', async (req, res) => {
-    const { nome, email, senha } = req.body;
-    const hash = crypto.createHash('sha256').update(senha).digest('hex');
-    try {
-        const result = await pool.query(
-            'INSERT INTO usuarios (nome, email, senha) VALUES ($1, $2, $3) RETURNING id, nome, saldo',
-            [nome, email, hash]
-        );
-        res.json({ sucesso: true, usuario: result.rows[0] });
-    } catch (e) { res.status(400).json({ erro: "E-mail já cadastrado." }); }
-});
-
-// Finalizar Aposta
-app.post('/api/finalizar', async (req, res) => {
-    const { usuario_id, valor, apostas, odd_total } = req.body;
-    if (apostas.length > 10) return res.status(400).json({ erro: "Limite de 10 jogos excedido." });
-    
-    const codigo = "GB" + Math.floor(100000 + Math.random() * 900000);
-    let retornoCalc = (valor * odd_total);
-    if(retornoCalc > 2500) retornoCalc = 2500.00;
-    const retornoFinal = parseFloat(retornoCalc).toFixed(2);
-    
-    const idUser = usuario_id || 1; // Usa ID 1 se for aposta avulsa
-
-    try {
-        await pool.query(
-            'INSERT INTO bilhetes (usuario_id, codigo, valor, retorno, odds_total, detalhes) VALUES ($1, $2, $3, $4, $5, $6)',
-            [idUser, codigo, valor, retornoFinal, odd_total, JSON.stringify(apostas)]
-        );
-        res.json({ sucesso: true, codigo, retorno: retornoFinal });
-    } catch (e) { 
-        // Se der erro de usuário não encontrado, cria um genérico e tenta de novo
-        try {
-            await pool.query("INSERT INTO usuarios (id, nome, email, senha) VALUES (1, 'Balcão', 'balcao@gurila.com', '123') ON CONFLICT DO NOTHING");
-            await pool.query(
-                'INSERT INTO bilhetes (usuario_id, codigo, valor, retorno, odds_total, detalhes) VALUES ($1, $2, $3, $4, $5, $6)',
-                [1, codigo, valor, retornoFinal, odd_total, JSON.stringify(apostas)]
-            );
-            res.json({ sucesso: true, codigo, retorno: retornoFinal });
-        } catch(err) { res.status(500).json({ erro: "Erro ao processar." }); }
-    }
-});
-
-// Validador
-app.get('/api/bilhete/:codigo', async (req, res) => {
-    try {
-        const { codigo } = req.params;
-        const result = await pool.query(`SELECT b.*, u.nome as cliente FROM bilhetes b LEFT JOIN usuarios u ON b.usuario_id = u.id WHERE b.codigo = $1`, [codigo]);
-        if(result.rows.length > 0) res.json({ sucesso: true, bilhete: result.rows[0] });
-        else res.json({ sucesso: false, erro: "Bilhete não encontrado" });
-    } catch(e) { res.status(500).json({ erro: e.message }); }
-});
-
-// --- GERADOR DE BACKUP (Para o site não ficar vazio hoje) ---
-function gerarJogosBackup(dataStr) {
-    const times = [ {n:"Flamengo",l:"https://media.api-sports.io/football/teams/127.png"}, {n:"Palmeiras",l:"https://media.api-sports.io/football/teams/121.png"}, {n:"Real Madrid",l:"https://media.api-sports.io/football/teams/541.png"}, {n:"Barcelona",l:"https://media.api-sports.io/football/teams/529.png"} ];
-    const ligas = [ {n:"Brasileirão Série A",p:"Brazil",f:"https://media.api-sports.io/flags/br.svg"}, {n:"La Liga",p:"Spain",f:"https://media.api-sports.io/flags/es.svg"} ];
+// JOGOS DE BACKUP (Para quando a API cair)
+function gerarJogosFalsos(dataStr) {
+    const times = [
+        {n: "Flamengo", l: "https://media.api-sports.io/football/teams/127.png"},
+        {n: "Palmeiras", l: "https://media.api-sports.io/football/teams/121.png"},
+        {n: "Real Madrid", l: "https://media.api-sports.io/football/teams/541.png"},
+        {n: "Barcelona", l: "https://media.api-sports.io/football/teams/529.png"}
+    ];
+    const ligas = [
+        {n: "Brasileirão Série A", p: "Brazil", f: "https://media.api-sports.io/flags/br.svg"},
+        {n: "Champions League", p: "World", f: "https://media.api-sports.io/flags/eu.svg"}
+    ];
     
     let lista = [];
     let hora = 19;
     for(let i=0; i<6; i++) {
         let t1 = times[Math.floor(Math.random()*times.length)];
         let t2 = times[Math.floor(Math.random()*times.length)];
-        if(t1==t2) t2 = times[(times.indexOf(t2)+1)%times.length];
+        if(t1.n===t2.n) t2 = times[(times.indexOf(t2)+1)%times.length];
         let l = ligas[i%2];
         let d = new Date(dataStr); d.setHours(hora+i, 0, 0);
         
-        lista.push(montarObjeto({
-            fixture: { id: 5000+i, date: d.toISOString(), status: { short: "NS" } },
-            league: { name: l.n, country: l.p, flag: l.f },
+        lista.push(montarObjetoJogo({
+            fixture: { id: 9000+i, date: d.toISOString(), status: { short: "NS" } },
+            league: { name: l.n, logo: l.f, country: l.p, flag: l.f },
             teams: { home: { name: t1.n, logo: t1.l }, away: { name: t2.n, logo: t2.l } }
         }));
     }
     return lista;
 }
 
-app.listen(process.env.PORT || 3000);
+// ROTA DE LOGIN (Para o botão Entrar funcionar)
+app.post('/api/login', async (req, res) => {
+    try {
+        const { email, senha } = req.body;
+        const hash = crypto.createHash('sha256').update(senha).digest('hex');
+        const result = await pool.query('SELECT id, nome, saldo FROM usuarios WHERE email = $1 AND senha = $2', [email, hash]);
+        if (result.rows.length > 0) res.json({ sucesso: true, usuario: result.rows[0] });
+        else res.status(401).json({ erro: "Dados incorretos." });
+    } catch (e) { res.status(500).json({ erro: "Erro servidor." }); }
+});
+
+// ROTA DE CADASTRO
+app.post('/api/cadastro', async (req, res) => {
+    try {
+        const { nome, email, senha } = req.body;
+        const hash = crypto.createHash('sha256').update(senha).digest('hex');
+        const result = await pool.query('INSERT INTO usuarios (nome, email, senha) VALUES ($1, $2, $3) RETURNING id, nome, saldo', [nome, email, hash]);
+        res.json({ sucesso: true, usuario: result.rows[0] });
+    } catch (e) { res.status(400).json({ erro: "Email já existe." }); }
+});
+
+app.post('/api/finalizar', async (req, res) => {
+    const { usuario_id, valor, apostas, odd_total } = req.body;
+    const codigo = "GB" + Math.floor(100000 + Math.random() * 900000);
+    const userId = usuario_id || 1;
+    let ret = parseFloat(valor * odd_total).toFixed(2);
+    if(ret > 2500) ret = 2500.00;
+
+    try {
+        await pool.query(
+            'INSERT INTO bilhetes (usuario_id, codigo, valor, retorno, odds_total, detalhes) VALUES ($1, $2, $3, $4, $5, $6)',
+            [userId, codigo, valor, ret, odd_total, JSON.stringify(apostas)]
+        );
+        res.json({ sucesso: true, codigo, retorno: ret });
+    } catch (e) { 
+        // Fallback usuário genérico
+        try {
+            await pool.query("INSERT INTO usuarios (id, nome, email, senha) VALUES (1, 'Visitante', 'v@v.com', '123') ON CONFLICT DO NOTHING");
+            await pool.query('INSERT INTO bilhetes (usuario_id, codigo, valor, retorno, odds_total, detalhes) VALUES ($1, $2, $3, $4, $5, $6)', [1, codigo, valor, ret, odd_total, JSON.stringify(apostas)]);
+            res.json({ sucesso: true, codigo, retorno: ret });
+        } catch(err) { res.status(500).json({ erro: "Erro ao apostar" }); }
+    }
+});
+
+// Validação
+app.get('/api/bilhete/:codigo', async (req, res) => {
+    try {
+        const { codigo } = req.params;
+        const result = await pool.query(`SELECT b.*, u.nome as cliente FROM bilhetes b LEFT JOIN usuarios u ON b.usuario_id = u.id WHERE b.codigo = $1`, [codigo]);
+        if(result.rows.length > 0) res.json({ sucesso: true, bilhete:
