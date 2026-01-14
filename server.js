@@ -30,7 +30,9 @@ app.get('/api/jogos', async (req, res) => {
 
 function formatar(data) {
     return data.map(j => {
-        const podeApostar = j.fixture.status.short === 'NS'; // NS = Not Started
+        const status = j.fixture.status.short;
+        const ativo = status === 'NS'; // Apenas jogos não iniciados recebem odds
+        
         return {
             id: j.fixture.id,
             liga: j.league.name,
@@ -39,16 +41,49 @@ function formatar(data) {
             home: { name: j.teams.home.name, logo: j.teams.home.logo },
             away: { name: j.teams.away.name, logo: j.teams.away.logo },
             data: j.fixture.date,
-            status: j.fixture.status.short,
+            status: status,
+            // Odds Principais (Resultado Final)
             odds: { 
-                casa: podeApostar ? (1.5 + Math.random()).toFixed(2) : "0.00", 
-                empate: podeApostar ? (3.0 + Math.random()).toFixed(2) : "0.00", 
-                fora: podeApostar ? (2.2 + Math.random() * 2).toFixed(2) : "0.00" 
+                casa: ativo ? (1.5 + Math.random()).toFixed(2) : "0.00", 
+                empate: ativo ? (3.0 + Math.random()).toFixed(2) : "0.00", 
+                fora: ativo ? (2.2 + Math.random() * 2).toFixed(2) : "0.00" 
             },
-            // Acrescentado: Inteligência de mercados secundários
-            mercados_extras: podeApostar ? {
-                gols: { mais: (1.7 + Math.random()).toFixed(2), menos: (1.8 + Math.random()).toFixed(2) },
-                ambas: { sim: (1.6 + Math.random()).toFixed(2), nao: (1.9 + Math.random()).toFixed(2) }
+            // MERCADOS COMPLETOS (Simulação de Casa Profissional)
+            mercados: ativo ? {
+                dupla_chance: {
+                    casa_empate: (1.1 + Math.random() * 0.2).toFixed(2),
+                    casa_fora: (1.2 + Math.random() * 0.2).toFixed(2),
+                    empate_fora: (1.5 + Math.random() * 0.5).toFixed(2)
+                },
+                ambas_marcam: {
+                    sim: (1.6 + Math.random() * 0.5).toFixed(2),
+                    nao: (1.8 + Math.random() * 0.5).toFixed(2)
+                },
+                total_gols: {
+                    mais_15: (1.2 + Math.random() * 0.3).toFixed(2),
+                    menos_15: (3.5 + Math.random()).toFixed(2),
+                    mais_25: (1.8 + Math.random()).toFixed(2),
+                    menos_25: (1.9 + Math.random()).toFixed(2),
+                    mais_35: (3.2 + Math.random()).toFixed(2),
+                    menos_35: (1.3 + Math.random()).toFixed(2)
+                },
+                intervalo: {
+                    casa_ht: (2.5 + Math.random()).toFixed(2),
+                    empate_ht: (2.0 + Math.random()).toFixed(2),
+                    fora_ht: (3.5 + Math.random()).toFixed(2)
+                },
+                placar_exato: {
+                    "1-0": (6.0 + Math.random() * 2).toFixed(2),
+                    "2-0": (8.5 + Math.random() * 3).toFixed(2),
+                    "2-1": (9.0 + Math.random() * 3).toFixed(2),
+                    "0-0": (7.5 + Math.random() * 2).toFixed(2),
+                    "0-1": (8.0 + Math.random() * 3).toFixed(2)
+                },
+                escanteios: {
+                    mais_8: (1.5 + Math.random()).toFixed(2),
+                    mais_10: (2.1 + Math.random()).toFixed(2),
+                    menos_10: (1.6 + Math.random()).toFixed(2)
+                }
             } : null
         };
     });
