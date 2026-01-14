@@ -7,18 +7,22 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { background: #060a0d; color: #fff; font-family: 'Inter', sans-serif; }
+        
+        /* Headers e Cards */
         .league-header { background: #12171d; border-left: 4px solid #00ff88; padding: 12px; font-size: 11px; font-weight: 900; text-transform: uppercase; display: flex; align-items: center; gap: 10px; color: #94a3b8; }
         .league-top { border-left: 4px solid #fbbf24; background: #1e1b0b; color: #fbbf24; }
         .match-card { background: #0f141a; border-bottom: 1px solid #1e262f; padding: 15px; display: flex; align-items: center; justify-content: space-between; position: relative; }
-        .match-locked { opacity: 0.5; pointer-events: none; filter: grayscale(100%); }
-        .lock-icon { position: absolute; right: 10px; top: 10px; color: #555; font-size: 14px; }
         .odd-btn { background: #1c242c; border: 1px solid #2d3741; border-radius: 6px; width: 50px; height: 42px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #00ff88; transition: 0.2s; cursor: pointer; }
         .odd-btn:hover { background: #2d3741; border-color: #00ff88; }
         .odd-active { background: #00ff88 !important; color: #000 !important; border-color: #00ff88 !important; }
+        
+        /* Navegação */
         .date-btn { flex: 1; padding: 10px; text-align: center; font-size: 12px; font-weight: bold; color: #94a3b8; cursor: pointer; transition: 0.3s; background: #11171e; }
         .date-btn.active { background: linear-gradient(90deg, #10b981 0%, #059669 100%); color: #fff; border-bottom: 2px solid #00ff88; }
         .live-pulse { animation: pulseRed 1.5s infinite; color: #ef4444; }
         @keyframes pulseRed { 0% { opacity: 1; } 50% { opacity: 0.5; } 100% { opacity: 1; } }
+        
+        /* Ícones e Busca */
         .sport-icon { display: flex; flex-direction: column; align-items: center; gap: 5px; color: #94a3b8; width: 60px; }
         .sport-icon i { font-size: 20px; }
         .sport-icon span { font-size: 9px; font-weight: bold; }
@@ -27,19 +31,34 @@
         .search-container { padding: 10px; background: #0b0f13; position: relative; }
         .search-input { width: 100%; background: #161b22; border: 1px solid #2d3741; padding: 10px 10px 10px 40px; border-radius: 8px; color: white; outline: none; font-size: 12px; font-weight: bold; }
         .search-icon { position: absolute; left: 22px; top: 22px; color: #94a3b8; font-size: 14px; }
+        
+        /* Mercados e Botões */
         .camp-btn { background: #11171e; border: 1px solid #2d3741; padding: 8px 15px; border-radius: 50px; white-space: nowrap; font-size: 10px; font-weight: 900; color: #94a3b8; transition: 0.2s; }
         .camp-btn.active { background: #00ff88; color: #000; border-color: #00ff88; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        .cupom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #11171e; border-top: 1px solid #00ff88; padding: 15px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; box-shadow: 0 -5px 30px rgba(0,0,0,0.9); }
-        .max-win { color: #ffd700 !important; text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
-        
-        /* Ajuste do Mercado Box para o Modal */
         .market-box { background: #161b22; border: 1px solid #2d3741; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
         .market-title { font-size: 10px; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid #2d3741; padding-bottom: 4px; }
         .market-btn { background: #0d1117; color: #fff; padding: 12px; border-radius: 6px; text-align: center; font-size: 11px; font-bold; border: 1px solid #30363d; display: flex; justify-content: space-between; cursor: pointer; transition: 0.2s; }
         .market-btn:hover { border-color: #00ff88; }
         .market-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
         .market-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+
+        /* CUPOM NOVO ESTILO */
+        .cupom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #11171e; border-top: 1px solid #00ff88; padding: 15px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; box-shadow: 0 -5px 30px rgba(0,0,0,0.9); }
+        
+        .bet-item { background: #0d1117; border: 1px solid #30363d; border-radius: 8px; padding: 10px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+        .bet-info h4 { font-size: 11px; font-weight: 900; color: #fff; text-transform: uppercase; }
+        .bet-info p { font-size: 10px; color: #00ff88; font-weight: bold; }
+        .bet-delete { color: #ef4444; background: rgba(239, 68, 68, 0.1); width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 12px; cursor: pointer; }
+        
+        .quick-val-btn { background: #1f2937; border: 1px solid #374151; color: #9ca3af; font-size: 10px; font-weight: bold; padding: 8px; border-radius: 6px; transition: 0.2s; }
+        .quick-val-btn:hover, .quick-val-btn:active { background: #00ff88; color: #000; border-color: #00ff88; }
+        
+        .input-group label { display: block; font-size: 10px; color: #9ca3af; font-weight: bold; margin-bottom: 4px; uppercase; }
+        .input-dark { width: 100%; background: #0d1117; border: 1px solid #30363d; padding: 10px; border-radius: 8px; color: white; outline: none; font-size: 12px; }
+        .input-dark:focus { border-color: #00ff88; }
+        
+        .max-win { color: #ffd700 !important; text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
     </style>
 </head>
 <body class="pb-24 bg-[#060a0d]">
@@ -47,8 +66,7 @@
     <header class="p-4 bg-[#0b0f13] border-b border-gray-800 flex justify-between items-center sticky top-0 z-50">
         <h1 class="text-2xl font-black italic uppercase text-white tracking-tighter">Gurila<span class="text-green-500">Bet</span> 🦍</h1>
         <div id="user-area">
-            <button onclick="document.getElementById('modal-cadastro').classList.remove('hidden')" class="bg-green-600 text-black px-4 py-2 rounded-lg text-[10px] font-black uppercase italic">Entrar</button>
-        </div>
+            </div>
     </header>
 
     <div class="bg-[#0f141a] py-3 border-b border-gray-800 flex justify-around overflow-x-auto no-scrollbar">
@@ -91,53 +109,78 @@
             <span class="text-[10px] text-gray-400 font-bold uppercase">Boletim (<span id="qtd-apostas-bar">0</span>/10)</span>
             <div class="text-white font-black text-sm">Odd: <span id="odd-total" class="text-green-500">1.00</span></div>
         </div>
-        <button onclick="abrirCupomDetalhado()" class="bg-green-600 text-black font-black uppercase italic px-6 py-2 rounded-lg text-xs hover:bg-white transition">Finalizar</button>
+        <button onclick="abrirCupomDetalhado()" class="bg-green-600 text-black font-black uppercase italic px-6 py-2 rounded-lg text-xs hover:bg-white transition">Abrir Bilhete</button>
     </div>
 
     <div id="modal-cupom" class="fixed inset-0 bg-black/95 z-[700] hidden flex-col justify-end">
-        <div class="bg-[#161b22] rounded-t-3xl p-6 border-t border-gray-800 h-[80vh] flex flex-col">
-            <div class="flex justify-between items-center mb-4 border-b border-gray-800 pb-4">
-                <h3 class="text-lg font-black uppercase italic text-white">Seu Bilhete</h3>
-                <button onclick="document.getElementById('modal-cupom').classList.add('hidden')" class="text-gray-500 text-2xl">&times;</button>
-            </div>
-            <div id="lista-apostas" class="flex-1 overflow-y-auto text-xs text-gray-300 space-y-2 mb-4"></div>
-            <div class="mt-auto">
-                <div class="bg-black p-4 rounded-xl border border-gray-800 mb-4">
-                    <label class="text-[10px] text-gray-500 font-bold uppercase">Valor (R$)</label>
-                    <input type="number" id="valor-aposta" class="w-full bg-transparent text-white font-black text-2xl outline-none mt-1" placeholder="0.00" oninput="calcularRetorno()">
+        <div class="bg-[#161b22] rounded-t-3xl border-t border-gray-800 h-[90vh] flex flex-col shadow-2xl">
+            
+            <div class="p-4 border-b border-gray-800 flex justify-between items-center bg-[#11171e] rounded-t-3xl">
+                <div>
+                    <h3 class="text-sm font-black uppercase text-white">Cupom de Aposta</h3>
+                    <span class="text-[10px] text-gray-500 font-bold"><span id="cupom-count">0</span> Seleções</span>
                 </div>
-                <div class="flex justify-between text-xs font-bold text-gray-400 mb-4">
-                    <span>Retorno Máximo:</span>
-                    <div class="text-right">
-                        <span id="retorno-potencial" class="text-green-500 text-xl font-black">R$ 0.00</span>
-                        <div id="aviso-limite" class="text-[9px] text-red-500 font-bold uppercase hidden">Limite da Banca Aplicado</div>
+                <button onclick="document.getElementById('modal-cupom').classList.add('hidden')" class="w-8 h-8 bg-gray-800 rounded-full text-white font-bold">&times;</button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                
+                <div id="lista-apostas"></div>
+
+                <div class="grid grid-cols-5 gap-2 mb-2">
+                    <button onclick="definirValor(2)" class="quick-val-btn">R$ 2</button>
+                    <button onclick="definirValor(5)" class="quick-val-btn">R$ 5</button>
+                    <button onclick="definirValor(10)" class="quick-val-btn">R$ 10</button>
+                    <button onclick="definirValor(20)" class="quick-val-btn">R$ 20</button>
+                    <button onclick="definirValor(50)" class="quick-val-btn">R$ 50</button>
+                </div>
+
+                <div class="space-y-3 bg-[#0d1117] p-3 rounded-lg border border-[#30363d]">
+                    <div class="input-group">
+                        <label>Valor da Aposta (R$)*</label>
+                        <input type="number" id="valor-aposta" class="input-dark text-green-500 font-bold text-lg" placeholder="0.00" oninput="calcularRetorno()">
+                    </div>
+                    <div class="input-group">
+                        <label>Seu Nome*</label>
+                        <input type="text" id="cliente-nome" class="input-dark" placeholder="Digite seu nome">
+                    </div>
+                    <div class="input-group">
+                        <label>Telefone (Opcional)</label>
+                        <input type="tel" id="cliente-tel" class="input-dark" placeholder="(00) 00000-0000">
                     </div>
                 </div>
-                <button onclick="enviarAposta()" class="w-full bg-green-600 text-black font-black p-4 rounded-xl uppercase italic hover:bg-white transition">Apostar</button>
+
+                <div class="bg-[#11171e] p-4 rounded-lg border border-gray-800 space-y-2">
+                    <div class="flex justify-between text-xs text-gray-400 font-bold">
+                        <span>Cotação Total:</span>
+                        <span id="odd-final" class="text-white">1.00</span>
+                    </div>
+                    <div class="flex justify-between text-xs text-gray-400 font-bold">
+                        <span>Retorno Bruto:</span>
+                        <span id="retorno-bruto" class="text-white">R$ 0.00</span>
+                    </div>
+                    <div class="flex justify-between text-sm font-black border-t border-gray-700 pt-2 mt-1">
+                        <span class="text-white">LUCRO POTENCIAL:</span>
+                        <span id="retorno-liquido" class="text-green-500 text-lg">R$ 0.00</span>
+                    </div>
+                    <div id="aviso-limite" class="text-[9px] text-red-500 font-bold uppercase text-right hidden">Limite da Banca (R$ 2.500)</div>
+                </div>
+
+            </div>
+
+            <div class="p-4 bg-[#11171e] border-t border-gray-800 grid grid-cols-2 gap-3">
+                <button onclick="limparCupom()" class="bg-red-900/50 text-red-500 font-bold p-3 rounded-xl uppercase text-xs border border-red-900 hover:bg-red-900 hover:text-white transition">Limpar</button>
+                <button onclick="enviarAposta()" class="bg-green-600 text-black font-black p-3 rounded-xl uppercase text-xs hover:bg-white transition shadow-[0_0_15px_rgba(0,255,136,0.4)]">Gerar Pré-Bilhete 🦍</button>
             </div>
         </div>
     </div>
 
     <div id="modal-extras" class="fixed inset-0 bg-[#060a0d] z-[600] hidden flex-col">
         <header class="p-4 bg-[#0b0f13] border-b border-gray-800 flex justify-between items-center sticky top-0">
-            <div>
-                <h3 id="modal-titulo" class="text-xs font-black uppercase text-white"></h3>
-                <span class="text-[10px] text-green-500 font-bold uppercase">Mercados</span>
-            </div>
+            <div><h3 id="modal-titulo" class="text-xs font-black uppercase text-white"></h3><span class="text-[10px] text-green-500 font-bold uppercase">Mercados</span></div>
             <button onclick="document.getElementById('modal-extras').classList.add('hidden')" class="w-8 h-8 bg-gray-800 rounded-full text-white font-bold">&times;</button>
         </header>
         <div id="modal-corpo" class="p-3 overflow-y-auto pb-24"></div>
-    </div>
-
-    <div id="modal-cadastro" class="fixed inset-0 bg-black/95 z-[800] hidden flex items-center justify-center p-4">
-        <div class="bg-[#11171e] p-8 rounded-3xl w-full max-w-sm border border-gray-800 text-center">
-            <h2 class="text-xl font-black italic mb-6 uppercase text-white">Conta</h2>
-            <input id="cad-nome" type="text" placeholder="Nome" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-3 outline-none text-white">
-            <input id="cad-email" type="email" placeholder="E-mail" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-3 outline-none text-white">
-            <input id="cad-senha" type="password" placeholder="Senha" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-6 outline-none text-white">
-            <button onclick="realizarCadastro()" class="w-full bg-green-600 text-black font-black p-4 rounded-xl uppercase">Cadastrar</button>
-            <button onclick="document.getElementById('modal-cadastro').classList.add('hidden')" class="mt-4 text-xs text-gray-500 uppercase font-bold">Cancelar</button>
-        </div>
     </div>
     
     <div id="modal-validador" class="fixed inset-0 bg-black/95 z-[900] hidden flex items-center justify-center p-4">
@@ -158,7 +201,7 @@
         let ligaAtiva = 'Todos';
         let modoAtual = 'hoje';
         let dataAtiva = new Date().toISOString().split('T')[0];
-        let usuario = JSON.parse(localStorage.getItem('gurila_user'));
+        let usuario = JSON.parse(localStorage.getItem('gurila_user')); // Pode ser null agora, usamos input direto
         
         const LIMITE_JOGOS = 10;
         const LIMITE_GANHO = 2500.00;
@@ -170,6 +213,11 @@
         
         document.getElementById('btn-depois').innerText = `DIA ${depois.getDate()}/${depois.getMonth()+1}`;
 
+        // Se já tiver usuário salvo, preenche o input automaticamente
+        if(usuario && usuario.nome) {
+            document.getElementById('user-area').innerHTML = `<span class="text-xs font-bold text-green-500 uppercase">${usuario.nome}</span>`;
+        }
+
         function mudarData(tipo) {
             document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
             modoAtual = tipo;
@@ -179,8 +227,6 @@
             else { document.getElementById('btn-depois').classList.add('active'); dataAtiva = depois.toISOString().split('T')[0]; }
             carregar();
         }
-
-        if(usuario) document.getElementById('user-area').innerHTML = `<div class="bg-[#1c242c] px-3 py-1 rounded-lg border border-gray-700"><span class="block text-[8px] text-gray-400 uppercase">Saldo</span><span class="text-xs font-black text-green-500">R$ ${usuario.saldo}</span></div>`;
 
         function traduzir(texto) {
             const dic = { 'Brazil': 'Brasil', 'England': 'Inglaterra', 'Spain': 'Espanha', 'World': 'Mundial', 'France': 'França', 'Germany': 'Alemanha', 'Italy': 'Itália' };
@@ -262,57 +308,138 @@
             document.getElementById('container-jogos').innerHTML = html || "<div class='text-center py-10 text-gray-500'>Nenhum jogo encontrado.</div>";
         }
 
-        // Funções de Cupom e Mercados (Mantidas conforme código anterior)
+        // --- LÓGICA DE CUPOM (ATUALIZADA PARA O NOVO DESIGN) ---
         function addAposta(el, id, mercado, opcao, odd, nome) {
             if (odd == 0 || odd == "Bloq") return;
             document.querySelectorAll('.odd-active').forEach(btn => { if(btn.getAttribute('onclick').includes(`, ${id},`)) btn.classList.remove('odd-active'); });
+            
             const jaExiste = carrinho.find(i => i.id === id && i.opcao === opcao);
             if(jaExiste) { carrinho = carrinho.filter(i => i.id !== id); atualizarBarraCupom(); return; }
+
             const jaTinhaJogo = carrinho.some(i => i.id === id);
             if (!jaTinhaJogo && carrinho.length >= LIMITE_JOGOS) { alert(`Limite de ${LIMITE_JOGOS} jogos.`); return; }
+
             carrinho = carrinho.filter(i => i.id !== id);
             if(el) el.classList.add('odd-active');
             carrinho.push({ id, mercado, opcao, odd, nome });
             atualizarBarraCupom();
         }
 
+        function removerAposta(index, id) {
+            // Remove do array
+            carrinho.splice(index, 1);
+            // Remove visual do botão ativo na vitrine
+            document.querySelectorAll('.odd-active').forEach(btn => { 
+                if(btn.getAttribute('onclick').includes(`, ${id},`)) btn.classList.remove('odd-active'); 
+            });
+            abrirCupomDetalhado(); // Re-renderiza o modal
+            atualizarBarraCupom(); // Atualiza barra inferior
+        }
+
         function atualizarBarraCupom() {
             const qtd = carrinho.length;
-            if(qtd > 0) { document.getElementById('cupom-bar').classList.remove('hidden'); document.getElementById('qtd-apostas-bar').innerText = qtd; const oddTotal = carrinho.reduce((acc, item) => acc * parseFloat(item.odd), 1).toFixed(2); document.getElementById('odd-total').innerText = oddTotal; } else { document.getElementById('cupom-bar').classList.add('hidden'); }
+            if(qtd > 0) { 
+                document.getElementById('cupom-bar').classList.remove('hidden'); 
+                document.getElementById('qtd-apostas-bar').innerText = qtd; 
+                document.getElementById('cupom-count').innerText = qtd;
+                const oddTotal = carrinho.reduce((acc, item) => acc * parseFloat(item.odd), 1).toFixed(2); 
+                document.getElementById('odd-total').innerText = oddTotal; 
+            } else { 
+                document.getElementById('cupom-bar').classList.add('hidden'); 
+                document.getElementById('modal-cupom').classList.add('hidden'); // Fecha modal se esvaziar
+            }
         }
 
         function abrirCupomDetalhado() {
-            const lista = document.getElementById('lista-apostas'); lista.innerHTML = '';
-            carrinho.forEach((item, index) => { lista.innerHTML += `<div class="flex justify-between items-center bg-black p-3 rounded-lg border border-gray-800"><div><div class="text-[10px] text-gray-500 uppercase font-bold">${item.nome}</div><div class="font-bold text-green-500 text-sm">${item.mercado}: ${item.opcao}</div></div><div class="text-right"><div class="font-black text-lg text-white">${item.odd}</div><button onclick="carrinho.splice(${index},1); abrirCupomDetalhado(); atualizarBarraCupom();" class="text-[9px] text-red-500 uppercase underline">Remover</button></div></div>`; });
-            calcularRetorno(); document.getElementById('modal-cupom').classList.remove('hidden');
+            const lista = document.getElementById('lista-apostas'); 
+            lista.innerHTML = '';
+            
+            if(carrinho.length === 0) {
+                document.getElementById('modal-cupom').classList.add('hidden');
+                return;
+            }
+
+            carrinho.forEach((item, index) => { 
+                lista.innerHTML += `
+                <div class="bet-item">
+                    <div class="bet-info">
+                        <h4>${item.nome}</h4>
+                        <p>${item.mercado}: ${item.opcao} @ ${item.odd}</p>
+                    </div>
+                    <button onclick="removerAposta(${index}, ${item.id})" class="bet-delete"><i class="fas fa-trash"></i></button>
+                </div>`; 
+            });
+            
+            // Preenche nome se usuário tiver salvo
+            if(usuario && usuario.nome) document.getElementById('cliente-nome').value = usuario.nome;
+            
+            calcularRetorno(); 
+            document.getElementById('modal-cupom').classList.remove('hidden');
+        }
+
+        function definirValor(val) {
+            document.getElementById('valor-aposta').value = val.toFixed(2);
+            calcularRetorno();
+        }
+
+        function limparCupom() {
+            carrinho = [];
+            document.querySelectorAll('.odd-active').forEach(btn => btn.classList.remove('odd-active'));
+            atualizarBarraCupom();
         }
 
         function calcularRetorno() {
             const valor = parseFloat(document.getElementById('valor-aposta').value) || 0;
-            const oddTotal = parseFloat(document.getElementById('odd-total').innerText);
+            const oddTotal = carrinho.reduce((acc, item) => acc * parseFloat(item.odd), 1);
             let potencial = valor * oddTotal;
-            const elementoRetorno = document.getElementById('retorno-potencial');
-            if (potencial > LIMITE_GANHO) { potencial = LIMITE_GANHO; elementoRetorno.classList.remove('text-green-500'); elementoRetorno.classList.add('max-win'); document.getElementById('aviso-limite').classList.remove('hidden'); } else { elementoRetorno.classList.remove('max-win'); elementoRetorno.classList.add('text-green-500'); document.getElementById('aviso-limite').classList.add('hidden'); }
+            
+            document.getElementById('odd-final').innerText = oddTotal.toFixed(2);
+            document.getElementById('retorno-bruto').innerText = `R$ ${potencial.toFixed(2)}`;
+
+            const elementoRetorno = document.getElementById('retorno-liquido');
+            if (potencial > LIMITE_GANHO) { 
+                potencial = LIMITE_GANHO; 
+                elementoRetorno.classList.remove('text-green-500'); 
+                elementoRetorno.classList.add('max-win'); 
+                document.getElementById('aviso-limite').classList.remove('hidden'); 
+            } else { 
+                elementoRetorno.classList.remove('max-win'); 
+                elementoRetorno.classList.add('text-green-500'); 
+                document.getElementById('aviso-limite').classList.add('hidden'); 
+            }
             elementoRetorno.innerText = `R$ ${potencial.toFixed(2)}`;
         }
 
         async function enviarAposta() {
             const SEU_WHATSAPP = "556100000000"; 
-            if(!usuario) { alert("Faça login!"); document.getElementById('modal-cadastro').classList.remove('hidden'); return; }
+            const nomeCliente = document.getElementById('cliente-nome').value;
             const valor = document.getElementById('valor-aposta').value;
-            if(!valor || valor <= 0) return;
-            const oddTotal = document.getElementById('odd-total').innerText;
-            const retornoPotencial = document.getElementById('retorno-potencial').innerText;
-            const res = await fetch(`${API_URL}/api/finalizar`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ usuario_id: usuario.id, valor, apostas: carrinho, odd_total: oddTotal }) });
+
+            if(!nomeCliente) { alert("Digite seu nome no bilhete!"); return; }
+            if(!valor || valor <= 0) { alert("Digite um valor!"); return; }
+            if(carrinho.length > LIMITE_JOGOS) return;
+
+            const oddTotal = document.getElementById('odd-final').innerText;
+            const retornoPotencial = document.getElementById('retorno-liquido').innerText;
+
+            // Salva nome do cliente para próximas vezes
+            if(!usuario) {
+                usuario = { nome: nomeCliente, saldo: '0.00' };
+                localStorage.setItem('gurila_user', JSON.stringify(usuario));
+            }
+
+            const res = await fetch(`${API_URL}/api/finalizar`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ usuario_id: 1, valor, apostas: carrinho, odd_total: oddTotal }) }); // ID fixo 1 pra simplificar se não tiver cadastro
             const data = await res.json();
+            
             if(data.sucesso) {
                 let listaJogos = ""; carrinho.forEach(i => { listaJogos += `⚽ ${i.nome}\n   👉 ${i.mercado}: ${i.opcao} (${i.odd})\n`; });
-                const msg = `🦍 *GURILA BET - PRÉ BILHETE* 🦍\n\n👤 Cliente: *${usuario.nome}*\n🎫 Código: *${data.codigo}*\n💰 Valor: *R$ ${valor}*\n🏆 Retorno: *${retornoPotencial}*\n\n📋 *PALPITES:*\n${listaJogos}\n_Envie o comprovante para validar!_`;
+                const msg = `🦍 *GURILA BET - PRÉ BILHETE* 🦍\n\n👤 Cliente: *${nomeCliente}*\n🎫 Código: *${data.codigo}*\n💰 Valor: *R$ ${valor}*\n🏆 Retorno: *${retornoPotencial}*\n\n📋 *PALPITES:*\n${listaJogos}\n_Envie o comprovante para validar!_`;
                 window.open(`https://wa.me/${SEU_WHATSAPP}?text=${encodeURIComponent(msg)}`, '_blank');
-                carrinho = []; location.reload();
+                limparCupom();
             } else { alert(data.erro); }
         }
 
+        // Validador e Mercados (Mantidos)
         async function validarBilhete() {
             const cod = document.getElementById('input-codigo').value;
             if(!cod) return;
@@ -341,9 +468,6 @@
             document.getElementById('modal-extras').classList.add('flex');
         }
 
-        function fecharMercados() { document.getElementById('modal-extras').classList.add('hidden'); }
-        async function realizarCadastro() { const nome = document.getElementById('cad-nome').value; const email = document.getElementById('cad-email').value; const senha = document.getElementById('cad-senha').value; const res = await fetch(`${API_URL}/api/cadastro`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({nome, email, senha}) }); const data = await res.json(); if(data.sucesso) { localStorage.setItem('gurila_user', JSON.stringify(data.usuario)); location.reload(); } else { alert(data.erro); } }
-        function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); document.getElementById(id).classList.toggle('flex'); }
         window.onload = carregar;
     </script>
 </body>
