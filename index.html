@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
@@ -8,54 +7,75 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { background: #060a0d; color: #fff; font-family: 'Inter', sans-serif; }
-        .league-card { background: linear-gradient(90deg, #12171d 0%, #060a0d 100%); border-left: 4px solid #00ff88; }
-        .odd-btn { background: #1c242c; border: 1px solid #2d3741; }
-        .selected { border-color: #00ff88; color: #00ff88; }
+        .odd-btn { background: #1c242c; border: 1px solid #2d3741; transition: 0.2s; }
+        .odd-btn:active { transform: scale(0.95); }
+        .league-row { background: linear-gradient(90deg, #12171d 0%, #060a0d 100%); border-left: 4px solid #00ff88; }
+        .modal { background: rgba(0,0,0,0.95); backdrop-filter: blur(10px); }
     </style>
 </head>
 <body class="pb-32">
 
     <header class="p-4 bg-[#0b0f13] border-b border-gray-800 flex justify-between items-center sticky top-0 z-50">
-        <h1 class="text-xl font-black italic uppercase tracking-tighter">Gurila<span class="text-green-500">Bet</span> 🦍</h1>
+        <h1 class="text-2xl font-black italic uppercase text-white tracking-tighter">Gurila<span class="text-green-500">Bet</span> 🦍</h1>
         <div id="user-area" class="flex gap-2 text-[10px] font-bold">
-            <button onclick="toggleModal('modal-cadastro')" class="text-gray-400 px-2 uppercase">Cadastrar</button>
-            <button class="bg-green-600 text-black px-4 py-1.5 rounded-lg uppercase">Entrar</button>
+            <button onclick="toggleModal('modal-cadastro')" class="text-gray-400 px-2">CADASTRAR</button>
+            <button class="bg-green-600 text-black px-4 py-2 rounded-lg">ENTRAR</button>
         </div>
     </header>
 
     <main class="p-2 max-w-2xl mx-auto" id="lista-jogos">
-        <div class="flex flex-col items-center py-20 text-gray-500 animate-pulse uppercase text-[10px] font-black italic">
-            <i class="fas fa-futbol fa-spin text-3xl mb-4 text-green-500"></i> Sincronizando Mercados Globais...
-        </div>
+        <div class="text-center py-20 text-gray-600 animate-pulse font-bold text-xs uppercase italic">Sincronizando Mercados Reais...</div>
     </main>
 
-    <div id="modal-cadastro" class="fixed inset-0 bg-black/90 z-[200] hidden items-center justify-center p-4">
-        <div class="bg-[#11171e] p-6 rounded-3xl w-full max-w-sm border border-gray-800">
+    <div id="pagina-perfil" class="fixed inset-0 bg-[#060a0d] z-[300] hidden flex-col">
+        <header class="p-5 bg-[#0b0f13] border-b border-gray-800 flex items-center gap-4">
+            <button onclick="togglePerfil()" class="text-xl"><i class="fas fa-arrow-left"></i></button>
+            <h2 class="text-lg font-black uppercase italic">Minha Conta</h2>
+        </header>
+        <div class="p-6 overflow-y-auto">
+            <div class="bg-gradient-to-br from-green-600 to-green-900 p-6 rounded-3xl mb-8 shadow-2xl">
+                <p class="text-[10px] font-black uppercase opacity-70">Saldo Disponível</p>
+                <h3 class="text-3xl font-bold" id="perfil-saldo">R$ 0,00</h3>
+            </div>
+            <h4 class="text-xs font-black uppercase mb-4 text-gray-500 italic tracking-widest">Meus Bilhetes</h4>
+            <div id="historico-bilhetes" class="space-y-3"></div>
+        </div>
+    </div>
+
+    <div id="modal-cadastro" class="fixed inset-0 modal z-[400] hidden items-center justify-center p-4">
+        <div class="bg-[#11171e] p-8 rounded-3xl w-full max-w-sm border border-gray-800">
             <h2 class="text-xl font-black italic mb-6 uppercase">Criar Conta 🦍</h2>
-            <input id="cad-nome" type="text" placeholder="Nome Completo" class="w-full bg-black border border-gray-800 p-3 rounded-xl mb-3 text-sm outline-none">
-            <input id="cad-email" type="email" placeholder="E-mail" class="w-full bg-black border border-gray-800 p-3 rounded-xl mb-3 text-sm outline-none">
-            <input id="cad-senha" type="password" placeholder="Senha" class="w-full bg-black border border-gray-800 p-3 rounded-xl mb-6 text-sm outline-none">
+            <input id="cad-nome" type="text" placeholder="Nome Completo" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-3 text-sm outline-none">
+            <input id="cad-email" type="email" placeholder="E-mail" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-3 text-sm outline-none">
+            <input id="cad-senha" type="password" placeholder="Senha" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-6 text-sm outline-none">
             <button onclick="realizarCadastro()" class="w-full bg-green-600 text-black font-black p-4 rounded-xl uppercase italic">Finalizar Cadastro</button>
-            <button onclick="toggleModal('modal-cadastro')" class="w-full text-gray-500 text-[10px] mt-4 font-bold uppercase underline">Cancelar</button>
+            <button onclick="toggleModal('modal-cadastro')" class="w-full text-gray-600 text-[10px] mt-4 font-bold uppercase underline">Voltar</button>
         </div>
     </div>
 
     <script>
-        const API_URL = 'SUA_URL_DO_RAILWAY_AQUI'; // <--- OBRIGATÓRIO ATUALIZAR
+        const API_URL = 'https://gurilabet-v2-production.up.railway.app'; // <--- VERIFIQUE SEU LINK
         let usuarioLogado = JSON.parse(localStorage.getItem('gurila_user')) || null;
 
-        function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); document.getElementById(id).classList.toggle('flex'); }
+        function toggleModal(id) { 
+            const m = document.getElementById(id);
+            m.classList.toggle('hidden'); m.classList.toggle('flex'); 
+        }
+
+        function togglePerfil() {
+            const p = document.getElementById('pagina-perfil');
+            p.classList.toggle('hidden'); p.classList.toggle('flex');
+            if(!p.classList.contains('hidden')) carregarHistorico();
+        }
 
         async function realizarCadastro() {
-            const dados = {
-                nome: document.getElementById('cad-nome').value,
-                email: document.getElementById('cad-email').value,
-                senha: document.getElementById('cad-senha').value
-            };
+            const nome = document.getElementById('cad-nome').value;
+            const email = document.getElementById('cad-email').value;
+            const senha = document.getElementById('cad-senha').value;
             const res = await fetch(`${API_URL}/api/cadastro`, {
                 method: 'POST',
                 headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify(dados)
+                body: JSON.stringify({nome, email, senha})
             });
             const data = await res.json();
             if(data.sucesso) {
@@ -72,25 +92,68 @@
             
             let html = '';
             for(let liga in ligas) {
-                html += `<div class="league-card p-3 mb-1 mt-4 text-[10px] font-black uppercase italic flex items-center gap-2"><img src="${ligas[liga][0].logo_liga}" class="w-4 h-4"> ${liga}</div>`;
+                html += `<div class="league-row p-3 mb-1 mt-4 text-[10px] font-black uppercase italic flex items-center gap-2 text-gray-400">
+                    <img src="${ligas[liga][0].logo_liga}" class="w-4 h-4 object-contain"> ${liga}
+                </div>`;
                 ligas[liga].forEach(j => {
                     const dt = new Date(j.data);
                     html += `
-                        <div class="bg-[#11171e] p-4 border-b border-gray-900 flex items-center justify-between gap-2 shadow-lg">
-                            <div class="text-[9px] text-gray-500 font-bold w-12 text-center uppercase leading-tight">${dt.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}<br><span class="text-white">${dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</span></div>
-                            <div class="flex-1 flex flex-col gap-2">
-                                <div class="flex items-center gap-3 text-[10px] font-black uppercase tracking-tighter"><img src="${j.home.logo}" class="w-5 h-5"> ${j.home.name}</div>
-                                <div class="flex items-center gap-3 text-[10px] font-black uppercase tracking-tighter"><img src="${j.away.logo}" class="w-5 h-5"> ${j.away.name}</div>
+                        <div class="bg-[#11171e] p-4 border-b border-gray-900 flex items-center justify-between gap-3">
+                            <div class="text-[9px] text-gray-500 font-bold w-12 text-center uppercase leading-tight border-r border-gray-800 pr-2">
+                                ${dt.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}<br><span class="text-white">${dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</span>
                             </div>
-                            <div class="flex gap-1">
-                                <button onclick="selecionar(this, '${j.home.name} x ${j.away.name}', 'Casa', ${j.odds.casa})" class="odd-btn w-12 h-11 rounded-xl text-[11px] font-black text-green-500 flex flex-col items-center justify-center"><span class="text-[7px] text-gray-600 font-bold uppercase">1</span>${j.odds.casa}</button>
-                                <button onclick="selecionar(this, '${j.home.name} x ${j.away.name}', 'Empate', ${j.odds.empate})" class="odd-btn w-12 h-11 rounded-xl text-[11px] font-black text-green-500 flex flex-col items-center justify-center"><span class="text-[7px] text-gray-600 font-bold uppercase">X</span>${j.odds.empate}</button>
-                                <button onclick="selecionar(this, '${j.home.name} x ${j.away.name}', 'Fora', ${j.odds.fora})" class="odd-btn w-12 h-11 rounded-xl text-[11px] font-black text-green-500 flex flex-col items-center justify-center"><span class="text-[7px] text-gray-600 font-bold uppercase">2</span>${j.odds.fora}</button>
+                            <div class="flex-1 flex flex-col gap-2">
+                                <div class="flex items-center gap-3 text-[11px] font-black uppercase tracking-tighter text-gray-200">
+                                    <img src="${j.home.logo}" class="w-5 h-5 object-contain"> ${j.home.name}
+                                </div>
+                                <div class="flex items-center gap-3 text-[11px] font-black uppercase tracking-tighter text-gray-200">
+                                    <img src="${j.away.logo}" class="w-5 h-5 object-contain"> ${j.away.name}
+                                </div>
+                            </div>
+                            <div class="flex gap-1.5">
+                                <button onclick="selecionar(this, '${j.home.name} x ${j.away.name}', 'Casa', ${j.odds.casa})" class="odd-btn w-14 h-11 rounded-xl text-green-500 font-black text-xs flex flex-col items-center justify-center">
+                                    <span class="text-[7px] text-gray-600 mb-0.5">1</span>${j.odds.casa}
+                                </button>
+                                <button onclick="selecionar(this, '${j.home.name} x ${j.away.name}', 'Empate', ${j.odds.empate})" class="odd-btn w-14 h-11 rounded-xl text-green-500 font-black text-xs flex flex-col items-center justify-center">
+                                    <span class="text-[7px] text-gray-600 mb-0.5">X</span>${j.odds.empate}
+                                </button>
+                                <button onclick="selecionar(this, '${j.home.name} x ${j.away.name}', 'Fora', ${j.odds.fora})" class="odd-btn w-14 h-11 rounded-xl text-green-500 font-black text-xs flex flex-col items-center justify-center">
+                                    <span class="text-[7px] text-gray-600 mb-0.5">2</span>${j.odds.fora}
+                                </button>
                             </div>
                         </div>`;
                 });
             }
             document.getElementById('lista-jogos').innerHTML = html;
+        }
+
+        async function carregarHistorico() {
+            const res = await fetch(`${API_URL}/api/meus-bilhetes/${usuarioLogado.id}`);
+            const bets = await res.json();
+            document.getElementById('perfil-saldo').innerText = `R$ ${parseFloat(usuarioLogado.saldo).toFixed(2)}`;
+            document.getElementById('historico-bilhetes').innerHTML = bets.map(b => `
+                <div class="bg-[#11171e] p-4 rounded-2xl border border-gray-800 mb-3">
+                    <div class="flex justify-between text-[10px] font-black mb-2 italic">
+                        <span class="text-green-500">BILHETE: ${b.codigo}</span>
+                        <span class="text-gray-500 uppercase">${b.status}</span>
+                    </div>
+                    <p class="text-[11px] font-bold uppercase mb-3">${b.detalhes.times}</p>
+                    <div class="flex justify-between border-t border-white/5 pt-3">
+                        <div class="text-[10px] font-bold">VALOR: <span class="text-white text-xs">R$ ${b.valor}</span></div>
+                        <div class="text-[10px] font-bold">RETORNO: <span class="text-green-500 text-xs">R$ ${b.retorno}</span></div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Header Dinâmico
+        if(usuarioLogado) {
+            document.getElementById('user-area').innerHTML = `
+                <button onclick="togglePerfil()" class="flex items-center gap-2 bg-[#1c242c] p-2 px-3 rounded-xl border border-gray-800">
+                    <div class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-black font-black text-[10px]">${usuarioLogado.nome.charAt(0)}</div>
+                    <span class="text-white uppercase italic tracking-tighter">CONTA</span>
+                </button>
+            `;
         }
 
         window.onload = carregarJogos;
