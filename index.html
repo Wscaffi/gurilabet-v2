@@ -7,7 +7,8 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { background: #060a0d; color: #fff; font-family: 'Inter', sans-serif; }
-        .league-row { background: linear-gradient(90deg, #12171d 0%, #060a0d 100%); border-left: 4px solid #00ff88; }
+        .league-group { margin-bottom: 25px; overflow: hidden; border-radius: 12px; border: 1px solid #1e262f; }
+        .league-header { background: linear-gradient(90deg, #12171d 0%, #060a0d 100%); border-left: 4px solid #00ff88; }
         .odd-btn { background: #1c242c; border: 1px solid #2d3741; transition: 0.2s; }
         .odd-btn:active { transform: scale(0.95); }
         .modal { background: rgba(0,0,0,0.95); backdrop-filter: blur(10px); }
@@ -52,17 +53,22 @@
         const API_URL = 'https://gurilabet-v2-production.up.railway.app'; 
         let usuarioLogado = JSON.parse(localStorage.getItem('gurila_user')) || null;
 
-        // Função para mapear nome do país para código de bandeira (Acréscimo Corretivo)
+        // --- CORREÇÃO: MAPEAMENTO AMPLO DE BANDEIRAS ---
         function getFlag(pais) {
             const flags = {
                 'Brazil': 'BR', 'England': 'GB', 'Spain': 'ES', 'Italy': 'IT', 'Germany': 'DE',
                 'France': 'FR', 'Portugal': 'PT', 'Argentina': 'AR', 'Netherlands': 'NL',
-                'Belgium': 'BE', 'Turkey': 'TR', 'Saudi-Arabia': 'SA', 'USA': 'US'
+                'Belgium': 'BE', 'Turkey': 'TR', 'Saudi-Arabia': 'SA', 'USA': 'US', 
+                'Japan': 'JP', 'Mexico': 'MX', 'Colombia': 'CO', 'Chile': 'CL'
             };
             const code = flags[pais] || 'UN'; 
             return `https://flagsapi.com/${code}/flat/64.png`;
         }
 
+        function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); document.getElementById(id).classList.toggle('flex'); }
+        function togglePerfil() { document.getElementById('pagina-perfil').classList.toggle('hidden'); }
+
+        // --- CORREÇÃO: CARREGAMENTO COM SEPARAÇÃO POR LIGAS ---
         async function carregarJogos() {
             try {
                 const res = await fetch(`${API_URL}/api/jogos`);
@@ -73,22 +79,29 @@
                     return;
                 }
 
+                // Agrupar por Ligas
                 const ligas = {};
-                jogos.forEach(j => { if(!ligas[j.liga]) ligas[j.liga] = []; ligas[j.liga].push(j); });
+                jogos.forEach(j => { 
+                    const chave = `${j.pais} - ${j.liga}`;
+                    if(!ligas[chave]) ligas[chave] = []; 
+                    ligas[chave].push(j); 
+                });
                 
                 let html = '';
-                for(let liga in ligas) {
-                    const jInfo = ligas[liga][0];
-                    // Adicionada a Bandeira do País no cabeçalho da Liga
-                    html += `<div class="league-row p-3 mb-1 mt-4 text-[10px] font-black uppercase italic flex items-center gap-2 text-gray-400">
-                        <img src="${getFlag(jInfo.pais)}" class="w-5 h-4 object-cover rounded-sm shadow-md" onerror="this.src='${jInfo.bandeira}'">
-                        <span>${jInfo.pais}: ${liga}</span>
-                    </div>`;
+                for(let ligaNome in ligas) {
+                    const jInfo = ligas[ligaNome][0];
                     
-                    ligas[liga].forEach(j => {
+                    // Início do Bloco da Liga
+                    html += `<div class="league-group">
+                        <div class="league-header p-3 flex items-center gap-2 text-[10px] font-black uppercase italic text-gray-400">
+                            <img src="${getFlag(jInfo.pais)}" class="w-5 h-4 object-cover rounded-sm shadow-md" onerror="this.src='${jInfo.bandeira}'">
+                            <span>${ligaNome}</span>
+                        </div>`;
+                    
+                    ligas[ligaNome].forEach(j => {
                         const dt = new Date(j.data);
                         html += `
-                        <div class="bg-[#11171e] p-4 border-b border-gray-900 flex items-center justify-between gap-3 shadow-lg">
+                        <div class="bg-[#11171e] p-4 border-t border-gray-900 flex items-center justify-between gap-3 shadow-lg">
                             <div class="text-[9px] text-gray-500 font-bold w-12 text-center uppercase leading-tight border-r border-gray-800 pr-2">
                                 ${dt.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}<br><span class="text-white">${dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</span>
                             </div>
@@ -102,23 +115,42 @@
                             </div>
                             <div class="flex gap-1.5 ml-2">
                                 <div class="odd-btn w-14 h-11 rounded-xl text-[12px] font-black text-green-500 flex flex-col items-center justify-center">
-                                    <span class="text-[7px] text-gray-500 font-bold uppercase mb-0.5 tracking-tighter">1</span>${j.odds.casa}
+                                    <span class="text-[7px] text-gray-500 font-bold uppercase mb-0.5">1</span>${j.odds.casa}
                                 </div>
                                 <div class="odd-btn w-14 h-11 rounded-xl text-[12px] font-black text-green-500 flex flex-col items-center justify-center">
-                                    <span class="text-[7px] text-gray-500 font-bold uppercase mb-0.5 tracking-tighter">X</span>${j.odds.empate}
+                                    <span class="text-[7px] text-gray-500 font-bold uppercase mb-0.5">X</span>${j.odds.empate}
                                 </div>
                                 <div class="odd-btn w-14 h-11 rounded-xl text-[12px] font-black text-green-500 flex flex-col items-center justify-center">
-                                    <span class="text-[7px] text-gray-500 font-bold uppercase mb-0.5 tracking-tighter">2</span>${j.odds.fora}
+                                    <span class="text-[7px] text-gray-600 font-bold uppercase mb-0.5">2</span>${j.odds.fora}
                                 </div>
                             </div>
                         </div>`;
                     });
+                    html += `</div>`; // Fim do Bloco da Liga
                 }
                 document.getElementById('lista-jogos').innerHTML = html;
             } catch (e) { console.error(e); }
         }
 
-        function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); document.getElementById(id).classList.toggle('flex'); }
+        // Funções de Cadastro (Mantidas)
+        async function realizarCadastro() {
+            const res = await fetch(`${API_URL}/api/cadastro`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({nome: document.getElementById('cad-nome').value, email: document.getElementById('cad-email').value, senha: document.getElementById('cad-senha').value})
+            });
+            const data = await res.json();
+            if(data.sucesso) { localStorage.setItem('gurila_user', JSON.stringify(data.usuario)); location.reload(); } else { alert(data.erro); }
+        }
+
+        if(usuarioLogado) {
+            document.getElementById('user-area').innerHTML = `
+                <button onclick="togglePerfil()" class="flex items-center gap-2 bg-[#1c242c] p-2 px-3 rounded-xl border border-gray-800">
+                    <div class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-black font-black text-[10px] uppercase">${usuarioLogado.nome.charAt(0)}</div>
+                    <span class="text-white uppercase italic tracking-tighter">CONTA</span>
+                </button>`;
+        }
+
         window.onload = carregarJogos;
     </script>
 </body>
