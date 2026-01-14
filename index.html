@@ -14,7 +14,6 @@
     .league-header { background:linear-gradient(90deg,#12171d,#060a0d); border-left:4px solid #00ff88; }
     .odd-btn { background:#1c242c; border:1px solid #2d3741; transition:.2s; }
     .odd-btn:active { transform:scale(.95); }
-    .modal { background:rgba(0,0,0,.95); backdrop-filter:blur(10px); }
     .flag-container { width:22px; height:16px; background:#1a2128; border-radius:2px; overflow:hidden; }
   </style>
 </head>
@@ -22,11 +21,9 @@
 <body class="pb-32">
 
 <header class="p-4 bg-[#0b0f13] border-b border-gray-800 flex justify-between items-center sticky top-0 z-50">
-  <h1 class="text-2xl font-black italic uppercase">Gurila<span class="text-green-500">Bet</span> 🦍</h1>
-  <div class="flex gap-2 text-[10px] font-bold">
-    <button class="text-gray-400 uppercase">Cadastrar</button>
-    <button class="bg-green-600 text-black px-4 py-2 rounded-lg uppercase italic font-black">Entrar</button>
-  </div>
+  <h1 class="text-2xl font-black italic uppercase">
+    Gurila<span class="text-green-500">Bet</span> 🦍
+  </h1>
 </header>
 
 <main id="lista-jogos" class="p-2 max-w-2xl mx-auto">
@@ -37,75 +34,70 @@
 
 <script>
 const API_URL = 'https://gurilabet-v2-production.up.railway.app';
+const FALLBACK_FLAG = 'https://cdn-icons-png.flaticon.com/512/33/33736.png';
 
-/* ===== SISTEMA DE BANDEIRAS DEFINITIVO ===== */
-function getFlag(pais) {
-  if (!pais) return fallbackFlag();
+/* ===============================
+   FUNÇÃO DE BANDEIRA (CORRETA)
+   =============================== */
+function getFlag(jogo) {
+  // PRIORIDADE TOTAL: bandeira vinda da API
+  if (jogo.bandeira && jogo.bandeira.startsWith('http')) {
+    return jogo.bandeira;
+  }
 
-  const normalized = pais
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toUpperCase();
+  // Se algum dia a API mandar country_code
+  if (jogo.country_code) {
+    return `https://flagsapi.com/${jogo.country_code}/flat/64.png`;
+  }
 
-  const map = {
-    BRAZIL:"BR", COLOMBIA:"CO", JAPAN:"JP", POLAND:"PL",
-    AUSTRIA:"AT", ARGENTINA:"AR", ENGLAND:"GB", SPAIN:"ES",
-    ITALY:"IT", GERMANY:"DE", FRANCE:"FR", PORTUGAL:"PT",
-    NETHERLANDS:"NL", WORLD:"UN"
-  };
-
-  const iso = map[normalized] || "UN";
-  return `https://flagsapi.com/${iso}/flat/64.png`;
+  // Fallback absoluto
+  return FALLBACK_FLAG;
 }
 
-function fallbackFlag() {
-  return "https://cdn-icons-png.flaticon.com/512/33/33736.png";
-}
-
-/* ===== TRADUTOR ===== */
-function traduzir(txt) {
-  const d = {
-    World:'Mundial', Friendly:'Amistoso',
-    Brazil:'Brasil', Colombia:'Colômbia', Japan:'Japão'
-  };
-  return d[txt] || txt;
-}
-
-/* ===== CARREGAR JOGOS ===== */
+/* ===============================
+   CARREGAR JOGOS
+   =============================== */
 async function carregarJogos() {
   try {
     const res = await fetch(`${API_URL}/api/jogos`);
     const jogos = await res.json();
 
-    if (!jogos || !jogos.length) {
-      lista.innerHTML = "<div class='text-center py-20 text-gray-500'>Sem jogos</div>";
+    if (!Array.isArray(jogos) || jogos.length === 0) {
+      document.getElementById('lista-jogos').innerHTML =
+        "<div class='text-center py-20 text-gray-500'>Sem jogos disponíveis</div>";
       return;
     }
 
     const ligas = {};
     jogos.forEach(j => {
-      const key = `${traduzir(j.pais)} - ${j.liga}`;
-      if (!ligas[key]) ligas[key] = [];
-      ligas[key].push(j);
+      const chave = `${j.pais || 'Outros'} - ${j.liga || 'Liga'}`;
+      if (!ligas[chave]) ligas[chave] = [];
+      ligas[chave].push(j);
     });
 
     let html = "";
+
     for (const liga in ligas) {
       const info = ligas[liga][0];
+
       html += `
       <div class="league-group">
         <div class="league-header p-3 flex items-center gap-2 text-[10px] font-black uppercase text-gray-400">
           <div class="flag-container">
-            <img src="${getFlag(info.pais)}"
+            <img 
+              src="${getFlag(info)}"
               class="w-full h-full object-cover"
               loading="lazy"
-              onerror="this.onerror=null;this.src='${fallbackFlag()}'">
+              onerror="this.onerror=null;this.src='${FALLBACK_FLAG}'"
+            >
           </div>
           <span>${liga}</span>
-        </div>`;
+        </div>
+      `;
 
       ligas[liga].forEach(j => {
         const d = new Date(j.data);
+
         html += `
         <div class="bg-[#11171e] p-4 border-t border-gray-900 flex gap-3">
           <div class="text-[9px] text-gray-500 font-bold w-12 text-center border-r border-gray-800">
@@ -116,11 +108,13 @@ async function carregarJogos() {
           <div class="flex-1 flex flex-col gap-2">
             <div class="flex items-center gap-2 text-[11px] font-black uppercase">
               <img src="${j.home.logo}" class="w-5 h-5 object-contain"
-                   onerror="this.src='${fallbackFlag()}'"> ${j.home.name}
+                   onerror="this.src='${FALLBACK_FLAG}'">
+              ${j.home.name}
             </div>
             <div class="flex items-center gap-2 text-[11px] font-black uppercase">
               <img src="${j.away.logo}" class="w-5 h-5 object-contain"
-                   onerror="this.src='${fallbackFlag()}'"> ${j.away.name}
+                   onerror="this.src='${FALLBACK_FLAG}'">
+              ${j.away.name}
             </div>
           </div>
 
@@ -135,15 +129,19 @@ async function carregarJogos() {
               <span class="text-[7px] text-gray-600">2</span>${j.odds.fora}
             </div>
           </div>
-        </div>`;
+        </div>
+        `;
       });
 
       html += "</div>";
     }
 
-    document.getElementById("lista-jogos").innerHTML = html;
-  } catch (e) {
-    console.error(e);
+    document.getElementById('lista-jogos').innerHTML = html;
+
+  } catch (err) {
+    console.error(err);
+    document.getElementById('lista-jogos').innerHTML =
+      "<div class='text-center py-20 text-red-500'>Erro ao carregar jogos</div>";
   }
 }
 
