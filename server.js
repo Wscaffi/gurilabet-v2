@@ -28,7 +28,6 @@ async function initDb() {
 }
 initDb();
 
-// ROTA DE JOGOS
 app.get('/api/jogos', async (req, res) => {
     try {
         const headers = { 
@@ -45,7 +44,7 @@ app.get('/api/jogos', async (req, res) => {
             url = `https://v3.football.api-sports.io/fixtures?date=${dataFiltro}`;
         }
 
-        const resp = await axios.get(url, { headers, timeout: 15000 });
+        const resp = await axios.get(url, { headers, timeout: 20000 });
         let fixtures = resp.data.response;
         if (!fixtures) fixtures = [];
 
@@ -70,6 +69,7 @@ function formatar(data) {
             liga: j.league.name,
             logo_liga: j.league.logo,
             pais: j.league.country,
+            bandeira_pais: j.league.flag || j.league.logo, // Usa a bandeira da API se tiver
             home: { name: j.teams.home.name, logo: j.teams.home.logo },
             away: { name: j.teams.away.name, logo: j.teams.away.logo },
             data: j.fixture.date,
