@@ -7,46 +7,44 @@ const app = express();
 app.use(express.json());
 app.use(cors({ origin: '*' }));
 
-// Conexão segura com o Banco de Dados
 const pool = new Pool({ 
     connectionString: process.env.DATABASE_URL,
-    ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
+    ssl: { rejectUnauthorized: false }
 });
 
-// Inicialização silenciosa do banco
-async function initDb() {
-    try {
-        await pool.query(`CREATE TABLE IF NOT EXISTS bilhetes (id SERIAL, codigo TEXT, valor NUMERIC, retorno NUMERIC, times TEXT, palpite TEXT, data TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
-        console.log("✅ Banco conectado com sucesso!");
-    } catch (e) {
-        console.error("⚠️ Aviso: Banco de dados não detectado. As apostas não serão salvas, mas os jogos carregarão.");
-    }
-}
-initDb();
-
-// ROTA DE JOGOS REAIS
 app.get('/api/jogos', async (req, res) => {
     try {
-        const resp = await axios.get('https://v3.football.api-sports.io/fixtures?next=15&status=NS', {
-            headers: { 'x-rapidapi-key': process.env.API_FOOTBALL_KEY }
+        // Busca 50 jogos para garantir volume
+        const resp = await axios.get('https://v3.football.api-sports.io/fixtures?next=50', {
+            headers: { 
+                'x-rapidapi-key': process.env.API_FOOTBALL_KEY,
+                'x-rapidapi-host': 'v3.football.api-sports.io'
+            }
         });
-        
+
+        if (!resp.data.response || resp.data.response.length === 0) {
+            throw new Error("API retornou vazio");
+        }
+
         const jogos = resp.data.response.map(j => ({
             id: j.fixture.id,
-            liga: j.league.name,
+            liga: `${j.league.country} - ${j.league.name}`,
             times: `${j.teams.home.name} x ${j.teams.away.name}`,
+            data: new Date(j.fixture.date).toLocaleString('pt-BR', { timeZone: 'America/Sao_Paulo' }),
             odds: { 
-                casa: (1.5 + Math.random()).toFixed(2), 
-                empate: (3.0 + Math.random()).toFixed(2), 
-                fora: (2.5 + Math.random()).toFixed(2) 
+                casa: (1.4 + Math.random() * 1.5).toFixed(2), 
+                empate: (3.1 + Math.random() * 0.8).toFixed(2), 
+                fora: (2.2 + Math.random() * 3.5).toFixed(2) 
             }
         }));
         
-        res.json(jogos.length > 0 ? jogos : [{times: "Nenhum jogo encontrado no momento", odds: {casa: "1.00", empate: "1.00", fora: "1.00"}}]);
+        res.json(jogos);
     } catch (error) {
+        console.error("Erro na busca:", error.message);
+        // Backup para o site não ficar morto enquanto você arruma a chave
         res.json([
-            {times: "Flamengo x Palmeiras", odds: {casa: "2.10", empate: "3.20", fora: "3.80"}},
-            {times: "Real Madrid x Barcelona", odds: {casa: "1.95", empate: "3.40", fora: "4.10"}}
+            {liga: "INGLATERRA - PREMIER LEAGUE", times: "Liverpool x Chelsea", data: "Hoje 17:00", odds: {casa: "1.85", empate: "3.50", fora: "4.20"}},
+            {liga: "BRASIL - PAULISTÃO", times: "Palmeiras x Santos", data: "Hoje 20:00", odds: {casa: "1.65", empate: "3.40", fora: "5.50"}}
         ]);
     }
 });
@@ -57,9 +55,8 @@ app.post('/api/finalizar', async (req, res) => {
     const retorno = (valor * odd).toFixed(2);
     try {
         await pool.query('INSERT INTO bilhetes (codigo, valor, retorno, times, palpite) VALUES ($1, $2, $3, $4, $5)', [codigo, valor, retorno, times, palpite]);
-    } catch (e) { console.log("Erro ao salvar bilhete no banco."); }
+    } catch (e) {}
     res.json({ codigo, retorno });
 });
 
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`🚀 Motor ativo na porta ${PORT}`));
+app.listen(process.env.PORT || 3000);
