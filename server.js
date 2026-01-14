@@ -8,6 +8,7 @@ const app = express();
 app.use(express.json());
 app.use(cors({ origin: '*' }));
 
+// Conexão com Banco de Dados
 const pool = new Pool({ 
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
@@ -28,6 +29,7 @@ async function initDb() {
 }
 initDb();
 
+// ROTA DE JOGOS (Com Mercados Completos e Travas de Segurança)
 app.get('/api/jogos', async (req, res) => {
     try {
         const headers = { 
@@ -55,9 +57,11 @@ function formatar(data) {
     return data.map(j => {
         const dataJogo = new Date(j.fixture.date);
         const status = j.fixture.status.short;
-        const statusOk = status === 'NS';
-        const tempoOk = dataJogo > agora;
-        const ativo = statusOk && tempoOk;
+
+        // TRAVAS DE SEGURANÇA
+        const statusOk = status === 'NS'; // Apenas não iniciados
+        const tempoOk = dataJogo > agora; // Apenas jogos futuros
+        const ativo = statusOk && tempoOk; 
 
         return {
             id: j.fixture.id,
@@ -68,7 +72,7 @@ function formatar(data) {
             away: { name: j.teams.away.name, logo: j.teams.away.logo },
             data: j.fixture.date,
             status: status,
-            ativo: ativo,
+            ativo: ativo, // Front usa isso para o cadeado
             odds: { 
                 casa: ativo ? (1.5 + Math.random()).toFixed(2) : "Bloq", 
                 empate: ativo ? (3.0 + Math.random()).toFixed(2) : "Bloq", 
@@ -90,6 +94,7 @@ function formatar(data) {
     });
 }
 
+// Cadastro
 app.post('/api/cadastro', async (req, res) => {
     const { nome, email, senha } = req.body;
     const hash = crypto.createHash('sha256').update(senha).digest('hex');
@@ -98,38 +103,4 @@ app.post('/api/cadastro', async (req, res) => {
             'INSERT INTO usuarios (nome, email, senha) VALUES ($1, $2, $3) RETURNING id, nome, saldo',
             [nome, email, hash]
         );
-        res.json({ sucesso: true, usuario: result.rows[0] });
-    } catch (e) { res.status(400).json({ erro: "E-mail já cadastrado." }); }
-});
-
-// --- ROTA DE FINALIZAÇÃO COM GESTÃO DE RISCO ---
-app.post('/api/finalizar', async (req, res) => {
-    const { usuario_id, valor, apostas, odd_total } = req.body;
-    
-    // 1. REGRA: MÁXIMO 10 JOGOS
-    if (apostas.length > 10) {
-        return res.status(400).json({ erro: "Limite de 10 jogos por bilhete excedido." });
-    }
-
-    const codigo = "GB" + Math.floor(100000 + Math.random() * 900000);
-    
-    // 2. REGRA: TETO DE R$ 2500,00
-    let retornoCalculado = (valor * odd_total);
-    if (retornoCalculado > 2500) {
-        retornoCalculado = 2500.00; // Trava o valor no banco de dados
-    }
-    const retornoFinal = parseFloat(retornoCalculado).toFixed(2);
-    
-    try {
-        await pool.query(
-            'INSERT INTO bilhetes (usuario_id, codigo, valor, retorno, odds_total, detalhes) VALUES ($1, $2, $3, $4, $5, $6)',
-            [usuario_id, codigo, valor, retornoFinal, odd_total, JSON.stringify(apostas)]
-        );
-        res.json({ sucesso: true, codigo, retorno: retornoFinal });
-    } catch (e) { 
-        console.error(e);
-        res.status(500).json({ erro: "Erro ao processar aposta" }); 
-    }
-});
-
-app.listen(process.env.PORT || 3000);
+        res.json({
