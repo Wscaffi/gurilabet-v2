@@ -28,7 +28,7 @@ async function initDb() {
 }
 initDb();
 
-// ROTA DE JOGOS (COM FILTRO AO VIVO E REMOÇÃO DE BLOQUEADOS)
+// ROTA DE JOGOS
 app.get('/api/jogos', async (req, res) => {
     try {
         const headers = { 
@@ -37,11 +37,9 @@ app.get('/api/jogos', async (req, res) => {
         };
         
         let url = '';
-        // Se pedir AO VIVO, busca jogos live=all
         if (req.query.aovivo === 'true') {
             url = `https://v3.football.api-sports.io/fixtures?live=all`;
         } else {
-            // Se não, busca por data
             const hoje = new Date().toISOString().split('T')[0];
             const dataFiltro = req.query.data || hoje;
             url = `https://v3.football.api-sports.io/fixtures?date=${dataFiltro}`;
@@ -51,7 +49,6 @@ app.get('/api/jogos', async (req, res) => {
         let fixtures = resp.data.response;
         if (!fixtures) fixtures = [];
 
-        // Envia para formatação (que vai remover os bloqueados)
         res.json(formatar(fixtures));
     } catch (e) {
         res.status(500).json({ erro: e.message });
@@ -60,19 +57,12 @@ app.get('/api/jogos', async (req, res) => {
 
 function formatar(data) {
     const agora = new Date();
-    
-    // Mapeia e depois filtra os nulos (jogos inválidos)
     return data.map(j => {
         const dataJogo = new Date(j.fixture.date);
         const status = j.fixture.status.short;
-
-        // 1. É jogo futuro? (NS = Not Started)
         const isFuturo = status === 'NS' && dataJogo > agora;
-        
-        // 2. É jogo ao vivo? (1H, 2H, HT, ET, P)
         const isAoVivo = ['1H', '2H', 'HT', 'ET', 'P', 'BT'].includes(status);
 
-        // Se não for nem futuro válido e nem ao vivo, DESCARTA.
         if (!isFuturo && !isAoVivo) return null;
 
         return {
@@ -83,17 +73,13 @@ function formatar(data) {
             home: { name: j.teams.home.name, logo: j.teams.home.logo },
             away: { name: j.teams.away.name, logo: j.teams.away.logo },
             data: j.fixture.date,
-            status: status, // Mostra o tempo de jogo (ex: 1H)
-            ativo: true, // Se passou pelo filtro, é ativo
-            
-            // Gera odds dinâmicas
+            status: status,
+            ativo: true,
             odds: { 
                 casa: (1.5 + Math.random()).toFixed(2), 
                 empate: (3.0 + Math.random()).toFixed(2), 
                 fora: (2.2 + Math.random() * 2).toFixed(2) 
             },
-
-            // Mercados Completos
             mercados: {
                 dupla_chance: { casa_empate: "1.25", casa_fora: "1.30", empate_fora: "1.60" },
                 ambas_marcam: { sim: "1.75", nao: "1.95" },
@@ -106,8 +92,27 @@ function formatar(data) {
                 escanteios: { mais_8: "1.50", mais_10: "2.10", menos_10: "1.65" }
             }
         };
-    }).filter(j => j !== null); // REMOVE OS JOGOS BLOQUEADOS DA LISTA
+    }).filter(j => j !== null);
 }
+
+// ROTA DE VALIDAÇÃO (ADMIN)
+app.get('/api/bilhete/:codigo', async (req, res) => {
+    try {
+        const { codigo } = req.params;
+        const result = await pool.query(`
+            SELECT b.*, u.nome as cliente 
+            FROM bilhetes b 
+            JOIN usuarios u ON b.usuario_id = u.id 
+            WHERE b.codigo = $1
+        `, [codigo]);
+        
+        if(result.rows.length > 0) {
+            res.json({ sucesso: true, bilhete: result.rows[0] });
+        } else {
+            res.json({ sucesso: false, erro: "Bilhete não encontrado" });
+        }
+    } catch(e) { res.status(500).json({ erro: e.message }); }
+});
 
 app.post('/api/cadastro', async (req, res) => {
     const { nome, email, senha } = req.body;
