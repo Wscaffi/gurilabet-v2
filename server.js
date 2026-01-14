@@ -70,4 +70,50 @@ function formatar(data) {
             data: j.fixture.date,
             status: status,
             odds: { 
-                casa: ativo ? (1.5 + Math.random
+                casa: ativo ? (1.5 + Math.random()).toFixed(2) : "0.00", 
+                empate: ativo ? (3.0 + Math.random()).toFixed(2) : "0.00", 
+                fora: ativo ? (2.2 + Math.random() * 2).toFixed(2) : "0.00" 
+            },
+            mercados: ativo ? {
+                dupla_chance: { casa_empate: "1.25", casa_fora: "1.30", empate_fora: "1.60" },
+                ambas_marcam: { sim: "1.75", nao: "1.95" },
+                total_gols: { mais_25: "1.80", menos_25: "1.90", mais_15: "1.30", menos_15: "3.20" },
+                placar_exato: { "1-0": "6.50", "2-0": "9.00", "0-0": "8.00" },
+                escanteios: { mais_8: "1.60", mais_10: "2.20" }
+            } : null
+        };
+    });
+}
+
+// Cadastro e Login
+app.post('/api/cadastro', async (req, res) => {
+    const { nome, email, senha } = req.body;
+    const hash = crypto.createHash('sha256').update(senha).digest('hex');
+    try {
+        const result = await pool.query(
+            'INSERT INTO usuarios (nome, email, senha) VALUES ($1, $2, $3) RETURNING id, nome, saldo',
+            [nome, email, hash]
+        );
+        res.json({ sucesso: true, usuario: result.rows[0] });
+    } catch (e) { res.status(400).json({ erro: "E-mail já cadastrado." }); }
+});
+
+// Finalizar Aposta
+app.post('/api/finalizar', async (req, res) => {
+    const { usuario_id, valor, apostas, odd_total } = req.body;
+    const codigo = "GB" + Math.floor(100000 + Math.random() * 900000);
+    const retorno = (valor * odd_total).toFixed(2);
+    
+    try {
+        await pool.query(
+            'INSERT INTO bilhetes (usuario_id, codigo, valor, retorno, odds_total, detalhes) VALUES ($1, $2, $3, $4, $5, $6)',
+            [usuario_id, codigo, valor, retorno, odd_total, JSON.stringify(apostas)]
+        );
+        res.json({ sucesso: true, codigo, retorno });
+    } catch (e) { 
+        console.error(e);
+        res.status(500).json({ erro: "Erro ao processar aposta" }); 
+    }
+});
+
+app.listen(process.env.PORT || 3000, () => console.log("Motor Gurila Bet Rodando 🚀"));
