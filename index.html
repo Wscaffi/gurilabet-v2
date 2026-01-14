@@ -12,6 +12,8 @@
         .odd-btn { background: #1c242c; border: 1px solid #2d3741; transition: 0.2s; }
         .odd-btn:active { transform: scale(0.95); }
         .modal { background: rgba(0,0,0,0.95); backdrop-filter: blur(10px); }
+        /* Evita o efeito de piscar */
+        .flag-img { min-width: 20px; height: 15px; background: #1a2128; border-radius: 2px; }
     </style>
 </head>
 <body class="pb-32">
@@ -30,14 +32,6 @@
         </div>
     </main>
 
-    <div id="pagina-perfil" class="fixed inset-0 bg-[#060a0d] z-[300] hidden flex-col">
-        <header class="p-5 bg-[#0b0f13] border-b border-gray-800 flex items-center gap-4">
-            <button onclick="togglePerfil()" class="text-xl"><i class="fas fa-arrow-left"></i></button>
-            <h2 class="text-lg font-black uppercase italic">Minha Conta</h2>
-        </header>
-        <div class="p-6 overflow-y-auto" id="perfil-content"></div>
-    </div>
-
     <div id="modal-cadastro" class="fixed inset-0 modal z-[400] hidden items-center justify-center p-4">
         <div class="bg-[#11171e] p-8 rounded-3xl w-full max-w-sm border border-gray-800">
             <h2 class="text-xl font-black italic mb-6 uppercase">Criar Conta 🦍</h2>
@@ -45,7 +39,7 @@
             <input id="cad-email" type="email" placeholder="E-mail" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-3 text-sm outline-none">
             <input id="cad-senha" type="password" placeholder="Senha" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-6 text-sm outline-none">
             <button onclick="realizarCadastro()" class="w-full bg-green-600 text-black font-black p-4 rounded-xl uppercase italic">Finalizar Cadastro</button>
-            <button onclick="toggleModal('modal-cadastro')" class="w-full text-gray-500 text-[10px] mt-4 font-bold uppercase underline">Voltar</button>
+            <button onclick="toggleModal('modal-cadastro')" class="w-full text-gray-600 text-[10px] mt-4 font-bold uppercase underline">Voltar</button>
         </div>
     </div>
 
@@ -53,36 +47,48 @@
         const API_URL = 'https://gurilabet-v2-production.up.railway.app'; 
         let usuarioLogado = JSON.parse(localStorage.getItem('gurila_user')) || null;
 
-        // --- CORREÇÃO: MAPEAMENTO AMPLO DE BANDEIRAS ---
+        // TRADUTOR DE PAÍSES E LIGAS (Corrigindo o Inglês)
+        function traduzir(texto) {
+            const dicionario = {
+                'Brazil': 'Brasil',
+                'England': 'Inglaterra',
+                'Spain': 'Espanha',
+                'Italy': 'Itália',
+                'Germany': 'Alemanha',
+                'France': 'França',
+                'Portugal': 'Portugal',
+                'Argentina': 'Argentina',
+                'Netherlands': 'Holanda',
+                'Saudi-Arabia': 'Arábia Saudita',
+                'World': 'Mundial',
+                'Europe': 'Europa'
+            };
+            return dicionario[texto] || texto;
+        }
+
         function getFlag(pais) {
             const flags = {
                 'Brazil': 'BR', 'England': 'GB', 'Spain': 'ES', 'Italy': 'IT', 'Germany': 'DE',
                 'France': 'FR', 'Portugal': 'PT', 'Argentina': 'AR', 'Netherlands': 'NL',
-                'Belgium': 'BE', 'Turkey': 'TR', 'Saudi-Arabia': 'SA', 'USA': 'US', 
-                'Japan': 'JP', 'Mexico': 'MX', 'Colombia': 'CO', 'Chile': 'CL'
+                'Belgium': 'BE', 'Turkey': 'TR', 'Saudi-Arabia': 'SA', 'USA': 'US'
             };
             const code = flags[pais] || 'UN'; 
             return `https://flagsapi.com/${code}/flat/64.png`;
         }
 
-        function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); document.getElementById(id).classList.toggle('flex'); }
-        function togglePerfil() { document.getElementById('pagina-perfil').classList.toggle('hidden'); }
-
-        // --- CORREÇÃO: CARREGAMENTO COM SEPARAÇÃO POR LIGAS ---
         async function carregarJogos() {
             try {
                 const res = await fetch(`${API_URL}/api/jogos`);
                 const jogos = await res.json();
                 
                 if(!jogos || jogos.length === 0) {
-                    document.getElementById('lista-jogos').innerHTML = "<div class='text-center py-20 font-bold uppercase italic text-xs text-gray-500'>Aguardando abertura dos mercados...</div>";
+                    document.getElementById('lista-jogos').innerHTML = "<div class='text-center py-20 text-gray-500'>Aguardando mercados...</div>";
                     return;
                 }
 
-                // Agrupar por Ligas
                 const ligas = {};
                 jogos.forEach(j => { 
-                    const chave = `${j.pais} - ${j.liga}`;
+                    const chave = `${traduzir(j.pais)} - ${j.liga}`;
                     if(!ligas[chave]) ligas[chave] = []; 
                     ligas[chave].push(j); 
                 });
@@ -90,11 +96,9 @@
                 let html = '';
                 for(let ligaNome in ligas) {
                     const jInfo = ligas[ligaNome][0];
-                    
-                    // Início do Bloco da Liga
                     html += `<div class="league-group">
                         <div class="league-header p-3 flex items-center gap-2 text-[10px] font-black uppercase italic text-gray-400">
-                            <img src="${getFlag(jInfo.pais)}" class="w-5 h-4 object-cover rounded-sm shadow-md" onerror="this.src='${jInfo.bandeira}'">
+                            <img src="${getFlag(jInfo.pais)}" class="flag-img object-cover shadow-md" loading="lazy">
                             <span>${ligaNome}</span>
                         </div>`;
                     
@@ -102,7 +106,7 @@
                         const dt = new Date(j.data);
                         html += `
                         <div class="bg-[#11171e] p-4 border-t border-gray-900 flex items-center justify-between gap-3 shadow-lg">
-                            <div class="text-[9px] text-gray-500 font-bold w-12 text-center uppercase leading-tight border-r border-gray-800 pr-2">
+                            <div class="text-[9px] text-gray-500 font-bold w-12 text-center border-r border-gray-800 pr-2">
                                 ${dt.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}<br><span class="text-white">${dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</span>
                             </div>
                             <div class="flex-1 flex flex-col gap-2">
@@ -115,24 +119,23 @@
                             </div>
                             <div class="flex gap-1.5 ml-2">
                                 <div class="odd-btn w-14 h-11 rounded-xl text-[12px] font-black text-green-500 flex flex-col items-center justify-center">
-                                    <span class="text-[7px] text-gray-500 font-bold uppercase mb-0.5">1</span>${j.odds.casa}
+                                    <span class="text-[7px] text-gray-600 font-bold uppercase mb-0.5 font-bold">1</span>${j.odds.casa}
                                 </div>
                                 <div class="odd-btn w-14 h-11 rounded-xl text-[12px] font-black text-green-500 flex flex-col items-center justify-center">
-                                    <span class="text-[7px] text-gray-500 font-bold uppercase mb-0.5">X</span>${j.odds.empate}
+                                    <span class="text-[7px] text-gray-600 font-bold uppercase mb-0.5 font-bold">X</span>${j.odds.empate}
                                 </div>
                                 <div class="odd-btn w-14 h-11 rounded-xl text-[12px] font-black text-green-500 flex flex-col items-center justify-center">
-                                    <span class="text-[7px] text-gray-600 font-bold uppercase mb-0.5">2</span>${j.odds.fora}
+                                    <span class="text-[7px] text-gray-600 font-bold uppercase mb-0.5 font-bold">2</span>${j.odds.fora}
                                 </div>
                             </div>
                         </div>`;
                     });
-                    html += `</div>`; // Fim do Bloco da Liga
+                    html += `</div>`;
                 }
                 document.getElementById('lista-jogos').innerHTML = html;
             } catch (e) { console.error(e); }
         }
 
-        // Funções de Cadastro (Mantidas)
         async function realizarCadastro() {
             const res = await fetch(`${API_URL}/api/cadastro`, {
                 method: 'POST',
@@ -143,9 +146,11 @@
             if(data.sucesso) { localStorage.setItem('gurila_user', JSON.stringify(data.usuario)); location.reload(); } else { alert(data.erro); }
         }
 
+        function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); document.getElementById(id).classList.toggle('flex'); }
+
         if(usuarioLogado) {
             document.getElementById('user-area').innerHTML = `
-                <button onclick="togglePerfil()" class="flex items-center gap-2 bg-[#1c242c] p-2 px-3 rounded-xl border border-gray-800">
+                <button class="flex items-center gap-2 bg-[#1c242c] p-2 px-3 rounded-xl border border-gray-800">
                     <div class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-black font-black text-[10px] uppercase">${usuarioLogado.nome.charAt(0)}</div>
                     <span class="text-white uppercase italic tracking-tighter">CONTA</span>
                 </button>`;
