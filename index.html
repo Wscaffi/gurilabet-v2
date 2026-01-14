@@ -1,116 +1,78 @@
 <!DOCTYPE html>
 <html lang="pt-br">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GURILA BET | Futebol</title>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GURILA BET</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #060a0d; color: #e2e8f0; scrollbar-width: none; }
-        .bg-card { background-color: #12171d; }
-        .btn-odd { background-color: #1c242c; transition: all 0.2s; }
-        .btn-odd:hover { background-color: #00ff88; color: #000; }
-        .selected-odd { background-color: #00ff88 !important; color: #000 !important; }
+        body { background: #060a0d; color: #fff; }
+        .selected { background: #00ff88 !important; color: #000 !important; }
     </style>
 </head>
-<body class="font-sans">
-
-    <header class="p-4 flex justify-between items-center sticky top-0 bg-[#060a0d] z-50 border-b border-gray-800">
-        <div class="flex items-center gap-3">
-            <h1 class="text-xl font-black italic tracking-tighter text-white">GURILA<span class="text-green-500">BET</span> 🦍</h1>
-        </div>
-        <div class="flex gap-2">
-            <button class="text-xs font-bold text-gray-400 px-3">Cadastrar</button>
-            <button class="bg-green-600 text-black px-4 py-1.5 rounded-lg font-bold text-xs uppercase">Entrar</button>
-        </div>
+<body>
+    <header class="p-4 border-b border-gray-800 flex justify-between items-center sticky top-0 bg-[#060a0d] z-50">
+        <h1 class="text-xl font-black italic">GURILA<span class="text-green-500">BET</span> 🦍</h1>
+        <button class="bg-green-600 text-black px-4 py-1 rounded font-bold text-xs">ENTRAR</button>
     </header>
 
-    <nav class="flex p-4 gap-4 bg-[#0c1117] border-b border-gray-800 overflow-hidden">
-        <div class="flex items-center gap-2 text-green-500 border-b-2 border-green-500 pb-2 px-2">
-            <i class="fas fa-futbol"></i>
-            <span class="text-xs font-bold uppercase">Futebol</span>
-        </div>
-    </nav>
-
-    <main class="px-4 pt-4 pb-40">
-        <div class="flex items-center justify-between mb-4">
-            <h3 class="text-xs font-black uppercase tracking-tighter italic flex items-center gap-2">
-                <i class="fas fa-trophy text-green-500"></i> Jogos em Destaque
-            </h3>
-            <span class="text-[10px] text-gray-500">Ao Vivo (0)</span>
-        </div>
-
-        <div id="games-container" class="space-y-4">
-            <div class="text-center py-20"><i class="fas fa-circle-notch fa-spin text-green-500 text-2xl"></i></div>
-        </div>
+    <main class="p-4 max-w-md mx-auto pb-32">
+        <h2 class="text-xs font-bold text-gray-500 mb-4 uppercase italic"><i class="fas fa-futbol text-green-500 mr-2"></i> Futebol - Próximos Jogos</h2>
+        <div id="lista" class="space-y-4 text-center py-10"><i class="fas fa-spinner fa-spin text-2xl text-green-500"></i></div>
     </main>
 
-    <footer class="fixed bottom-0 left-0 right-0 bg-[#0c1117] border-t border-gray-800 p-2 flex justify-around items-center z-[100]">
-        <div class="flex flex-col items-center text-green-500"><i class="fas fa-home text-lg"></i><span class="text-[9px] font-bold">Início</span></div>
-        <div class="flex flex-col items-center text-gray-500"><i class="fas fa-search text-lg"></i><span class="text-[9px] font-bold">Busca</span></div>
-        <div class="relative"><div class="bg-green-600 w-12 h-12 rounded-full flex items-center justify-center -mt-8 border-4 border-[#060a0d] shadow-lg"><i class="fas fa-file-invoice-dollar text-black text-xl"></i></div></div>
-        <div class="flex flex-col items-center text-gray-500"><i class="fas fa-history text-lg"></i><span class="text-[9px] font-bold">Meus Bilhetes</span></div>
-        <div class="flex flex-col items-center text-gray-500" onclick="window.location.href='/admin'"><i class="fas fa-user-cog text-lg"></i><span class="text-[9px] font-bold">Painel</span></div>
-    </footer>
-
-    <div id="cart" class="fixed bottom-16 left-4 right-4 bg-[#1a222a] rounded-2xl border-t-4 border-green-500 p-5 hidden z-[110] shadow-2xl">
-        <div id="cart-info" class="mb-4"></div>
+    <div id="cart" class="fixed bottom-0 left-0 right-0 bg-[#12171d] p-5 border-t-4 border-green-500 hidden z-50">
+        <div id="info" class="mb-4"></div>
         <div class="flex gap-2">
-            <input id="valor" type="number" placeholder="R$ Valor" class="flex-1 bg-[#0c1117] border border-gray-700 p-3 rounded-xl text-white font-bold outline-none focus:border-green-500">
-            <button id="btn-finalizar" onclick="finalizar()" class="bg-green-500 text-black font-black px-6 rounded-xl uppercase italic">Finalizar</button>
+            <input id="valor" type="number" placeholder="R$ Valor" class="flex-1 bg-black border border-gray-700 p-3 rounded-lg outline-none text-white">
+            <button onclick="finalizar()" class="bg-green-500 text-black font-black px-6 rounded-lg uppercase italic">Apostar</button>
         </div>
     </div>
 
     <script>
-        const API_URL = 'https://SEU-LINK-DO-RAILWAY.up.railway.app'; // <--- MUDE AQUI
+        const API_URL = 'https://SEU-LINK-DO-RAILWAY.up.railway.app'; // <--- COLOQUE SEU LINK AQUI
 
-        async function loadGames() {
+        async function carregar() {
             try {
                 const res = await fetch(`${API_URL}/api/jogos`);
-                const games = await res.json();
-                document.getElementById('games-container').innerHTML = games.map(g => `
-                    <div class="bg-card rounded-2xl p-4 border border-gray-800">
-                        <div class="flex justify-between text-[9px] font-bold text-gray-500 mb-3 uppercase italic">
-                            <span><i class="fas fa-globe-americas mr-1"></i> Principal</span>
-                            <span>Hoje</span>
-                        </div>
-                        <div class="text-center font-bold text-sm mb-4 tracking-tight text-white uppercase italic">${g.times}</div>
+                const jogos = await res.json();
+                document.getElementById('lista').innerHTML = jogos.map(j => `
+                    <div class="bg-[#12171d] p-4 rounded-xl border border-gray-800">
+                        <p class="text-center font-bold mb-4 uppercase italic text-sm">${j.times}</p>
                         <div class="grid grid-cols-3 gap-2">
-                            <button onclick="addToCart(this, '${g.times}', 'Casa', ${g.odds.casa})" class="btn-odd p-3 rounded-xl flex flex-col items-center"><span class="text-[9px] text-gray-500 font-bold">1</span><span class="text-sm font-black">${g.odds.casa}</span></button>
-                            <button onclick="addToCart(this, '${g.times}', 'Empate', ${g.odds.empate})" class="btn-odd p-3 rounded-xl flex flex-col items-center"><span class="text-[9px] text-gray-500 font-bold">X</span><span class="text-sm font-black">${g.odds.empate}</span></button>
-                            <button onclick="addToCart(this, '${g.times}', 'Fora', ${g.odds.fora})" class="btn-odd p-3 rounded-xl flex flex-col items-center"><span class="text-[9px] text-gray-500 font-bold">2</span><span class="text-sm font-black">${g.odds.fora}</span></button>
+                            <button onclick="selecionar(this, '${j.times}', 'Casa', ${j.odds.casa})" class="bg-[#1c242c] p-3 rounded-lg text-sm font-bold text-green-500 border border-gray-800 hover:bg-gray-700 transition">${j.odds.casa}</button>
+                            <button onclick="selecionar(this, '${j.times}', 'Empate', ${j.odds.empate})" class="bg-[#1c242c] p-3 rounded-lg text-sm font-bold text-green-500 border border-gray-800 hover:bg-gray-700 transition">${j.odds.empate}</button>
+                            <button onclick="selecionar(this, '${j.times}', 'Fora', ${j.odds.fora})" class="bg-[#1c242c] p-3 rounded-lg text-sm font-bold text-green-500 border border-gray-800 hover:bg-gray-700 transition">${j.odds.fora}</button>
                         </div>
                     </div>
                 `).join('');
-            } catch (e) { console.error(e); }
+            } catch (e) { document.getElementById('lista').innerHTML = "Erro ao carregar jogos."; }
         }
 
-        let cartData = null;
-        function addToCart(btn, times, palpite, odd) {
-            document.querySelectorAll('.btn-odd').forEach(b => b.classList.remove('selected-odd'));
-            btn.classList.add('selected-odd');
-            cartData = { times, palpite, odd };
+        let aposta = null;
+        function selecionar(btn, times, palpite, odd) {
+            document.querySelectorAll('button').forEach(b => b.classList.remove('selected'));
+            btn.classList.add('selected');
+            aposta = { times, palpite, odd };
             document.getElementById('cart').classList.remove('hidden');
-            document.getElementById('cart-info').innerHTML = `<div class="flex justify-between"><span class="text-xs font-bold text-green-500 uppercase italic">${times}</span><span class="text-lg font-black italic">@${odd}</span></div><p class="text-xs text-gray-400">Palpite: ${palpite}</p>`;
+            document.getElementById('info').innerHTML = `<p class="font-bold text-green-500">${times}</p><p class="text-xs uppercase">${palpite} @${odd}</p>`;
         }
 
         async function finalizar() {
-            const valor = document.getElementById('valor').value;
-            if(!valor || valor < 2) return alert("Valor mínimo R$ 2,00");
-            const btn = document.getElementById('btn-finalizar');
-            btn.innerHTML = "...";
+            const v = document.getElementById('valor').value;
+            if(!v || v < 2) return alert("Mínimo R$ 2,00");
             try {
                 const res = await fetch(`${API_URL}/api/finalizar`, {
                     method: 'POST',
                     headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({...cartData, valor})
+                    body: JSON.stringify({...aposta, valor: v})
                 });
-                const data = await res.json();
-                document.body.innerHTML = `<div class="h-screen flex flex-col items-center justify-center p-8 text-center"><div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mb-6 shadow-lg"><i class="fas fa-check text-2xl text-black"></i></div><h2 class="text-xl font-black italic mb-2 uppercase">Bilhete Gerado!</h2><div class="bg-[#12171d] border-2 border-dashed border-green-500 p-6 rounded-2xl w-full max-w-xs mb-6"><p class="text-[10px] text-gray-500 font-bold uppercase mb-2">Código de Validação</p><p class="text-4xl font-black text-green-400 tracking-[8px] mb-4">${data.codigo}</p><p class="text-xs font-bold text-gray-400">PRÊMIO: <span class="text-white">R$ ${data.retorno}</span></p></div><button onclick="location.reload()" class="bg-white text-black font-black px-8 py-3 rounded-full uppercase italic text-xs">Voltar</button></div>`;
-            } catch (e) { alert("Erro!"); }
+                const d = await res.json();
+                alert(`BILHETE GERADO!\nCódigo: ${d.codigo}\nPrêmio: R$ ${d.retorno}`);
+                location.reload();
+            } catch (e) { alert("Erro ao salvar bilhete."); }
         }
-        window.onload = loadGames;
+        window.onload = carregar;
     </script>
 </body>
 </html>
