@@ -9,23 +9,30 @@
         body { background: #060a0d; color: #fff; font-family: 'Inter', sans-serif; }
         .league-header { background: #12171d; border-left: 4px solid #00ff88; padding: 12px; font-size: 11px; font-weight: 900; text-transform: uppercase; display: flex; align-items: center; gap: 10px; color: #94a3b8; }
         .match-card { background: #0f141a; border-bottom: 1px solid #1e262f; padding: 15px; display: flex; align-items: center; justify-content: space-between; }
-        .odd-btn { background: #1c242c; border: 1px solid #2d3741; border-radius: 6px; width: 50px; height: 42px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #00ff88; transition: 0.2s; }
-        .odd-btn:hover { background: #2d3741; transform: scale(1.05); }
+        
+        /* Botões de Odd */
+        .odd-btn { background: #1c242c; border: 1px solid #2d3741; border-radius: 6px; width: 50px; height: 42px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #00ff88; transition: 0.2s; cursor: pointer; }
+        .odd-btn:hover { background: #2d3741; }
+        .odd-active { background: #00ff88 !important; color: #000 !important; border-color: #00ff88 !important; }
+
+        .market-box { background: #161b22; border: 1px solid #2d3741; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
+        .market-title { font-size: 10px; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid #2d3741; padding-bottom: 4px; }
+        .market-btn { background: #0d1117; color: #fff; padding: 10px; border-radius: 6px; text-align: center; font-size: 11px; font-bold; border: 1px solid #30363d; display: flex; justify-content: space-between; cursor: pointer; }
+        
+        /* Cupom Flutuante */
+        .cupom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #11171e; border-top: 1px solid #00ff88; padding: 15px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; box-shadow: 0 -5px 20px rgba(0,0,0,0.8); }
         .camp-btn { background: #11171e; border: 1px solid #2d3741; padding: 8px 15px; border-radius: 50px; white-space: nowrap; font-size: 10px; font-weight: 900; color: #94a3b8; }
         .camp-btn.active { background: #00ff88; color: #000; border-color: #00ff88; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        /* Estilo dos Mercados Extras */
-        .market-box { background: #161b22; border: 1px solid #2d3741; border-radius: 8px; padding: 10px; margin-bottom: 10px; }
-        .market-title { font-size: 10px; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid #2d3741; padding-bottom: 4px; }
-        .market-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-        .market-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
-        .market-btn { background: #0d1117; color: #fff; padding: 10px; border-radius: 6px; text-align: center; font-size: 11px; font-bold; border: 1px solid #30363d; display: flex; justify-content: space-between; }
-        .market-btn span { color: #00ff88; }
     </style>
 </head>
-<body class="pb-20">
+<body class="pb-24">
+
     <header class="p-4 bg-[#0b0f13] border-b border-gray-800 flex justify-between items-center sticky top-0 z-50">
         <h1 class="text-2xl font-black italic uppercase text-white">Gurila<span class="text-green-500">Bet</span> 🦍</h1>
+        <div id="user-area">
+            <button onclick="document.getElementById('modal-cadastro').classList.remove('hidden')" class="bg-green-600 text-black px-4 py-2 rounded-lg text-[10px] font-black uppercase italic">Entrar</button>
+        </div>
     </header>
 
     <div class="p-3 bg-[#0b0f13] sticky top-[65px] z-40 border-b border-gray-900 overflow-x-auto no-scrollbar flex gap-2" id="menu-campeonatos">
@@ -33,27 +40,66 @@
     </div>
 
     <main id="container-jogos" class="max-w-3xl mx-auto p-2">
-        <div class="text-center py-20 text-gray-600 animate-pulse font-bold uppercase italic text-xs">Carregando Mercados...</div>
+        <div class="text-center py-20 text-gray-600 animate-pulse font-bold uppercase italic text-xs">Carregando Odds Ao Vivo...</div>
     </main>
+
+    <div id="cupom-bar" class="cupom-bar hidden">
+        <div class="flex flex-col">
+            <span class="text-[10px] text-gray-400 font-bold uppercase">Boletim de Apostas</span>
+            <div class="text-white font-black text-sm"><span id="qtd-apostas">0</span> Seleções | Odd: <span id="odd-total" class="text-green-500">1.00</span></div>
+        </div>
+        <button onclick="abrirCupomDetalhado()" class="bg-green-600 text-black font-black uppercase italic px-6 py-2 rounded-lg text-xs">Finalizar</button>
+    </div>
+
+    <div id="modal-cupom" class="fixed inset-0 bg-black/95 z-[700] hidden flex-col justify-end">
+        <div class="bg-[#161b22] rounded-t-3xl p-6 border-t border-gray-800">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-black uppercase italic">Seu Bilhete</h3>
+                <button onclick="document.getElementById('modal-cupom').classList.add('hidden')" class="text-gray-500">&times;</button>
+            </div>
+            <div id="lista-apostas" class="mb-4 max-h-40 overflow-y-auto text-xs text-gray-300 space-y-2"></div>
+            <div class="bg-black p-4 rounded-xl border border-gray-800 mb-4">
+                <label class="text-[10px] text-gray-500 font-bold uppercase">Valor da Aposta (R$)</label>
+                <input type="number" id="valor-aposta" class="w-full bg-transparent text-white font-black text-xl outline-none mt-1" placeholder="0.00" oninput="calcularRetorno()">
+            </div>
+            <div class="flex justify-between text-xs font-bold text-gray-400 mb-4">
+                <span>Retorno Potencial:</span>
+                <span id="retorno-potencial" class="text-green-500 text-lg">R$ 0.00</span>
+            </div>
+            <button onclick="enviarAposta()" class="w-full bg-green-600 text-black font-black p-4 rounded-xl uppercase italic">Confirmar Aposta</button>
+        </div>
+    </div>
 
     <div id="modal-extras" class="fixed inset-0 bg-[#060a0d] z-[600] hidden flex-col">
         <header class="p-4 bg-[#0b0f13] border-b border-gray-800 flex justify-between items-center sticky top-0">
-            <div>
-                <h3 id="modal-titulo" class="text-xs font-black uppercase text-white"></h3>
-                <span class="text-[10px] text-gray-500 font-bold uppercase">Mercados Principais</span>
-            </div>
-            <button onclick="fecharMercados()" class="w-8 h-8 bg-gray-800 rounded-full text-white flex items-center justify-center font-bold">&times;</button>
+            <h3 id="modal-titulo" class="text-xs font-black uppercase text-white"></h3>
+            <button onclick="document.getElementById('modal-extras').classList.add('hidden')" class="w-8 h-8 bg-gray-800 rounded-full text-white font-bold">&times;</button>
         </header>
         <div id="modal-corpo" class="p-3 overflow-y-auto pb-20"></div>
+    </div>
+
+    <div id="modal-cadastro" class="fixed inset-0 bg-black/95 z-[800] hidden flex items-center justify-center p-4">
+        <div class="bg-[#11171e] p-8 rounded-3xl w-full max-w-sm border border-gray-800 text-center">
+            <h2 class="text-xl font-black italic mb-6 uppercase">Criar Conta</h2>
+            <input id="cad-nome" type="text" placeholder="Nome" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-3 outline-none">
+            <input id="cad-email" type="email" placeholder="E-mail" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-3 outline-none">
+            <input id="cad-senha" type="password" placeholder="Senha" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-6 outline-none">
+            <button onclick="realizarCadastro()" class="w-full bg-green-600 text-black font-black p-4 rounded-xl uppercase">Cadastrar</button>
+            <button onclick="document.getElementById('modal-cadastro').classList.add('hidden')" class="mt-4 text-xs text-gray-500 uppercase font-bold">Cancelar</button>
+        </div>
     </div>
 
     <script>
         const API_URL = 'https://gurilabet-v2-production.up.railway.app'; 
         let todosJogos = [];
+        let carrinho = [];
         let ligaAtiva = 'Todos';
+        let usuario = JSON.parse(localStorage.getItem('gurila_user'));
+
+        if(usuario) document.getElementById('user-area').innerHTML = `<span class="text-xs font-bold text-green-500 uppercase">${usuario.nome} (R$ ${usuario.saldo})</span>`;
 
         function traduzir(texto) {
-            const dic = { 'Brazil': 'Brasil', 'England': 'Inglaterra', 'Spain': 'Espanha', 'Italy': 'Itália', 'Germany': 'Alemanha', 'France': 'França', 'World': 'Mundial' };
+            const dic = { 'Brazil': 'Brasil', 'England': 'Inglaterra', 'Spain': 'Espanha', 'World': 'Mundial' };
             return dic[texto] || texto;
         }
 
@@ -63,17 +109,13 @@
                 todosJogos = await res.json();
                 renderizarMenuLigas();
                 renderizarVitrine();
-            } catch (e) {
-                document.getElementById('container-jogos').innerHTML = "<p class='text-center py-20 text-red-500 font-bold uppercase'>Erro de Conexão</p>";
-            }
+            } catch (e) { document.getElementById('container-jogos').innerHTML = "<p class='text-center py-20 text-red-500 font-bold'>OFFLINE</p>"; }
         }
 
         function renderizarMenuLigas() {
             const paises = [...new Set(todosJogos.map(j => traduzir(j.pais)))];
             let html = `<button onclick="filtrarLiga('Todos')" class="camp-btn ${ligaAtiva === 'Todos' ? 'active' : ''}">TODOS</button>`;
-            paises.forEach(p => {
-                html += `<button onclick="filtrarLiga('${p}')" class="camp-btn ${traduzir(ligaAtiva) === p ? 'active' : ''}">${p.toUpperCase()}</button>`;
-            });
+            paises.forEach(p => { html += `<button onclick="filtrarLiga('${p}')" class="camp-btn ${traduzir(ligaAtiva) === p ? 'active' : ''}">${p.toUpperCase()}</button>`; });
             document.getElementById('menu-campeonatos').innerHTML = html;
         }
 
@@ -89,10 +131,13 @@
             });
 
             let html = '';
-            for(let ligaNome in grupos) {
-                html += `<div class="mb-4 rounded-lg overflow-hidden border border-[#1e262f]"><div class="league-header"><img src="${grupos[ligaNome][0].logo_liga}" class="w-5 h-5 object-contain"><span>${ligaNome}</span></div>`;
-                grupos[ligaNome].forEach(j => {
+            for(let liga in grupos) {
+                html += `<div class="mb-4 rounded-lg overflow-hidden border border-[#1e262f]"><div class="league-header"><img src="${grupos[liga][0].logo_liga}" class="w-5 h-5 object-contain"><span>${liga}</span></div>`;
+                grupos[liga].forEach(j => {
                     const dt = new Date(j.data);
+                    const jogoId = j.id;
+                    const nomeJogo = `${j.home.name} x ${j.away.name}`;
+                    
                     html += `
                     <div class="match-card">
                         <div class="text-[10px] text-gray-500 font-bold w-12 text-center leading-tight">
@@ -103,9 +148,9 @@
                             <div class="flex items-center gap-2 font-bold text-[10px] uppercase text-gray-200"><img src="${j.away.logo}" class="w-4 h-4"> ${j.away.name}</div>
                         </div>
                         <div class="flex gap-1 items-center">
-                            <button class="odd-btn"><span class="text-[6px] text-gray-500 mb-0.5">1</span>${j.odds.casa}</button>
-                            <button class="odd-btn"><span class="text-[6px] text-gray-500 mb-0.5">X</span>${j.odds.empate}</button>
-                            <button class="odd-btn"><span class="text-[6px] text-gray-500 mb-0.5">2</span>${j.odds.fora}</button>
+                            <button onclick="addAposta(this, ${j.id}, 'Vencedor', 'Casa', ${j.odds.casa}, '${nomeJogo}')" class="odd-btn"><span class="text-[6px] text-gray-500 mb-0.5">1</span>${j.odds.casa}</button>
+                            <button onclick="addAposta(this, ${j.id}, 'Vencedor', 'Empate', ${j.odds.empate}, '${nomeJogo}')" class="odd-btn"><span class="text-[6px] text-gray-500 mb-0.5">X</span>${j.odds.empate}</button>
+                            <button onclick="addAposta(this, ${j.id}, 'Vencedor', 'Fora', ${j.odds.fora}, '${nomeJogo}')" class="odd-btn"><span class="text-[6px] text-gray-500 mb-0.5">2</span>${j.odds.fora}</button>
                             <button onclick="abrirMercados(${j.id})" class="w-8 h-10 bg-[#2d3741] hover:bg-green-600 hover:text-black rounded-lg text-white font-black text-xs ml-1 transition flex items-center justify-center">+${Object.keys(j.mercados || {}).length * 3}</button>
                         </div>
                     </div>`;
@@ -115,78 +160,131 @@
             document.getElementById('container-jogos').innerHTML = html;
         }
 
+        // LÓGICA DO CUPOM (CARRINHO)
+        function addAposta(el, id, mercado, opcao, odd, nome) {
+            if(el) {
+                // Remove visualmente de outros botões do mesmo jogo/mercado se quiser (opcional)
+                el.classList.toggle('odd-active');
+            }
+
+            // Verifica se já existe
+            const index = carrinho.findIndex(i => i.id === id && i.mercado === mercado && i.opcao === opcao);
+            if(index > -1) {
+                carrinho.splice(index, 1); // Remove se clicar de novo
+            } else {
+                carrinho.push({ id, mercado, opcao, odd, nome });
+            }
+            atualizarBarraCupom();
+        }
+
+        function atualizarBarraCupom() {
+            const qtd = carrinho.length;
+            if(qtd > 0) {
+                document.getElementById('cupom-bar').classList.remove('hidden');
+                document.getElementById('qtd-apostas').innerText = qtd;
+                // Calcula Odd Total (Multiplicação)
+                const oddTotal = carrinho.reduce((acc, item) => acc * parseFloat(item.odd), 1).toFixed(2);
+                document.getElementById('odd-total').innerText = oddTotal;
+            } else {
+                document.getElementById('cupom-bar').classList.add('hidden');
+            }
+        }
+
+        function abrirCupomDetalhado() {
+            const lista = document.getElementById('lista-apostas');
+            lista.innerHTML = '';
+            carrinho.forEach(item => {
+                lista.innerHTML += `
+                <div class="flex justify-between bg-black p-2 rounded border border-gray-800">
+                    <div>
+                        <div class="font-bold text-green-500">${item.mercado}: ${item.opcao}</div>
+                        <div class="text-[10px] uppercase">${item.nome}</div>
+                    </div>
+                    <div class="font-black text-lg">${item.odd}</div>
+                </div>`;
+            });
+            calcularRetorno();
+            document.getElementById('modal-cupom').classList.remove('hidden');
+        }
+
+        function calcularRetorno() {
+            const valor = document.getElementById('valor-aposta').value || 0;
+            const oddTotal = parseFloat(document.getElementById('odd-total').innerText);
+            document.getElementById('retorno-potencial').innerText = `R$ ${(valor * oddTotal).toFixed(2)}`;
+        }
+
+        async function enviarAposta() {
+            if(!usuario) { alert("Faça login primeiro!"); return; }
+            const valor = document.getElementById('valor-aposta').value;
+            const oddTotal = document.getElementById('odd-total').innerText;
+
+            const res = await fetch(`${API_URL}/api/finalizar`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({ usuario_id: usuario.id, valor, apostas: carrinho, odd_total: oddTotal })
+            });
+            const data = await res.json();
+            if(data.sucesso) {
+                alert(`Aposta Feita! Código: ${data.codigo}`);
+                location.reload();
+            } else {
+                alert("Erro ao apostar.");
+            }
+        }
+
+        // Lógica do Modal de Mercados Extras
         function abrirMercados(id) {
             const j = todosJogos.find(item => item.id === id);
             if(!j || !j.mercados) return;
-
             document.getElementById('modal-titulo').innerText = `${j.home.name} X ${j.away.name}`;
             const m = j.mercados;
-            
-            let html = `
-                <div class="market-box">
-                    <div class="market-title">Dupla Chance</div>
-                    <div class="market-grid-3">
-                        <div class="market-btn">Casa/Empate <span>${m.dupla_chance.casa_empate}</span></div>
-                        <div class="market-btn">Casa/Fora <span>${m.dupla_chance.casa_fora}</span></div>
-                        <div class="market-btn">Empate/Fora <span>${m.dupla_chance.empate_fora}</span></div>
-                    </div>
-                </div>
+            const nomeJogo = `${j.home.name} x ${j.away.name}`;
 
-                <div class="market-box">
-                    <div class="market-title">Ambas Equipes Marcam</div>
-                    <div class="market-grid">
-                        <div class="market-btn">Sim <span>${m.ambas_marcam.sim}</span></div>
-                        <div class="market-btn">Não <span>${m.ambas_marcam.nao}</span></div>
-                    </div>
-                </div>
-
-                <div class="market-box">
-                    <div class="market-title">Total de Gols</div>
-                    <div class="market-grid">
-                        <div class="market-btn">Mais 1.5 <span>${m.total_gols.mais_15}</span></div>
-                        <div class="market-btn">Menos 1.5 <span>${m.total_gols.menos_15}</span></div>
-                        <div class="market-btn">Mais 2.5 <span>${m.total_gols.mais_25}</span></div>
-                        <div class="market-btn">Menos 2.5 <span>${m.total_gols.menos_25}</span></div>
-                        <div class="market-btn">Mais 3.5 <span>${m.total_gols.mais_35}</span></div>
-                        <div class="market-btn">Menos 3.5 <span>${m.total_gols.menos_35}</span></div>
-                    </div>
-                </div>
-
-                <div class="market-box">
-                    <div class="market-title">Placar Exato (Principais)</div>
-                    <div class="market-grid-3">
-                        <div class="market-btn">1-0 <span>${m.placar_exato["1-0"]}</span></div>
-                        <div class="market-btn">2-0 <span>${m.placar_exato["2-0"]}</span></div>
-                        <div class="market-btn">2-1 <span>${m.placar_exato["2-1"]}</span></div>
-                        <div class="market-btn">0-0 <span>${m.placar_exato["0-0"]}</span></div>
-                        <div class="market-btn">0-1 <span>${m.placar_exato["0-1"]}</span></div>
-                        <div class="market-btn">Outros <span>--</span></div>
-                    </div>
-                </div>
-
-                <div class="market-box">
-                    <div class="market-title">Resultado no Intervalo</div>
-                    <div class="market-grid-3">
-                        <div class="market-btn">Casa <span>${m.intervalo.casa_ht}</span></div>
-                        <div class="market-btn">Empate <span>${m.intervalo.empate_ht}</span></div>
-                        <div class="market-btn">Fora <span>${m.intervalo.fora_ht}</span></div>
-                    </div>
-                </div>
-
-                <div class="market-box">
-                    <div class="market-title">Escanteios</div>
-                    <div class="market-grid">
-                        <div class="market-btn">Mais de 8.0 <span>${m.escanteios.mais_8}</span></div>
-                        <div class="market-btn">Mais de 10.0 <span>${m.escanteios.mais_10}</span></div>
-                    </div>
+            // Helper para criar botão dentro do modal
+            const btn = (mercado, sel, odd) => `
+                <div onclick="addAposta(this, ${j.id}, '${mercado}', '${sel}', ${odd}, '${nomeJogo}')" class="market-btn hover:border-green-500 transition">
+                    ${sel} <span>${odd}</span>
                 </div>`;
+
+            let html = `
+                <div class="market-box"><div class="market-title">Dupla Chance</div><div class="market-grid-3">
+                    ${btn('Dupla Chance', 'Casa/Empate', m.dupla_chance.casa_empate)}
+                    ${btn('Dupla Chance', 'Casa/Fora', m.dupla_chance.casa_fora)}
+                    ${btn('Dupla Chance', 'Empate/Fora', m.dupla_chance.empate_fora)}
+                </div></div>
+
+                <div class="market-box"><div class="market-title">Ambas Marcam</div><div class="market-grid">
+                    ${btn('Ambas Marcam', 'Sim', m.ambas_marcam.sim)}
+                    ${btn('Ambas Marcam', 'Não', m.ambas_marcam.nao)}
+                </div></div>
+                
+                <div class="market-box"><div class="market-title">Gols (2.5)</div><div class="market-grid">
+                    ${btn('Gols', 'Mais 2.5', m.total_gols.mais_25)}
+                    ${btn('Gols', 'Menos 2.5', m.total_gols.menos_25)}
+                </div></div>`;
             
             document.getElementById('modal-corpo').innerHTML = html;
             document.getElementById('modal-extras').classList.remove('hidden');
             document.getElementById('modal-extras').classList.add('flex');
         }
 
-        function fecharMercados() { document.getElementById('modal-extras').classList.add('hidden'); }
+        // Cadastro Simplificado
+        async function realizarCadastro() {
+            const nome = document.getElementById('cad-nome').value;
+            const email = document.getElementById('cad-email').value;
+            const senha = document.getElementById('cad-senha').value;
+            const res = await fetch(`${API_URL}/api/cadastro`, {
+                method: 'POST',
+                headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify({nome, email, senha})
+            });
+            const data = await res.json();
+            if(data.sucesso) {
+                localStorage.setItem('gurila_user', JSON.stringify(data.usuario));
+                location.reload();
+            } else { alert(data.erro); }
+        }
+
         window.onload = carregar;
     </script>
 </body>
