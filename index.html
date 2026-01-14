@@ -3,173 +3,103 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GURILA BET | O Brabo</title>
+    <title>GURILA BET | Futebol</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background-color: #060a0d; color: #e2e8f0; }
+        body { background-color: #060a0d; color: #e2e8f0; scrollbar-width: none; }
         .bg-card { background-color: #12171d; }
-        .border-green { border-color: #00ff88; }
-        .text-green { color: #00ff88; }
         .btn-odd { background-color: #1c242c; transition: all 0.2s; }
         .btn-odd:hover { background-color: #00ff88; color: #000; }
+        .selected-odd { background-color: #00ff88 !important; color: #000 !important; }
     </style>
 </head>
 <body class="font-sans">
 
     <header class="p-4 flex justify-between items-center sticky top-0 bg-[#060a0d] z-50 border-b border-gray-800">
         <div class="flex items-center gap-3">
-            <i class="fas fa-bars text-xl"></i>
-            <h1 class="text-xl font-black italic tracking-tighter text-white">
-                GURILA<span class="text-green-500 italic">BET</span> 🦍
-            </h1>
+            <h1 class="text-xl font-black italic tracking-tighter text-white">GURILA<span class="text-green-500">BET</span> 🦍</h1>
         </div>
-        <button class="bg-green-600 text-black px-4 py-1.5 rounded-lg font-bold text-sm">Entrar</button>
+        <div class="flex gap-2">
+            <button class="text-xs font-bold text-gray-400 px-3">Cadastrar</button>
+            <button class="bg-green-600 text-black px-4 py-1.5 rounded-lg font-bold text-xs uppercase">Entrar</button>
+        </div>
     </header>
 
-    <nav class="flex overflow-x-auto p-4 gap-6 no-scrollbar bg-[#0c1117] border-b border-gray-800">
-        <div class="flex flex-col items-center gap-1 min-w-[60px] text-green-500">
-            <i class="fas fa-futbol text-2xl"></i>
-            <span class="text-[10px] font-bold uppercase">Futebol</span>
-        </div>
-        <div class="flex flex-col items-center gap-1 min-w-[60px] text-gray-500">
-            <i class="fas fa-basketball-ball text-2xl"></i>
-            <span class="text-[10px] font-bold uppercase">Basquete</span>
-        </div>
-        <div class="flex flex-col items-center gap-1 min-w-[60px] text-gray-500">
-            <i class="fas fa-hand-fist text-2xl"></i>
-            <span class="text-[10px] font-bold uppercase">Luta</span>
-        </div>
-        <div class="flex flex-col items-center gap-1 min-w-[60px] text-gray-500">
-            <i class="fas fa-table-tennis text-2xl"></i>
-            <span class="text-[10px] font-bold uppercase">Tênis</span>
-        </div>
-        <div class="flex flex-col items-center gap-1 min-w-[60px] text-gray-500">
-            <i class="fas fa-gamepad text-2xl"></i>
-            <span class="text-[10px] font-bold uppercase">E-sports</span>
+    <nav class="flex p-4 gap-4 bg-[#0c1117] border-b border-gray-800 overflow-hidden">
+        <div class="flex items-center gap-2 text-green-500 border-b-2 border-green-500 pb-2 px-2">
+            <i class="fas fa-futbol"></i>
+            <span class="text-xs font-bold uppercase">Futebol</span>
         </div>
     </nav>
 
-    <div class="p-4">
-        <div class="relative bg-gradient-to-br from-green-900 to-black rounded-2xl p-6 border border-green-900/50 overflow-hidden shadow-2xl">
-            <div class="relative z-10">
-                <p class="text-[10px] font-bold text-green-400 mb-1 italic">🔥 MÚLTIPLA TURBINADA</p>
-                <h2 class="text-xl font-black italic leading-tight">BÔNUS DE 100% NO<br>PRIMEIRO DEPÓSITO</h2>
-                <button class="mt-4 bg-green-500 text-black text-[10px] font-black px-4 py-2 rounded-full uppercase tracking-widest">Aproveitar</button>
-            </div>
-            <i class="fas fa-crown absolute right-[-10px] bottom-[-10px] text-8xl text-green-500 opacity-20 rotate-12"></i>
-        </div>
-    </div>
-
-    <div class="px-4 mb-4">
-        <div class="bg-[#12171d] p-3 rounded-xl flex justify-between items-center border border-gray-800">
-            <span class="text-sm font-bold text-gray-400 italic">Selecionar campeonato</span>
-            <i class="fas fa-chevron-down text-gray-600 text-xs"></i>
-        </div>
-    </div>
-
-    <main class="px-4 pb-40">
-        <div class="flex items-center gap-2 mb-4">
-            <i class="fas fa-trophy text-green-500 text-sm"></i>
-            <h3 class="text-sm font-black uppercase tracking-tighter italic">Eventos em Destaque</h3>
+    <main class="px-4 pt-4 pb-40">
+        <div class="flex items-center justify-between mb-4">
+            <h3 class="text-xs font-black uppercase tracking-tighter italic flex items-center gap-2">
+                <i class="fas fa-trophy text-green-500"></i> Jogos em Destaque
+            </h3>
+            <span class="text-[10px] text-gray-500">Ao Vivo (0)</span>
         </div>
 
         <div id="games-container" class="space-y-4">
-            </div>
+            <div class="text-center py-20"><i class="fas fa-circle-notch fa-spin text-green-500 text-2xl"></i></div>
+        </div>
     </main>
 
     <footer class="fixed bottom-0 left-0 right-0 bg-[#0c1117] border-t border-gray-800 p-2 flex justify-around items-center z-[100]">
-        <div class="flex flex-col items-center text-green-500">
-            <i class="fas fa-home text-xl"></i>
-            <span class="text-[9px] font-bold">Início</span>
-        </div>
-        <div class="flex flex-col items-center text-gray-500">
-            <i class="fas fa-search text-xl"></i>
-            <span class="text-[9px] font-bold">Pesquisar</span>
-        </div>
-        <div class="relative">
-            <div class="bg-green-600 w-12 h-12 rounded-full flex items-center justify-center -mt-8 border-4 border-[#060a0d] shadow-lg">
-                <i class="fas fa-ticket-alt text-black"></i>
-            </div>
-        </div>
-        <div class="flex flex-col items-center text-gray-500">
-            <i class="fas fa-history text-xl"></i>
-            <span class="text-[9px] font-bold">Apostas</span>
-        </div>
-        <div class="flex flex-col items-center text-gray-500" onclick="window.location.href='/admin'">
-            <i class="fas fa-user text-xl"></i>
-            <span class="text-[9px] font-bold">Perfil</span>
-        </div>
+        <div class="flex flex-col items-center text-green-500"><i class="fas fa-home text-lg"></i><span class="text-[9px] font-bold">Início</span></div>
+        <div class="flex flex-col items-center text-gray-500"><i class="fas fa-search text-lg"></i><span class="text-[9px] font-bold">Busca</span></div>
+        <div class="relative"><div class="bg-green-600 w-12 h-12 rounded-full flex items-center justify-center -mt-8 border-4 border-[#060a0d] shadow-lg"><i class="fas fa-file-invoice-dollar text-black text-xl"></i></div></div>
+        <div class="flex flex-col items-center text-gray-500"><i class="fas fa-history text-lg"></i><span class="text-[9px] font-bold">Meus Bilhetes</span></div>
+        <div class="flex flex-col items-center text-gray-500" onclick="window.location.href='/admin'"><i class="fas fa-user-cog text-lg"></i><span class="text-[9px] font-bold">Painel</span></div>
     </footer>
 
-    <div id="cart" class="fixed bottom-16 left-4 right-4 bg-[#1a222a] rounded-2xl border-t-4 border-green-500 p-5 hidden z-[110] shadow-2xl transition-all">
+    <div id="cart" class="fixed bottom-16 left-4 right-4 bg-[#1a222a] rounded-2xl border-t-4 border-green-500 p-5 hidden z-[110] shadow-2xl">
         <div id="cart-info" class="mb-4"></div>
         <div class="flex gap-2">
-            <input id="valor" type="number" placeholder="R$ 0,00" class="flex-1 bg-[#0c1117] border border-gray-700 p-3 rounded-xl text-white font-bold outline-none focus:border-green-500">
-            <button onclick="finalizar()" class="bg-green-500 text-black font-black px-6 rounded-xl uppercase italic tracking-tighter">Apostar</button>
+            <input id="valor" type="number" placeholder="R$ Valor" class="flex-1 bg-[#0c1117] border border-gray-700 p-3 rounded-xl text-white font-bold outline-none focus:border-green-500">
+            <button id="btn-finalizar" onclick="finalizar()" class="bg-green-500 text-black font-black px-6 rounded-xl uppercase italic">Finalizar</button>
         </div>
     </div>
 
     <script>
-        const API_URL = 'https://SEU-LINK-DO-RAILWAY.up.railway.app'; // <--- COLOQUE O SEU LINK AQUI
+        const API_URL = 'https://SEU-LINK-DO-RAILWAY.up.railway.app'; // <--- MUDE AQUI
 
         async function loadGames() {
             try {
                 const res = await fetch(`${API_URL}/api/jogos`);
                 const games = await res.json();
-                const container = document.getElementById('games-container');
-                
-                container.innerHTML = games.map(g => `
-                    <div class="bg-card rounded-2xl p-4 border border-gray-800 relative shadow-md">
-                        <div class="flex justify-between items-center mb-3">
-                            <span class="text-[9px] font-bold text-gray-500 flex items-center gap-1">
-                                <i class="fas fa-shield-alt text-green-500"></i> BRASIL / SÉRIE A
-                            </span>
-                            <span class="text-[9px] font-bold text-gray-600 italic">Hoje 20:00</span>
+                document.getElementById('games-container').innerHTML = games.map(g => `
+                    <div class="bg-card rounded-2xl p-4 border border-gray-800">
+                        <div class="flex justify-between text-[9px] font-bold text-gray-500 mb-3 uppercase italic">
+                            <span><i class="fas fa-globe-americas mr-1"></i> Principal</span>
+                            <span>Hoje</span>
                         </div>
-                        
-                        <div class="text-center font-bold text-md mb-4 tracking-tight">${g.times}</div>
-                        
+                        <div class="text-center font-bold text-sm mb-4 tracking-tight text-white uppercase italic">${g.times}</div>
                         <div class="grid grid-cols-3 gap-2">
-                            <button onclick="addToCart('${g.times}', 'Casa', ${g.odds.casa})" class="btn-odd p-3 rounded-xl flex flex-col items-center">
-                                <span class="text-[9px] text-gray-500 uppercase font-bold">1</span>
-                                <span class="text-sm font-black">${g.odds.casa}</span>
-                            </button>
-                            <button onclick="addToCart('${g.times}', 'Empate', ${g.odds.empate})" class="btn-odd p-3 rounded-xl flex flex-col items-center">
-                                <span class="text-[9px] text-gray-500 uppercase font-bold">X</span>
-                                <span class="text-sm font-black">${g.odds.empate}</span>
-                            </button>
-                            <button onclick="addToCart('${g.times}', 'Fora', ${g.odds.fora})" class="btn-odd p-3 rounded-xl flex flex-col items-center">
-                                <span class="text-[9px] text-gray-500 uppercase font-bold">2</span>
-                                <span class="text-sm font-black">${g.odds.fora}</span>
-                            </button>
+                            <button onclick="addToCart(this, '${g.times}', 'Casa', ${g.odds.casa})" class="btn-odd p-3 rounded-xl flex flex-col items-center"><span class="text-[9px] text-gray-500 font-bold">1</span><span class="text-sm font-black">${g.odds.casa}</span></button>
+                            <button onclick="addToCart(this, '${g.times}', 'Empate', ${g.odds.empate})" class="btn-odd p-3 rounded-xl flex flex-col items-center"><span class="text-[9px] text-gray-500 font-bold">X</span><span class="text-sm font-black">${g.odds.empate}</span></button>
+                            <button onclick="addToCart(this, '${g.times}', 'Fora', ${g.odds.fora})" class="btn-odd p-3 rounded-xl flex flex-col items-center"><span class="text-[9px] text-gray-500 font-bold">2</span><span class="text-sm font-black">${g.odds.fora}</span></button>
                         </div>
                     </div>
                 `).join('');
-            } catch (e) { 
-                console.error(e); 
-            }
+            } catch (e) { console.error(e); }
         }
 
         let cartData = null;
-        function addToCart(times, palpite, odd) {
+        function addToCart(btn, times, palpite, odd) {
+            document.querySelectorAll('.btn-odd').forEach(b => b.classList.remove('selected-odd'));
+            btn.classList.add('selected-odd');
             cartData = { times, palpite, odd };
             document.getElementById('cart').classList.remove('hidden');
-            document.getElementById('cart-info').innerHTML = `
-                <div class="flex justify-between items-center">
-                    <div>
-                        <p class="text-xs font-bold text-green-500">${times}</p>
-                        <p class="text-sm font-black">${palpite}</p>
-                    </div>
-                    <span class="text-xl font-black italic">@${odd}</span>
-                </div>
-            `;
+            document.getElementById('cart-info').innerHTML = `<div class="flex justify-between"><span class="text-xs font-bold text-green-500 uppercase italic">${times}</span><span class="text-lg font-black italic">@${odd}</span></div><p class="text-xs text-gray-400">Palpite: ${palpite}</p>`;
         }
 
         async function finalizar() {
             const valor = document.getElementById('valor').value;
-            if(!valor || valor <= 0) return alert("Digite o valor!");
-            
+            if(!valor || valor < 2) return alert("Valor mínimo R$ 2,00");
+            const btn = document.getElementById('btn-finalizar');
+            btn.innerHTML = "...";
             try {
                 const res = await fetch(`${API_URL}/api/finalizar`, {
                     method: 'POST',
@@ -177,28 +107,9 @@
                     body: JSON.stringify({...cartData, valor})
                 });
                 const data = await res.json();
-                
-                // TELA DE BILHETE IGUAL APP
-                document.body.innerHTML = `
-                    <div class="h-screen flex flex-col items-center justify-center p-8 text-center bg-[#060a0d]">
-                        <div class="w-20 h-20 bg-green-500 rounded-full flex items-center justify-center shadow-[0_0_40px_rgba(0,255,136,0.3)] mb-6">
-                            <i class="fas fa-check text-4xl text-black"></i>
-                        </div>
-                        <h2 class="text-2xl font-black italic mb-2">BILHETE REGISTRADO!</h2>
-                        <p class="text-gray-500 text-sm mb-8">Pague para validar sua aposta</p>
-                        
-                        <div class="bg-[#12171d] border-2 border-dashed border-green-500 p-6 rounded-2xl w-full">
-                            <p class="text-xs text-gray-500 mb-1 font-bold">CÓDIGO DO BILHETE</p>
-                            <p class="text-4xl font-black text-green-400 tracking-[10px] mb-4">${data.codigo}</p>
-                            <p class="text-sm font-bold">RETORNO: <span class="text-white text-lg">R$ ${data.retorno}</span></p>
-                        </div>
-                        
-                        <button onclick="location.reload()" class="mt-10 bg-white text-black font-black px-10 py-4 rounded-full uppercase italic text-sm tracking-tighter">Voltar ao Início</button>
-                    </div>
-                `;
-            } catch (e) { alert("Erro ao finalizar"); }
+                document.body.innerHTML = `<div class="h-screen flex flex-col items-center justify-center p-8 text-center"><div class="w-16 h-16 bg-green-500 rounded-full flex items-center justify-center mb-6 shadow-lg"><i class="fas fa-check text-2xl text-black"></i></div><h2 class="text-xl font-black italic mb-2 uppercase">Bilhete Gerado!</h2><div class="bg-[#12171d] border-2 border-dashed border-green-500 p-6 rounded-2xl w-full max-w-xs mb-6"><p class="text-[10px] text-gray-500 font-bold uppercase mb-2">Código de Validação</p><p class="text-4xl font-black text-green-400 tracking-[8px] mb-4">${data.codigo}</p><p class="text-xs font-bold text-gray-400">PRÊMIO: <span class="text-white">R$ ${data.retorno}</span></p></div><button onclick="location.reload()" class="bg-white text-black font-black px-8 py-3 rounded-full uppercase italic text-xs">Voltar</button></div>`;
+            } catch (e) { alert("Erro!"); }
         }
-
         window.onload = loadGames;
     </script>
 </body>
