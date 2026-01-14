@@ -25,7 +25,7 @@
 
     <main class="p-2 max-w-2xl mx-auto" id="lista-jogos">
         <div class="text-center py-20 text-gray-600 animate-pulse font-bold text-xs uppercase italic tracking-widest">
-            <i class="fas fa-futbol fa-spin text-3xl mb-4 text-green-500"></i> Sincronizando Mercados Reais...
+            Sincronizando Mercados Reais...
         </div>
     </main>
 
@@ -34,14 +34,7 @@
             <button onclick="togglePerfil()" class="text-xl"><i class="fas fa-arrow-left"></i></button>
             <h2 class="text-lg font-black uppercase italic">Minha Conta</h2>
         </header>
-        <div class="p-6 overflow-y-auto">
-            <div class="bg-gradient-to-br from-green-600 to-green-900 p-6 rounded-3xl mb-8 shadow-2xl">
-                <p class="text-[10px] font-black uppercase opacity-70">Saldo Disponível</p>
-                <h3 class="text-3xl font-bold" id="perfil-saldo">R$ 0,00</h3>
-            </div>
-            <h4 class="text-xs font-black uppercase mb-4 text-gray-500 italic tracking-widest">Meus Bilhetes</h4>
-            <div id="historico-bilhetes" class="space-y-3"></div>
-        </div>
+        <div class="p-6 overflow-y-auto" id="perfil-content"></div>
     </div>
 
     <div id="modal-cadastro" class="fixed inset-0 modal z-[400] hidden items-center justify-center p-4">
@@ -51,27 +44,25 @@
             <input id="cad-email" type="email" placeholder="E-mail" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-3 text-sm outline-none">
             <input id="cad-senha" type="password" placeholder="Senha" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-6 text-sm outline-none">
             <button onclick="realizarCadastro()" class="w-full bg-green-600 text-black font-black p-4 rounded-xl uppercase italic">Finalizar Cadastro</button>
-            <button onclick="toggleModal('modal-cadastro')" class="w-full text-gray-600 text-[10px] mt-4 font-bold uppercase underline">Voltar</button>
-        </div>
-    </div>
-
-    <div id="cart" class="fixed bottom-20 left-4 right-4 bg-[#11171e] rounded-2xl border-t-4 border-green-500 p-5 hidden z-[100] shadow-2xl">
-        <div id="info" class="mb-4"></div>
-        <div class="flex gap-2">
-            <input id="valor" type="number" placeholder="Valor R$" class="flex-1 bg-black border border-gray-800 p-4 rounded-xl text-white font-black outline-none focus:border-green-500">
-            <button onclick="finalizar()" class="bg-green-600 text-black font-black px-6 rounded-xl uppercase italic tracking-tighter shadow-lg">Apostar</button>
+            <button onclick="toggleModal('modal-cadastro')" class="w-full text-gray-500 text-[10px] mt-4 font-bold uppercase underline">Voltar</button>
         </div>
     </div>
 
     <script>
-        // --- SUBSTITUA PELO SEU LINK DO RAILWAY ---
         const API_URL = 'https://gurilabet-v2-production.up.railway.app'; 
         let usuarioLogado = JSON.parse(localStorage.getItem('gurila_user')) || null;
 
-        function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); document.getElementById(id).classList.toggle('flex'); }
-        function togglePerfil() { document.getElementById('pagina-perfil').classList.toggle('hidden'); if(!document.getElementById('pagina-perfil').classList.contains('hidden')) carregarHistorico(); }
+        // Função para mapear nome do país para código de bandeira (Acréscimo Corretivo)
+        function getFlag(pais) {
+            const flags = {
+                'Brazil': 'BR', 'England': 'GB', 'Spain': 'ES', 'Italy': 'IT', 'Germany': 'DE',
+                'France': 'FR', 'Portugal': 'PT', 'Argentina': 'AR', 'Netherlands': 'NL',
+                'Belgium': 'BE', 'Turkey': 'TR', 'Saudi-Arabia': 'SA', 'USA': 'US'
+            };
+            const code = flags[pais] || 'UN'; 
+            return `https://flagsapi.com/${code}/flat/64.png`;
+        }
 
-        // --- SISTEMA DE JOGOS CORRIGIDO (LIGAS + BANDEIRAS) ---
         async function carregarJogos() {
             try {
                 const res = await fetch(`${API_URL}/api/jogos`);
@@ -87,93 +78,48 @@
                 
                 let html = '';
                 for(let liga in ligas) {
+                    const jInfo = ligas[liga][0];
+                    // Adicionada a Bandeira do País no cabeçalho da Liga
                     html += `<div class="league-row p-3 mb-1 mt-4 text-[10px] font-black uppercase italic flex items-center gap-2 text-gray-400">
-                        <img src="${ligas[liga][0].bandeira}" class="w-5 h-5 object-contain"> ${ligas[liga][0].pais}: ${liga}
+                        <img src="${getFlag(jInfo.pais)}" class="w-5 h-4 object-cover rounded-sm shadow-md" onerror="this.src='${jInfo.bandeira}'">
+                        <span>${jInfo.pais}: ${liga}</span>
                     </div>`;
+                    
                     ligas[liga].forEach(j => {
                         const dt = new Date(j.data);
                         html += `
-                            <div class="bg-[#11171e] p-4 border-b border-gray-900 flex items-center justify-between gap-3">
-                                <div class="text-[9px] text-gray-500 font-bold w-12 text-center uppercase leading-tight border-r border-gray-800 pr-2">
-                                    ${dt.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}<br><span class="text-white">${dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</span>
+                        <div class="bg-[#11171e] p-4 border-b border-gray-900 flex items-center justify-between gap-3 shadow-lg">
+                            <div class="text-[9px] text-gray-500 font-bold w-12 text-center uppercase leading-tight border-r border-gray-800 pr-2">
+                                ${dt.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}<br><span class="text-white">${dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</span>
+                            </div>
+                            <div class="flex-1 flex flex-col gap-2">
+                                <div class="flex items-center gap-3 text-[11px] font-black uppercase tracking-tighter text-gray-200">
+                                    <img src="${j.home.logo}" class="w-5 h-5 object-contain"> ${j.home.name}
                                 </div>
-                                <div class="flex-1 flex flex-col gap-2">
-                                    <div class="flex items-center gap-3 text-[11px] font-black uppercase tracking-tighter text-gray-200">
-                                        <img src="${j.home.logo}" class="w-5 h-5 object-contain"> ${j.home.name}
-                                    </div>
-                                    <div class="flex items-center gap-3 text-[11px] font-black uppercase tracking-tighter text-gray-200">
-                                        <img src="${j.away.logo}" class="w-5 h-5 object-contain"> ${j.away.name}
-                                    </div>
+                                <div class="flex items-center gap-3 text-[11px] font-black uppercase tracking-tighter text-gray-200">
+                                    <img src="${j.away.logo}" class="w-5 h-5 object-contain"> ${j.away.name}
                                 </div>
-                                <div class="flex gap-1.5">
-                                    <button onclick="selecionar(this, '${j.home.name} x ${j.away.name}', 'Casa', ${j.odds.casa})" class="odd-btn w-14 h-11 rounded-xl text-green-500 font-black text-xs flex flex-col items-center justify-center">
-                                        <span class="text-[7px] text-gray-600 mb-0.5 font-bold">1</span>${j.odds.casa}
-                                    </button>
-                                    <button onclick="selecionar(this, '${j.home.name} x ${j.away.name}', 'Empate', ${j.odds.empate})" class="odd-btn w-14 h-11 rounded-xl text-green-500 font-black text-xs flex flex-col items-center justify-center">
-                                        <span class="text-[7px] text-gray-600 mb-0.5 font-bold">X</span>${j.odds.empate}
-                                    </button>
-                                    <button onclick="selecionar(this, '${j.home.name} x ${j.away.name}', 'Fora', ${j.odds.fora})" class="odd-btn w-14 h-11 rounded-xl text-green-500 font-black text-xs flex flex-col items-center justify-center">
-                                        <span class="text-[7px] text-gray-600 mb-0.5 font-bold">2</span>${j.odds.fora}
-                                    </button>
+                            </div>
+                            <div class="flex gap-1.5 ml-2">
+                                <div class="odd-btn w-14 h-11 rounded-xl text-[12px] font-black text-green-500 flex flex-col items-center justify-center">
+                                    <span class="text-[7px] text-gray-500 font-bold uppercase mb-0.5 tracking-tighter">1</span>${j.odds.casa}
                                 </div>
-                            </div>`;
+                                <div class="odd-btn w-14 h-11 rounded-xl text-[12px] font-black text-green-500 flex flex-col items-center justify-center">
+                                    <span class="text-[7px] text-gray-500 font-bold uppercase mb-0.5 tracking-tighter">X</span>${j.odds.empate}
+                                </div>
+                                <div class="odd-btn w-14 h-11 rounded-xl text-[12px] font-black text-green-500 flex flex-col items-center justify-center">
+                                    <span class="text-[7px] text-gray-500 font-bold uppercase mb-0.5 tracking-tighter">2</span>${j.odds.fora}
+                                </div>
+                            </div>
+                        </div>`;
                     });
                 }
                 document.getElementById('lista-jogos').innerHTML = html;
-            } catch (e) { document.getElementById('lista-jogos').innerHTML = "<div class='text-center py-20 text-red-500 font-bold uppercase text-xs italic'>Erro de Conexão com o Motor 🦍</div>"; }
+            } catch (e) { console.error(e); }
         }
 
-        // --- MANTENDO SISTEMA DE CADASTRO/LOGIN ---
-        async function realizarCadastro() {
-            const res = await fetch(`${API_URL}/api/cadastro`, {
-                method: 'POST',
-                headers: {'Content-Type': 'application/json'},
-                body: JSON.stringify({nome: document.getElementById('cad-nome').value, email: document.getElementById('cad-email').value, senha: document.getElementById('cad-senha').value})
-            });
-            const data = await res.json();
-            if(data.sucesso) { localStorage.setItem('gurila_user', JSON.stringify(data.usuario)); location.reload(); } else { alert(data.erro); }
-        }
-
-        let aposta = null;
-        function selecionar(btn, times, palpite, odd) {
-            document.querySelectorAll('.odd-btn').forEach(b => b.classList.remove('border-green-500'));
-            btn.classList.add('border-green-500');
-            aposta = { times, palpite, odd };
-            document.getElementById('cart').classList.remove('hidden');
-            document.getElementById('info').innerHTML = `<p class="text-[10px] font-black text-green-500 uppercase italic mb-1">${times}</p><p class="text-sm font-black uppercase text-white">${palpite} @${odd}</p>`;
-        }
-
-        async function finalizar() {
-            const v = document.getElementById('valor').value;
-            if(!v || v < 2) return alert("Mínimo R$ 2,00");
-            try {
-                const res = await fetch(`${API_URL}/api/finalizar`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({...aposta, valor: v, usuario_id: usuarioLogado ? usuarioLogado.id : null})
-                });
-                const d = await res.json();
-                alert(`BILHETE GERADO!\nCÓDIGO: ${d.codigo}\nPRÊMIO: R$ ${d.retorno}`);
-                location.reload();
-            } catch (e) { alert("Erro ao processar!"); }
-        }
-
-        // --- DINAMISMO DE HEADER E CARREGAMENTO ---
-        if(usuarioLogado) {
-            document.getElementById('user-area').innerHTML = `
-                <button onclick="togglePerfil()" class="flex items-center gap-2 bg-[#1c242c] p-2 px-3 rounded-xl border border-gray-800">
-                    <div class="w-6 h-6 bg-green-500 rounded-full flex items-center justify-center text-black font-black text-[10px] uppercase">${usuarioLogado.nome.charAt(0)}</div>
-                    <span class="text-white uppercase italic tracking-tighter">CONTA</span>
-                </button>`;
-        }
-
+        function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); document.getElementById(id).classList.toggle('flex'); }
         window.onload = carregarJogos;
     </script>
-
-    <nav class="fixed bottom-0 left-0 right-0 bg-[#0b0f13] border-t border-gray-800 p-3 flex justify-around items-center z-50">
-        <div class="flex flex-col items-center text-green-500" onclick="location.reload()"><i class="fas fa-home text-lg"></i><span class="text-[9px] font-bold uppercase mt-1 italic tracking-widest">Home</span></div>
-        <div class="flex flex-col items-center text-gray-600" onclick="togglePerfil()"><i class="fas fa-history text-lg"></i><span class="text-[9px] font-bold uppercase mt-1 italic tracking-widest">Apostas</span></div>
-        <div class="flex flex-col items-center text-gray-600"><i class="fas fa-user-shield text-lg"></i><span class="text-[9px] font-bold uppercase mt-1 italic tracking-widest">Admin</span></div>
-    </nav>
 </body>
 </html>
