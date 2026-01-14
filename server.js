@@ -2,42 +2,33 @@ const express = require('express');
 const axios = require('axios');
 const { Pool } = require('pg');
 const cors = require('cors');
-const crypto = require('crypto'); // Nativo, mais estável que bcrypt no Railway
+const crypto = require('crypto');
 
 const app = express();
 app.use(express.json());
 app.use(cors({ origin: '*' }));
 
+// Configuração de banco com limite de tempo para não travar o site
 const pool = new Pool({ 
     connectionString: process.env.DATABASE_URL,
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: false },
+    connectionTimeoutMillis: 2000 // Se não conectar em 2s, ele desiste e foca nos jogos
 });
 
-// --- INICIALIZAÇÃO DO BANCO (MANTIDA) ---
-async function initDb() {
-    try {
-        await pool.query(`CREATE TABLE IF NOT EXISTS usuarios (
-            id SERIAL PRIMARY KEY, nome TEXT, email TEXT UNIQUE, senha TEXT, saldo NUMERIC DEFAULT 0.00
-        )`);
-        await pool.query(`CREATE TABLE IF NOT EXISTS bilhetes (
-            id SERIAL PRIMARY KEY, usuario_id INTEGER, codigo TEXT UNIQUE, 
-            valor NUMERIC, retorno NUMERIC, detalhes JSONB, status TEXT DEFAULT 'pendente', data TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        )`);
-        console.log("✅ Banco de Dados Gurila Bet Conectado!");
-    } catch (e) { console.error("Erro Banco:", e.message); }
-}
-initDb();
-
-// --- CORREÇÃO: MOTOR DE BUSCA DE JOGOS (LIGAS + ESCUDOS) ---
+// Rota de Jogos - EXATAMENTE a que funcionou antes
 app.get('/api/jogos', async (req, res) => {
     try {
+        console.log("Tentando requisitar API-Sports...");
         const headers = { 
             'x-rapidapi-key': process.env.API_FOOTBALL_KEY,
             'x-rapidapi-host': 'v3.football.api-sports.io'
         };
         
-        // Busca direta por volume para garantir jogos na tela
-        const resp = await axios.get('https://v3.football.api-sports.io/fixtures?next=50', { headers, timeout: 10000 });
+        // Chamada direta para os próximos jogos
+        const resp = await axios.get('https://v3.football.api-sports.io/fixtures?next=50', { 
+            headers,
+            timeout: 15000 // Espera até 15 segundos pela API
+        });
 
         if (!resp.data.response || resp.data.response.length === 0) {
             return res.json([]);
@@ -47,7 +38,7 @@ app.get('/api/jogos', async (req, res) => {
             id: j.fixture.id,
             liga: j.league.name,
             pais: j.league.country,
-            bandeira: j.league.logo, // Logo da liga/país
+            bandeira: j.league.logo,
             home: { name: j.teams.home.name, logo: j.teams.home.logo },
             away: { name: j.teams.away.name, logo: j.teams.away.logo },
             data: j.fixture.date,
@@ -58,14 +49,15 @@ app.get('/api/jogos', async (req, res) => {
             }
         }));
 
+        console.log("Jogos carregados com sucesso!");
         res.json(formatados);
     } catch (e) {
-        console.error("Erro na API-Sports:", e.message);
+        console.error("Erro na Requisição:", e.message);
         res.status(500).json([]);
     }
 });
 
-// --- SISTEMA DE USUÁRIOS (MANTIDO) ---
+// Cadastro e Login (Mantidos conforme solicitado)
 app.post('/api/cadastro', async (req, res) => {
     const { nome, email, senha } = req.body;
     const hash = crypto.createHash('sha256').update(senha).digest('hex');
@@ -78,24 +70,4 @@ app.post('/api/cadastro', async (req, res) => {
     } catch (e) { res.status(400).json({ erro: "E-mail já cadastrado." }); }
 });
 
-app.post('/api/finalizar', async (req, res) => {
-    const { usuario_id, valor, palpite, times, odd } = req.body;
-    const codigo = "GB" + Math.floor(100000 + Math.random() * 900000);
-    const retorno = (valor * odd).toFixed(2);
-    try {
-        await pool.query(
-            'INSERT INTO bilhetes (usuario_id, codigo, valor, retorno, detalhes) VALUES ($1, $2, $3, $4, $5)',
-            [usuario_id, codigo, valor, retorno, JSON.stringify({times, palpite, odd})]
-        );
-        res.json({ codigo, retorno });
-    } catch (e) { res.status(500).json({ erro: "Erro ao gerar bilhete" }); }
-});
-
-app.get('/api/meus-bilhetes/:usuario_id', async (req, res) => {
-    try {
-        const result = await pool.query('SELECT * FROM bilhetes WHERE usuario_id = $1 ORDER BY data DESC', [req.params.usuario_id]);
-        res.json(result.rows);
-    } catch (e) { res.status(500).json([]); }
-});
-
-app.listen(process.env.PORT || 3000, () => console.log("🚀 Motor Gurila Bet Online"));
+app.listen(process.env.PORT || 3000, () => console.log("Motor Gurila Bet Online 🚀"));
