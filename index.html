@@ -2,35 +2,41 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GURILA BET | PRO</title>
+    <title>GURILA BET | PROFESSIONAL</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { background: #0b0f12; color: #fff; font-family: sans-serif; }
-        .odd-btn { background: #1a2128; border: 1px solid #2d3741; transition: 0.2s; }
-        .odd-btn:hover { border-color: #00ff88; }
-        .league-row { background: #151c24; border-left: 4px solid #00ff88; }
+        body { background: #060a0d; color: #fff; font-family: 'Inter', sans-serif; }
+        .odd-btn { background: #1c242c; border: 1px solid #2d3741; transition: 0.2s; }
+        .odd-btn:hover { border-color: #00ff88; color: #00ff88; }
+        .league-header { background: linear-gradient(90deg, #12171d 0%, #060a0d 100%); border-left: 4px solid #00ff88; }
     </style>
 </head>
-<body class="pb-20">
-    <header class="p-4 bg-[#0b0f12] flex justify-between items-center sticky top-0 z-50 border-b border-gray-800">
-        <h1 class="text-xl font-black italic uppercase tracking-tighter">GOL DA <span class="text-green-500 italic">SORTE</span></h1>
-        <button class="bg-green-600 text-black px-4 py-1.5 rounded font-bold text-xs uppercase">Entrar</button>
+<body class="pb-32">
+    <header class="p-4 bg-[#0b0f13] border-b border-gray-800 flex justify-between items-center sticky top-0 z-50">
+        <h1 class="text-2xl font-black italic tracking-tighter uppercase text-white">Gurila<span class="text-green-500">Bet</span> 🦍</h1>
+        <div class="flex gap-2">
+            <button class="bg-[#1e262f] text-gray-400 px-3 py-1.5 rounded-lg font-bold text-[10px] uppercase">Login</button>
+            <button class="bg-green-600 text-black px-4 py-1.5 rounded-lg font-bold text-[10px] uppercase">Cadastrar</button>
+        </div>
     </header>
 
     <main class="p-2 max-w-2xl mx-auto" id="lista">
-        <div class="flex justify-center py-20 animate-pulse text-gray-600 font-bold uppercase italic text-xs">Sincronizando Mercados...</div>
+        <div class="flex flex-col items-center py-20 text-gray-600 animate-pulse">
+            <i class="fas fa-futbol fa-spin text-3xl mb-4 text-green-500"></i>
+            <p class="text-[10px] font-black uppercase tracking-widest">Sincronizando Jogos Reais...</p>
+        </div>
     </main>
 
     <script>
-        const API_URL = 'https://gurilabet-v2-production.up.railway.app'; // <--- SEU LINK DO RAILWAY
+        // CERTIFIQUE-SE QUE ESTE É O SEU LINK DO RAILWAY
+        const API_URL = 'https://gurilabet-v2-production.up.railway.app'; 
 
         async function carregar() {
             try {
                 const res = await fetch(`${API_URL}/api/jogos`);
                 const jogos = await res.json();
                 
-                // Agrupar jogos por liga
                 const ligas = {};
                 jogos.forEach(j => {
                     if (!ligas[j.liga]) ligas[j.liga] = [];
@@ -39,45 +45,84 @@
 
                 let html = '';
                 for (const liga in ligas) {
-                    html += `<div class="league-row p-2 mb-1 mt-4 text-[10px] font-bold uppercase italic flex items-center gap-2">
-                        <img src="${ligas[liga][0].bandeira}" class="w-4 h-4"> ${liga}
+                    html += `<div class="league-header p-3 mb-1 mt-4 text-[10px] font-black uppercase italic flex items-center gap-2 text-gray-400">
+                        <i class="fas fa-trophy text-green-500"></i> ${liga}
                     </div>`;
                     
                     ligas[liga].forEach(j => {
                         const dt = new Date(j.data);
                         html += `
-                        <div class="bg-[#10161d] p-3 border-b border-gray-800 flex items-center justify-between gap-2">
-                            <div class="text-[9px] text-gray-500 font-bold w-10 text-center uppercase leading-tight">
-                                ${dt.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}<br>${dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}
+                        <div class="bg-[#11171e] p-4 border-b border-gray-800 flex items-center justify-between gap-3 shadow-lg">
+                            <div class="text-[9px] text-gray-500 font-bold w-12 text-center uppercase leading-tight border-r border-gray-800 pr-2">
+                                ${dt.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}<br>
+                                <span class="text-white">${dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</span>
                             </div>
-                            <div class="flex-1 flex flex-col gap-1">
-                                <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-tighter">
-                                    <img src="${j.home.logo}" class="w-4 h-4 object-contain"> ${j.home.name}
+                            <div class="flex-1 flex flex-col gap-2">
+                                <div class="flex items-center gap-3 text-[11px] font-black uppercase tracking-tighter text-gray-200">
+                                    <img src="${j.home.logo}" class="w-5 h-5 object-contain"> ${j.home.name}
                                 </div>
-                                <div class="flex items-center gap-2 text-[10px] font-bold uppercase tracking-tighter">
-                                    <img src="${j.away.logo}" class="w-4 h-4 object-contain"> ${j.away.name}
+                                <div class="flex items-center gap-3 text-[11px] font-black uppercase tracking-tighter text-gray-200">
+                                    <img src="${j.away.logo}" class="w-5 h-5 object-contain"> ${j.away.name}
                                 </div>
                             </div>
-                            <div class="flex gap-1">
-                                <button class="odd-btn w-12 h-10 rounded text-[11px] font-black text-green-500 flex flex-col items-center justify-center">
-                                    <span class="text-[7px] text-gray-500 font-bold uppercase">1</span>${j.odds.casa}
+                            <div class="flex gap-1.5 ml-2">
+                                <button onclick="selecionar(this, '${j.home.name} x ${j.away.name}', 'Casa', ${j.odds.casa})" class="odd-btn w-14 h-11 rounded-xl text-[12px] font-black text-green-500 flex flex-col items-center justify-center">
+                                    <span class="text-[7px] text-gray-500 font-bold uppercase mb-0.5">1</span>${j.odds.casa}
                                 </button>
-                                <button class="odd-btn w-12 h-10 rounded text-[11px] font-black text-green-500 flex flex-col items-center justify-center">
-                                    <span class="text-[7px] text-gray-500 font-bold uppercase">X</span>${j.odds.empate}
+                                <button onclick="selecionar(this, '${j.home.name} x ${j.away.name}', 'Empate', ${j.odds.empate})" class="odd-btn w-14 h-11 rounded-xl text-[12px] font-black text-green-500 flex flex-col items-center justify-center">
+                                    <span class="text-[7px] text-gray-500 font-bold uppercase mb-0.5">X</span>${j.odds.empate}
                                 </button>
-                                <button class="odd-btn w-12 h-10 rounded text-[11px] font-black text-green-500 flex flex-col items-center justify-center">
-                                    <span class="text-[7px] text-gray-500 font-bold uppercase">2</span>${j.odds.fora}
+                                <button onclick="selecionar(this, '${j.home.name} x ${j.away.name}', 'Fora', ${j.odds.fora})" class="odd-btn w-14 h-11 rounded-xl text-[12px] font-black text-green-500 flex flex-col items-center justify-center">
+                                    <span class="text-[7px] text-gray-500 font-bold uppercase mb-0.5">2</span>${j.odds.fora}
                                 </button>
                             </div>
                         </div>`;
                     });
                 }
-                document.getElementById('lista').innerHTML = html || "<p class='text-center p-10 font-bold'>SEM JOGOS NO MOMENTO</p>";
+                document.getElementById('lista').innerHTML = html || "<p class='text-center p-10 font-bold uppercase text-xs italic text-gray-500'>Nenhum jogo disponível agora</p>";
             } catch (e) { 
-                document.getElementById('lista').innerHTML = "<p class='text-center p-10 text-red-500 font-bold italic uppercase text-xs'>Erro de Conexão com o Motor</p>";
+                document.getElementById('lista').innerHTML = "<p class='text-center p-10 text-red-500 font-bold italic uppercase text-xs'>Erro de Conexão com o Motor 🦍</p>";
             }
+        }
+
+        let aposta = null;
+        function selecionar(btn, times, palpite, odd) {
+            document.querySelectorAll('.odd-btn').forEach(b => b.style.borderColor = "#2d3741");
+            btn.style.borderColor = "#00ff88";
+            aposta = { times, palpite, odd };
+            document.getElementById('cart').classList.remove('hidden');
+            document.getElementById('info').innerHTML = `<p class="text-[10px] font-black text-green-500 uppercase italic mb-1">${times}</p><p class="text-sm font-black uppercase">${palpite} @${odd}</p>`;
+        }
+
+        async function finalizar() {
+            const v = document.getElementById('valor').value;
+            if(!v || v < 2) return alert("Mínimo R$ 2,00");
+            try {
+                const res = await fetch(`${API_URL}/api/finalizar`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({...aposta, valor: v})
+                });
+                const d = await res.json();
+                alert(`BILHETE GERADO!\nCÓDIGO: ${d.codigo}\nPRÊMIO: R$ ${d.retorno}`);
+                location.reload();
+            } catch (e) { alert("Erro ao processar!"); }
         }
         window.onload = carregar;
     </script>
+
+    <nav class="fixed bottom-0 left-0 right-0 bg-[#0b0f13] border-t border-gray-800 p-3 flex justify-around items-center z-50">
+        <div class="flex flex-col items-center text-green-500"><i class="fas fa-home text-lg"></i><span class="text-[9px] font-bold uppercase mt-1 italic">Home</span></div>
+        <div class="flex flex-col items-center text-gray-600"><i class="fas fa-history text-lg"></i><span class="text-[9px] font-bold uppercase mt-1 italic">Apostas</span></div>
+        <div class="flex flex-col items-center text-gray-600" onclick="alert('Admin: /admin.html')"><i class="fas fa-user-shield text-lg"></i><span class="text-[9px] font-bold uppercase mt-1 italic">Painel</span></div>
+    </nav>
+
+    <div id="cart" class="fixed bottom-20 left-4 right-4 bg-[#11171e] rounded-2xl border-t-4 border-green-500 p-5 hidden z-[100] shadow-[0_-10px_50px_rgba(0,0,0,0.9)]">
+        <div id="info" class="mb-4"></div>
+        <div class="flex gap-2">
+            <input id="valor" type="number" placeholder="Valor R$" class="flex-1 bg-black border border-gray-800 p-4 rounded-xl text-white font-black outline-none focus:border-green-500">
+            <button onclick="finalizar()" class="bg-green-600 text-black font-black px-6 rounded-xl uppercase italic tracking-tighter shadow-lg">Apostar</button>
+        </div>
+    </div>
 </body>
 </html>
