@@ -40,7 +40,7 @@
         
         /* Modais */
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 1000; display: none; align-items: flex-end; }
-        .modal-center { align-items: center; justify-content: center; } /* Para Login/Validar */
+        .modal-center { align-items: center; justify-content: center; } 
         .modal-content { background: #1b1b1b; width: 100%; height: 90vh; border-radius: 20px 20px 0 0; display: flex; flex-col; border-top: 1px solid #333; }
         .modal-box { background: #1b1b1b; padding: 20px; border-radius: 12px; width: 90%; max-width: 350px; border: 1px solid #333; }
         
@@ -57,10 +57,10 @@
 </head>
 <body class="pb-24">
 
-    <header class="p-4 flex justify-between items-center bg-[#1b1b1b]">
-        <div class="text-xl font-black italic tracking-tighter">GURILA<span class="text-[#00ff88]">BET</span> <span class="text-[9px] text-gray-500 not-italic ml-1">FUTEBOL</span></div>
+    <header class="p-4 flex justify-between items-center bg-[#1b1b1b] border-b border-[#333]">
+        <div class="text-xl font-black italic tracking-tighter">GURILA<span class="text-[#00ff88]">BET</span> <span class="text-[9px] text-[#00ff88] border border-[#00ff88] rounded px-1 ml-1">V2.0</span></div>
         <div id="user-area">
-            <button onclick="abrirModalAuth()" class="text-xs font-bold bg-[#333] px-4 py-2 rounded text-[#00ff88] border border-[#00ff88]">ENTRAR</button>
+            <button onclick="abrirModalAuth()" class="text-xs font-bold bg-[#333] px-4 py-2 rounded text-[#00ff88] border border-[#00ff88] hover:bg-[#00ff88] hover:text-black transition">ENTRAR</button>
         </div>
     </header>
 
@@ -80,7 +80,7 @@
         <h3 class="text-[10px] font-black text-gray-600 uppercase mb-2 ml-2">Competições</h3>
         <div id="menu-campeonatos" class="flex flex-col">
             </div>
-        <button onclick="filtrarLiga('Todos')" class="w-full mt-2 bg-[#222] text-[#00ff88] font-bold text-xs py-3 rounded border border-[#333] uppercase">Ver Todos os Jogos</button>
+        <button onclick="filtrarLiga('Todos')" class="w-full mt-2 bg-[#222] text-[#00ff88] font-bold text-xs py-3 rounded border border-[#333] uppercase hover:bg-[#333] transition">Ver Todos os Jogos</button>
     </div>
 
     <main id="container-jogos" class="max-w-3xl mx-auto p-2 pb-40 min-h-[50vh]">
@@ -106,7 +106,7 @@
         <div class="modal-content">
             <div class="p-4 border-b border-[#333] flex justify-between items-center bg-[#222] rounded-t-[20px]">
                 <h3 class="font-bold text-[#00ff88]">CUPOM DE APOSTA</h3>
-                <button onclick="toggleModal('modal-cupom')" class="w-8 h-8 rounded-full bg-[#333] text-white font-bold">✕</button>
+                <button onclick="toggleModal('modal-cupom')" class="w-8 h-8 rounded-full bg-[#333] text-white font-bold hover:bg-red-500 transition">✕</button>
             </div>
             
             <div id="lista-apostas" class="flex-1 overflow-y-auto p-4 space-y-3"></div>
@@ -140,8 +140,8 @@
                 </div>
                 
                 <div class="grid grid-cols-3 gap-2">
-                    <button onclick="limparCupom()" class="col-span-1 bg-[#333] text-red-500 font-bold py-3 rounded-lg uppercase text-xs">Limpar</button>
-                    <button onclick="enviarAposta()" class="col-span-2 bg-[#00ff88] text-black font-black py-3 rounded-lg uppercase text-xs shadow-[0_0_15px_rgba(0,255,136,0.4)]">Gerar Bilhete 🦍</button>
+                    <button onclick="limparCupom()" class="col-span-1 bg-[#333] text-red-500 font-bold py-3 rounded-lg uppercase text-xs hover:bg-red-900 transition">Limpar</button>
+                    <button onclick="enviarAposta()" class="col-span-2 bg-[#00ff88] text-black font-black py-3 rounded-lg uppercase text-xs shadow-[0_0_15px_rgba(0,255,136,0.4)] hover:bg-white transition">Gerar Bilhete 🦍</button>
                 </div>
             </div>
         </div>
@@ -154,7 +154,7 @@
                     <h3 id="titulo-mercado" class="font-bold text-white text-xs uppercase">JOGO</h3>
                     <span class="text-[9px] text-[#00ff88]">Mercados Extras</span>
                 </div>
-                <button onclick="toggleModal('modal-mercados')" class="text-gray-500 font-bold">✕</button>
+                <button onclick="toggleModal('modal-mercados')" class="text-gray-500 font-bold hover:text-white">✕</button>
             </div>
             <div id="lista-mercados" class="flex-1 overflow-y-auto p-4 pb-20 space-y-2"></div>
         </div>
@@ -162,35 +162,47 @@
 
     <div id="modal-auth" class="modal-overlay modal-center">
         <div class="modal-box">
-            <div class="flex justify-center mb-4">
-                <button onclick="mudarAbaAuth('login')" id="tab-login" class="px-4 py-2 text-sm font-bold text-[#00ff88] border-b-2 border-[#00ff88]">Entrar</button>
-                <button onclick="mudarAbaAuth('cadastro')" id="tab-cadastro" class="px-4 py-2 text-sm font-bold text-gray-500 border-b-2 border-transparent">Cadastrar</button>
+            <div class="flex justify-center mb-6 border-b border-[#333]">
+                <button onclick="mudarAbaAuth('login')" id="tab-login" class="px-6 py-2 text-sm font-bold text-[#00ff88] border-b-2 border-[#00ff88] w-1/2">Entrar</button>
+                <button onclick="mudarAbaAuth('cadastro')" id="tab-cadastro" class="px-6 py-2 text-sm font-bold text-gray-500 border-b-2 border-transparent w-1/2">Cadastrar</button>
             </div>
 
             <div id="form-login">
-                <input id="log-email" type="email" placeholder="E-mail" class="w-full bg-black p-3 mb-2 rounded border border-[#333] text-white text-sm outline-none">
-                <input id="log-senha" type="password" placeholder="Senha" class="w-full bg-black p-3 mb-4 rounded border border-[#333] text-white text-sm outline-none">
-                <button onclick="fazerLogin()" class="w-full bg-[#00ff88] text-black font-bold p-3 rounded uppercase text-xs">Acessar Conta</button>
+                <div class="mb-4">
+                    <label class="block text-[10px] text-gray-400 mb-1 uppercase font-bold">Seu E-mail</label>
+                    <input id="log-email" type="email" class="w-full bg-black p-3 rounded border border-[#333] text-white text-sm outline-none focus:border-[#00ff88]">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-[10px] text-gray-400 mb-1 uppercase font-bold">Sua Senha</label>
+                    <input id="log-senha" type="password" class="w-full bg-black p-3 rounded border border-[#333] text-white text-sm outline-none focus:border-[#00ff88]">
+                </div>
+                <button onclick="fazerLogin()" class="w-full bg-[#00ff88] text-black font-black p-3 rounded uppercase text-xs hover:bg-white transition">Acessar Conta</button>
             </div>
 
             <div id="form-cadastro" class="hidden">
-                <input id="cad-nome" type="text" placeholder="Nome Completo" class="w-full bg-black p-3 mb-2 rounded border border-[#333] text-white text-sm outline-none">
-                <input id="cad-email" type="email" placeholder="E-mail" class="w-full bg-black p-3 mb-2 rounded border border-[#333] text-white text-sm outline-none">
-                <input id="cad-senha" type="password" placeholder="Crie uma Senha" class="w-full bg-black p-3 mb-4 rounded border border-[#333] text-white text-sm outline-none">
-                <button onclick="fazerCadastro()" class="w-full bg-[#00ff88] text-black font-bold p-3 rounded uppercase text-xs">Criar Conta</button>
+                <div class="mb-3">
+                    <input id="cad-nome" type="text" placeholder="Nome Completo" class="w-full bg-black p-3 rounded border border-[#333] text-white text-sm outline-none focus:border-[#00ff88]">
+                </div>
+                <div class="mb-3">
+                    <input id="cad-email" type="email" placeholder="E-mail" class="w-full bg-black p-3 rounded border border-[#333] text-white text-sm outline-none focus:border-[#00ff88]">
+                </div>
+                <div class="mb-6">
+                    <input id="cad-senha" type="password" placeholder="Crie uma Senha" class="w-full bg-black p-3 rounded border border-[#333] text-white text-sm outline-none focus:border-[#00ff88]">
+                </div>
+                <button onclick="fazerCadastro()" class="w-full bg-[#00ff88] text-black font-black p-3 rounded uppercase text-xs hover:bg-white transition">Criar Conta</button>
             </div>
 
-            <button onclick="toggleModal('modal-auth')" class="mt-4 text-xs text-gray-500 w-full text-center">Fechar</button>
+            <button onclick="toggleModal('modal-auth')" class="mt-6 text-xs text-gray-500 w-full text-center hover:text-white">Cancelar</button>
         </div>
     </div>
 
     <div id="modal-validador" class="modal-overlay modal-center">
         <div class="modal-box text-center">
             <h3 class="mb-4 font-bold text-[#00ff88] uppercase">Validar Bilhete</h3>
-            <input id="val-codigo" type="text" placeholder="CÓDIGO (Ex: GB1234)" class="w-full bg-black p-3 mb-4 rounded border border-[#333] text-white text-center uppercase font-bold outline-none">
-            <button onclick="validar()" class="w-full bg-white text-black font-bold p-3 rounded uppercase text-xs">Verificar</button>
+            <input id="val-codigo" type="text" placeholder="CÓDIGO (Ex: GB1234)" class="w-full bg-black p-3 mb-4 rounded border border-[#333] text-white text-center uppercase font-bold outline-none focus:border-[#00ff88]">
+            <button onclick="validar()" class="w-full bg-white text-black font-bold p-3 rounded uppercase text-xs hover:bg-gray-200">Verificar</button>
             <div id="res-validacao" class="mt-4 text-xs text-left bg-black p-3 rounded border border-[#333] hidden"></div>
-            <button onclick="toggleModal('modal-validador')" class="mt-2 text-xs text-gray-500">Fechar</button>
+            <button onclick="toggleModal('modal-validador')" class="mt-2 text-xs text-gray-500 hover:text-white">Fechar</button>
         </div>
     </div>
 
@@ -209,9 +221,10 @@
 
         function verificarLogin() {
             if(USER) {
-                document.getElementById('user-area').innerHTML = `<div class="flex flex-col text-right leading-tight"><span class="text-[10px] text-gray-400">Olá, ${USER.nome.split(' ')[0]}</span><span onclick="logout()" class="text-xs font-bold text-[#00ff88] cursor-pointer">R$ ${USER.saldo} (Sair)</span></div>`;
+                document.getElementById('user-area').innerHTML = `<div class="flex flex-col text-right leading-tight"><span class="text-[10px] text-gray-400">Olá, ${USER.nome.split(' ')[0]}</span><span onclick="logout()" class="text-xs font-bold text-[#00ff88] cursor-pointer hover:text-white">R$ ${USER.saldo} <i class="fas fa-sign-out-alt ml-1"></i></span></div>`;
+                document.getElementById('cliente-nome').value = USER.nome;
             } else {
-                document.getElementById('user-area').innerHTML = `<button onclick="abrirModalAuth()" class="text-xs font-bold bg-[#333] px-4 py-2 rounded text-[#00ff88] border border-[#00ff88]">ENTRAR</button>`;
+                document.getElementById('user-area').innerHTML = `<button onclick="abrirModalAuth()" class="text-xs font-bold bg-[#333] px-4 py-2 rounded text-[#00ff88] border border-[#00ff88] hover:bg-[#00ff88] hover:text-black transition">ENTRAR</button>`;
             }
         }
 
@@ -227,7 +240,6 @@
         }
 
         async function carregarJogos() {
-            document.getElementById('lista-apostas').innerHTML = '';
             document.getElementById('container-jogos').innerHTML = '<div class="text-center py-20 text-gray-600 animate-pulse font-bold uppercase italic text-xs">Carregando Jogos...</div>';
             
             let url = `${API}/api/jogos?` + (MODO === 'aovivo' ? 'aovivo=true' : `data=${DATA_ATUAL}`);
@@ -243,7 +255,7 @@
                 }
                 renderizarLigas();
                 renderizarJogos();
-            } catch(e) { document.getElementById('container-jogos').innerHTML = '<div class="text-center text-red-500">Erro de Conexão</div>'; }
+            } catch(e) { document.getElementById('container-jogos').innerHTML = '<div class="text-center text-red-500 py-20">Erro de Conexão. Verifique sua internet.</div>'; }
         }
 
         function renderizarLigas() {
@@ -254,7 +266,7 @@
             });
 
             let lista = Object.values(ligas).sort((a,b) => (b.top - a.top));
-            let html = `<div onclick="filtrarLiga('Todos')" class="league-menu-item"><div class="league-menu-text">🌍 TODOS OS JOGOS</div></div>`;
+            let html = `<div onclick="filtrarLiga('Todos')" class="league-menu-item"><div class="league-menu-text text-[#00ff88]">🌍 TODOS OS JOGOS</div></div>`;
             
             lista.forEach(l => {
                 html += `
@@ -297,7 +309,7 @@
                             <div onclick="addAposta(${j.id}, '1', ${j.odds.casa}, '${j.home.name} x ${j.away.name}', 'Resultado', this)" class="odd-btn" id="btn-${j.id}-1"><span class="text-[8px] text-gray-500">1</span><span class="text-[#00ff88] font-bold">${j.odds.casa}</span></div>
                             <div onclick="addAposta(${j.id}, 'X', ${j.odds.empate}, '${j.home.name} x ${j.away.name}', 'Resultado', this)" class="odd-btn" id="btn-${j.id}-X"><span class="text-[8px] text-gray-500">X</span><span class="text-[#00ff88] font-bold">${j.odds.empate}</span></div>
                             <div onclick="addAposta(${j.id}, '2', ${j.odds.fora}, '${j.home.name} x ${j.away.name}', 'Resultado', this)" class="odd-btn" id="btn-${j.id}-2"><span class="text-[8px] text-gray-500">2</span><span class="text-[#00ff88] font-bold">${j.odds.fora}</span></div>
-                            <div onclick="abrirMercados(${j.id})" class="odd-btn bg-[#333] w-[30px]"><span class="text-[10px] font-bold">+</span></div>
+                            <div onclick="abrirMercados(${j.id})" class="odd-btn bg-[#333] w-[30px] hover:bg-[#00ff88] hover:text-black transition"><span class="text-[10px] font-bold">+</span></div>
                         </div>
                     </div>`;
                 });
@@ -328,9 +340,9 @@
             if(CARRINHO.length > 0) {
                 document.getElementById('cupom-float').classList.remove('hidden');
                 document.getElementById('qtd-cupom').innerText = CARRINHO.length;
-                let v = document.getElementById('valor-aposta').value || 0;
-                let odd = CARRINHO.reduce((a,b) => a * Number(b.odd), 1);
-                document.getElementById('retorno-float').innerText = (odd * v).toFixed(2);
+                let total = CARRINHO.reduce((a,b) => a * Number(b.odd), 1);
+                let val = document.getElementById('valor-aposta').value || 0;
+                document.getElementById('retorno-float').innerText = (total * val).toFixed(2);
             } else {
                 document.getElementById('cupom-float').classList.add('hidden');
             }
@@ -348,20 +360,20 @@
                     </div>
                     <div class="text-right">
                         <div class="font-bold text-[#00ff88]">${item.odd}</div>
-                        <button onclick="rmItem(${idx})" class="text-[10px] text-red-500 underline">Remover</button>
+                        <button onclick="rmItem(${idx})" class="text-[10px] text-red-500 underline hover:text-white">Remover</button>
                     </div>
                 </div>`;
             });
             document.getElementById('lista-apostas').innerHTML = html;
             if(USER) document.getElementById('cliente-nome').value = USER.nome;
-            calcularRetorno();
+            calcRetorno();
         }
 
         function rmItem(idx) { CARRINHO.splice(idx, 1); abrirCupomDetalhado(); atualizarBotoes(); atualizarCupomFloat(); if(CARRINHO.length===0) toggleModal('modal-cupom'); }
-        function definirValor(v) { document.getElementById('valor-aposta').value = v; calcularRetorno(); }
+        function definirValor(v) { document.getElementById('valor-aposta').value = v; calcRetorno(); }
         function limparCupom() { CARRINHO = []; atualizarBotoes(); atualizarCupomFloat(); toggleModal('modal-cupom'); }
 
-        function calcularRetorno() {
+        function calcRetorno() {
             let v = parseFloat(document.getElementById('valor-aposta').value) || 0;
             let odd = CARRINHO.reduce((a,b) => a * Number(b.odd), 1);
             let ret = v * odd;
@@ -388,7 +400,7 @@
                 CARRINHO.forEach(i => msg += `⚽ ${i.nome}\n👉 ${i.opcao} (${i.odd})\n`);
                 window.open(`https://wa.me/${ZAP}?text=${encodeURIComponent(msg)}`);
                 limparCupom();
-            }
+            } else { alert("Erro: " + data.erro); }
         }
 
         // AUTH
@@ -433,6 +445,7 @@
             const addM = (t, i) => { html += `<div class="market-box"><div class="market-title text-[10px] font-bold text-gray-500 uppercase mb-2">${t}</div><div class="grid grid-cols-2 gap-2">`; i.forEach(x => html += `<div onclick="addAposta(${id}, '${x.sel}', ${x.val}, '${j.home.name} x ${j.away.name}', '${t}', null); toggleModal('modal-mercados')" class="market-btn"><span>${x.sel}</span><span class="text-[#00ff88]">${x.val}</span></div>`); html += `</div></div>`; };
             addM('Dupla Chance', [{sel:'Casa/Emp',val:m.dupla_chance.casa_empate}, {sel:'Casa/Fora',val:m.dupla_chance.casa_fora}, {sel:'Emp/Fora',val:m.dupla_chance.empate_fora}]);
             addM('Total Gols', [{sel:'+1.5',val:m.total_gols.mais_15}, {sel:'-1.5',val:m.total_gols.menos_15}, {sel:'+2.5',val:m.total_gols.mais_25}, {sel:'-2.5',val:m.total_gols.menos_25}]);
+            addM('Ambas Marcam', [{sel:'Sim',val:m.ambas_marcam.sim}, {sel:'Não',val:m.ambas_marcam.nao}]);
             document.getElementById('lista-mercados').innerHTML = html;
             toggleModal('modal-mercados');
         }
@@ -442,7 +455,7 @@
             let data = await res.json();
             let div = document.getElementById('res-validacao');
             div.classList.remove('hidden');
-            if(data.sucesso) div.innerHTML = `<span class="text-green-500 font-bold">✅ VÁLIDO</span><br>R$ ${data.bilhete.valor} -> R$ ${data.bilhete.retorno}`;
+            if(data.sucesso) div.innerHTML = `<span class="text-[#00ff88] font-bold">✅ VÁLIDO</span><br>R$ ${data.bilhete.valor} -> R$ ${data.bilhete.retorno}`;
             else div.innerHTML = '<span class="text-red-500 font-bold">❌ INVÁLIDO</span>';
         }
     </script>
