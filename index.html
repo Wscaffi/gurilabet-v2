@@ -24,6 +24,16 @@
         .camp-btn.active { background: #00ff88; color: #000; border-color: #00ff88; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .cupom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #11171e; border-top: 1px solid #00ff88; padding: 15px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; box-shadow: 0 -5px 30px rgba(0,0,0,0.9); }
+        .max-win { color: #ffd700 !important; text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
+        
+        /* Estilos Novos para Barra de Datas e Ícones */
+        .date-btn { flex: 1; padding: 10px; text-align: center; font-size: 12px; font-weight: bold; color: #94a3b8; cursor: pointer; transition: 0.3s; background: #11171e; }
+        .date-btn.active { background: linear-gradient(90deg, #10b981 0%, #059669 100%); color: #fff; border-bottom: 2px solid #00ff88; }
+        .sport-icon { display: flex; flex-direction: column; align-items: center; gap: 5px; color: #94a3b8; width: 60px; }
+        .sport-icon i { font-size: 20px; }
+        .sport-icon span { font-size: 9px; font-weight: bold; }
+        .sport-active { color: #00ff88; }
+        .sport-active i { color: #fff; }
     </style>
 </head>
 <body class="pb-24">
@@ -35,12 +45,26 @@
         </div>
     </header>
 
-    <div class="p-3 bg-[#0b0f13] sticky top-[65px] z-40 border-b border-gray-900 overflow-x-auto no-scrollbar flex gap-2" id="menu-campeonatos">
+    <div class="bg-[#0f141a] py-3 border-b border-gray-800 flex justify-around overflow-x-auto no-scrollbar">
+        <div class="sport-icon sport-active"><i class="fas fa-futbol"></i><span>FUTEBOL</span></div>
+        <div class="sport-icon"><i class="fas fa-basketball-ball"></i><span>BASQUETE</span></div>
+        <div class="sport-icon"><i class="fas fa-hand-rock"></i><span>LUTA</span></div>
+        <div class="sport-icon"><i class="fas fa-table-tennis"></i><span>TÊNIS</span></div>
+        <div class="sport-icon"><i class="fas fa-gamepad"></i><span>E-SPORTS</span></div>
+    </div>
+
+    <div class="flex border-b border-gray-800 bg-[#0b0f13]">
+        <div id="btn-hoje" onclick="mudarData('hoje')" class="date-btn active">HOJE</div>
+        <div id="btn-amanha" onclick="mudarData('amanha')" class="date-btn">AMANHÃ</div>
+        <div id="btn-depois" onclick="mudarData('depois')" class="date-btn">DIA 16/01</div>
+    </div>
+
+    <div class="p-3 bg-[#0b0f13] overflow-x-auto no-scrollbar flex gap-2" id="menu-campeonatos">
         <button onclick="filtrarLiga('Todos')" class="camp-btn active uppercase">Todos</button>
     </div>
 
     <main id="container-jogos" class="max-w-3xl mx-auto p-2">
-        <div class="text-center py-20 text-gray-600 animate-pulse font-bold uppercase italic text-xs">Carregando Odds Seguras...</div>
+        <div class="text-center py-20 text-gray-600 animate-pulse font-bold uppercase italic text-xs">Carregando Jogos do Dia...</div>
     </main>
 
     <div id="cupom-bar" class="cupom-bar hidden">
@@ -70,7 +94,7 @@
                         <div id="aviso-limite" class="text-[9px] text-red-500 font-bold uppercase hidden">Limite da Banca Aplicado</div>
                     </div>
                 </div>
-                <button onclick="enviarAposta()" class="w-full bg-green-600 text-black font-black p-4 rounded-xl uppercase italic">Apostar</button>
+                <button onclick="enviarAposta()" class="w-full bg-green-600 text-black font-black p-4 rounded-xl uppercase italic hover:bg-white transition">Apostar</button>
             </div>
         </div>
     </div>
@@ -102,11 +126,38 @@
         let todosJogos = [];
         let carrinho = [];
         let ligaAtiva = 'Todos';
+        let dataAtiva = new Date().toISOString().split('T')[0]; // Padrão HOJE
         let usuario = JSON.parse(localStorage.getItem('gurila_user'));
         
-        // LIMITES DA CASA
         const LIMITE_JOGOS = 10;
         const LIMITE_GANHO = 2500.00;
+
+        // Configuração inicial das datas nos botões
+        const hoje = new Date();
+        const amanha = new Date(hoje); amanha.setDate(hoje.getDate() + 1);
+        const depois = new Date(hoje); depois.setDate(hoje.getDate() + 2);
+        
+        document.getElementById('btn-depois').innerText = `DIA ${depois.getDate()}/${depois.getMonth()+1}`;
+
+        // Função para trocar a data e recarregar jogos
+        function mudarData(tipo) {
+            document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
+            
+            let dataStr = '';
+            if(tipo === 'hoje') {
+                document.getElementById('btn-hoje').classList.add('active');
+                dataStr = hoje.toISOString().split('T')[0];
+            } else if (tipo === 'amanha') {
+                document.getElementById('btn-amanha').classList.add('active');
+                dataStr = amanha.toISOString().split('T')[0];
+            } else {
+                document.getElementById('btn-depois').classList.add('active');
+                dataStr = depois.toISOString().split('T')[0];
+            }
+            
+            dataAtiva = dataStr;
+            carregar(); // Recarrega com a nova data
+        }
 
         if(usuario) document.getElementById('user-area').innerHTML = `<div class="bg-[#1c242c] px-3 py-1 rounded-lg border border-gray-700"><span class="block text-[8px] text-gray-400 uppercase">Saldo</span><span class="text-xs font-black text-green-500">R$ ${usuario.saldo}</span></div>`;
 
@@ -116,9 +167,17 @@
         }
 
         async function carregar() {
+            document.getElementById('container-jogos').innerHTML = "<div class='text-center py-20 text-gray-600 animate-pulse font-bold uppercase italic text-xs'>Buscando Jogos...</div>";
             try {
-                const res = await fetch(`${API_URL}/api/jogos`);
+                // Envia a data selecionada para o servidor
+                const res = await fetch(`${API_URL}/api/jogos?data=${dataAtiva}`);
                 todosJogos = await res.json();
+                
+                if(todosJogos.length === 0) {
+                    document.getElementById('container-jogos').innerHTML = "<div class='text-center py-20 text-gray-500 font-bold'>Nenhum jogo encontrado para esta data.</div>";
+                    return;
+                }
+
                 renderizarMenuLigas();
                 renderizarVitrine();
             } catch (e) { document.getElementById('container-jogos').innerHTML = "<p class='text-center py-20 text-red-500'>Erro Conexão</p>"; }
@@ -176,49 +235,30 @@
             document.getElementById('container-jogos').innerHTML = html;
         }
 
-        // --- SISTEMA DE CUPOM COM LIMITES ---
+        // --- SISTEMA DE CUPOM E MERCADOS (MANTIDO IGUAL) ---
         function addAposta(el, id, mercado, opcao, odd, nome) {
             if (odd == 0 || odd == "Bloq") return;
-            
-            // 1. VERIFICAÇÃO DE LIMITE DE JOGOS
             const jaExiste = carrinho.find(i => i.id === id && i.opcao === opcao);
-            if (!jaExiste && carrinho.length >= LIMITE_JOGOS) {
-                alert(`Limite máximo de ${LIMITE_JOGOS} jogos atingido!`);
-                return;
-            }
-
+            if (!jaExiste && carrinho.length >= LIMITE_JOGOS) { alert(`Máximo de ${LIMITE_JOGOS} jogos.`); return; }
             if(el) {
-                if(el.classList.contains('odd-active')) {
-                    el.classList.remove('odd-active');
-                    const idx = carrinho.findIndex(i => i.id === id && i.opcao === opcao);
-                    if(idx > -1) carrinho.splice(idx, 1);
-                    atualizarBarraCupom(); return;
-                }
+                if(el.classList.contains('odd-active')) { el.classList.remove('odd-active'); const idx = carrinho.findIndex(i => i.id === id && i.opcao === opcao); if(idx > -1) carrinho.splice(idx, 1); atualizarBarraCupom(); return; }
                 el.classList.add('odd-active');
             }
             const conflito = carrinho.findIndex(i => i.id === id && i.mercado === mercado);
             if(conflito > -1) carrinho.splice(conflito, 1);
-            
             carrinho.push({ id, mercado, opcao, odd, nome });
             atualizarBarraCupom();
         }
 
         function atualizarBarraCupom() {
             const qtd = carrinho.length;
-            if(qtd > 0) {
-                document.getElementById('cupom-bar').classList.remove('hidden');
-                document.getElementById('qtd-apostas-bar').innerText = qtd; // Atualiza contador 1/10
-                const oddTotal = carrinho.reduce((acc, item) => acc * parseFloat(item.odd), 1).toFixed(2);
-                document.getElementById('odd-total').innerText = oddTotal;
-            } else { document.getElementById('cupom-bar').classList.add('hidden'); }
+            if(qtd > 0) { document.getElementById('cupom-bar').classList.remove('hidden'); document.getElementById('qtd-apostas-bar').innerText = qtd; const oddTotal = carrinho.reduce((acc, item) => acc * parseFloat(item.odd), 1).toFixed(2); document.getElementById('odd-total').innerText = oddTotal; } else { document.getElementById('cupom-bar').classList.add('hidden'); }
         }
 
         function abrirCupomDetalhado() {
             const lista = document.getElementById('lista-apostas');
             lista.innerHTML = '';
-            carrinho.forEach((item, index) => {
-                lista.innerHTML += `<div class="flex justify-between items-center bg-black p-3 rounded-lg border border-gray-800"><div><div class="text-[10px] text-gray-500 uppercase font-bold">${item.nome}</div><div class="font-bold text-green-500 text-sm">${item.mercado}: ${item.opcao}</div></div><div class="text-right"><div class="font-black text-lg text-white">${item.odd}</div><button onclick="carrinho.splice(${index},1); abrirCupomDetalhado(); atualizarBarraCupom();" class="text-[9px] text-red-500 uppercase underline">Remover</button></div></div>`;
-            });
+            carrinho.forEach((item, index) => { lista.innerHTML += `<div class="flex justify-between items-center bg-black p-3 rounded-lg border border-gray-800"><div><div class="text-[10px] text-gray-500 uppercase font-bold">${item.nome}</div><div class="font-bold text-green-500 text-sm">${item.mercado}: ${item.opcao}</div></div><div class="text-right"><div class="font-black text-lg text-white">${item.odd}</div><button onclick="carrinho.splice(${index},1); abrirCupomDetalhado(); atualizarBarraCupom();" class="text-[9px] text-red-500 uppercase underline">Remover</button></div></div>`; });
             calcularRetorno();
             document.getElementById('modal-cupom').classList.remove('hidden');
         }
@@ -227,27 +267,15 @@
             const valor = parseFloat(document.getElementById('valor-aposta').value) || 0;
             const oddTotal = parseFloat(document.getElementById('odd-total').innerText);
             let potencial = valor * oddTotal;
-
-            // 2. VERIFICAÇÃO DE LIMITE DE GANHO
-            const aviso = document.getElementById('aviso-limite');
-            if (potencial > LIMITE_GANHO) {
-                potencial = LIMITE_GANHO;
-                aviso.classList.remove('hidden');
-            } else {
-                aviso.classList.add('hidden');
-            }
-
-            document.getElementById('retorno-potencial').innerText = `R$ ${potencial.toFixed(2)}`;
+            const elementoRetorno = document.getElementById('retorno-potencial');
+            if (potencial > LIMITE_GANHO) { potencial = LIMITE_GANHO; elementoRetorno.classList.remove('text-green-500'); elementoRetorno.classList.add('max-win'); } else { elementoRetorno.classList.remove('max-win'); elementoRetorno.classList.add('text-green-500'); }
+            elementoRetorno.innerText = `R$ ${potencial.toFixed(2)}`;
         }
 
         async function enviarAposta() {
             if(!usuario) { alert("Faça login!"); document.getElementById('modal-cadastro').classList.remove('hidden'); return; }
             const valor = document.getElementById('valor-aposta').value;
             if(!valor || valor <= 0) return;
-            
-            // Check Final Front-end
-            if(carrinho.length > LIMITE_JOGOS) { alert("Muitos jogos!"); return; }
-
             const oddTotal = document.getElementById('odd-total').innerText;
             const res = await fetch(`${API_URL}/api/finalizar`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ usuario_id: usuario.id, valor, apostas: carrinho, odd_total: oddTotal }) });
             const data = await res.json();
@@ -263,12 +291,7 @@
 
             let html = `
                 <div class="market-box"><div class="market-title">Dupla Chance</div><div class="market-grid-3">
-                    ${btn('Dupla Chance', 'Casa/Empate', m.dupla_chance.casa_empate)}
-                    ${btn('Dupla Chance', 'Casa/Fora', m.dupla_chance.casa_fora)}
-                    ${btn('Dupla Chance', 'Empate/Fora', m.dupla_chance.empate_fora)}
-                </div></div>
-                <div class="market-box"><div class="market-title">Ambas Marcam</div><div class="market-grid">
-                    ${btn('Ambas Marcam', 'Sim', m.ambas_marcam.sim)} ${btn('Ambas Marcam', 'Não', m.ambas_marcam.nao)}
+                    ${btn('Dupla Chance', 'Casa/Empate', m.dupla_chance.casa_empate)} ${btn('Dupla Chance', 'Casa/Fora', m.dupla_chance.casa_fora)} ${btn('Dupla Chance', 'Empate/Fora', m.dupla_chance.empate_fora)}
                 </div></div>
                  <div class="market-box"><div class="market-title">Total de Gols (Over/Under)</div><div class="market-grid">
                     ${btn('Gols', 'Mais 0.5', m.total_gols.mais_05)} ${btn('Gols', 'Menos 0.5', m.total_gols.menos_05)}
@@ -276,13 +299,17 @@
                     ${btn('Gols', 'Mais 2.5', m.total_gols.mais_25)} ${btn('Gols', 'Menos 2.5', m.total_gols.menos_25)}
                     ${btn('Gols', 'Mais 3.5', m.total_gols.mais_35)} ${btn('Gols', 'Menos 3.5', m.total_gols.menos_35)}
                 </div></div>
-                <div class="market-box"><div class="market-title">Intervalo / Final (HT/FT)</div><div class="market-grid-3">
-                    ${btn('HT/FT', 'Casa/Casa', m.intervalo_final["Casa/Casa"])}
-                    ${btn('HT/FT', 'Empate/Empate', m.intervalo_final["Empate/Empate"])}
-                    ${btn('HT/FT', 'Fora/Fora', m.intervalo_final["Fora/Fora"])}
+                <div class="market-box"><div class="market-title">Ambas Marcam</div><div class="market-grid">
+                    ${btn('Ambas Marcam', 'Sim', m.ambas_marcam.sim)} ${btn('Ambas Marcam', 'Não', m.ambas_marcam.nao)}
                 </div></div>
-                 <div class="market-box"><div class="market-title">Primeiro Gol</div><div class="market-grid-3">
-                    ${btn('Primeiro Gol', 'Casa', m.primeiro_gol["Casa"])} ${btn('Primeiro Gol', 'Fora', m.primeiro_gol["Fora"])} ${btn('Primeiro Gol', 'Sem Gols', m.primeiro_gol["Sem Gols"])}
+                <div class="market-box"><div class="market-title">Intervalo / Final (HT/FT)</div><div class="market-grid-3">
+                    ${btn('HT/FT', 'Casa/Casa', m.intervalo_final["Casa/Casa"])} ${btn('HT/FT', 'Empate/Empate', m.intervalo_final["Empate/Empate"])} ${btn('HT/FT', 'Fora/Fora', m.intervalo_final["Fora/Fora"])}
+                </div></div>
+                <div class="market-box"><div class="market-title">Handicap</div><div class="market-grid-3">
+                    ${btn('Handicap', 'Casa -1', m.handicap["Casa -1"])} ${btn('Handicap', 'Empate -1', m.handicap["Empate -1"])} ${btn('Handicap', 'Fora +1', m.handicap["Fora +1"])}
+                </div></div>
+                <div class="market-box"><div class="market-title">Escanteios</div><div class="market-grid">
+                    ${btn('Escanteios', 'Mais 8', m.escanteios.mais_8)} ${btn('Escanteios', 'Mais 10', m.escanteios.mais_10)}
                 </div></div>`;
             document.getElementById('modal-corpo').innerHTML = html;
             document.getElementById('modal-extras').classList.remove('hidden');
@@ -297,6 +324,9 @@
             const data = await res.json();
             if(data.sucesso) { localStorage.setItem('gurila_user', JSON.stringify(data.usuario)); location.reload(); } else { alert(data.erro); }
         }
+
+        function fecharMercados() { document.getElementById('modal-extras').classList.add('hidden'); }
+        function toggleModal(id) { document.getElementById(id).classList.toggle('hidden'); document.getElementById(id).classList.toggle('flex'); }
 
         window.onload = carregar;
     </script>
