@@ -24,7 +24,6 @@
         .camp-btn.active { background: #00ff88; color: #000; border-color: #00ff88; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .cupom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #11171e; border-top: 1px solid #00ff88; padding: 15px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; box-shadow: 0 -5px 30px rgba(0,0,0,0.9); }
-        /* Estilo para quando atinge o teto máximo (Dourado) */
         .max-win { color: #ffd700 !important; text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
     </style>
 </head>
@@ -42,7 +41,7 @@
     </div>
 
     <main id="container-jogos" class="max-w-3xl mx-auto p-2">
-        <div class="text-center py-20 text-gray-600 animate-pulse font-bold uppercase italic text-xs">Carregando Odds Seguras...</div>
+        <div class="text-center py-20 text-gray-600 animate-pulse font-bold uppercase italic text-xs">Carregando Odds Ao Vivo...</div>
     </main>
 
     <div id="cupom-bar" class="cupom-bar hidden">
@@ -69,7 +68,7 @@
                     <span>Retorno Potencial:</span>
                     <span id="retorno-potencial" class="text-green-500 text-xl font-black">R$ 0.00</span>
                 </div>
-                <button onclick="enviarAposta()" class="w-full bg-green-600 text-black font-black p-4 rounded-xl uppercase italic hover:bg-white transition">Apostar</button>
+                <button onclick="enviarAposta()" class="w-full bg-green-600 text-black font-black p-4 rounded-xl uppercase italic hover:bg-white transition">Gerar Pré-Bilhete 🦍</button>
             </div>
         </div>
     </div>
@@ -87,11 +86,11 @@
 
     <div id="modal-cadastro" class="fixed inset-0 bg-black/95 z-[800] hidden flex items-center justify-center p-4">
         <div class="bg-[#11171e] p-8 rounded-3xl w-full max-w-sm border border-gray-800 text-center">
-            <h2 class="text-xl font-black italic mb-6 uppercase text-white">Conta</h2>
-            <input id="cad-nome" type="text" placeholder="Nome" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-3 outline-none text-white">
-            <input id="cad-email" type="email" placeholder="E-mail" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-3 outline-none text-white">
-            <input id="cad-senha" type="password" placeholder="Senha" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-6 outline-none text-white">
-            <button onclick="realizarCadastro()" class="w-full bg-green-600 text-black font-black p-4 rounded-xl uppercase">Cadastrar</button>
+            <h2 class="text-xl font-black italic mb-6 uppercase text-white">Identifique-se</h2>
+            <input id="cad-nome" type="text" placeholder="Seu Nome" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-3 outline-none text-white">
+            <input id="cad-email" type="email" placeholder="Seu Celular (Opcional)" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-3 outline-none text-white">
+            <input id="cad-senha" type="password" placeholder="Crie uma Senha" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-6 outline-none text-white">
+            <button onclick="realizarCadastro()" class="w-full bg-green-600 text-black font-black p-4 rounded-xl uppercase">Entrar</button>
             <button onclick="document.getElementById('modal-cadastro').classList.add('hidden')" class="mt-4 text-xs text-gray-500 uppercase font-bold">Cancelar</button>
         </div>
     </div>
@@ -103,11 +102,11 @@
         let ligaAtiva = 'Todos';
         let usuario = JSON.parse(localStorage.getItem('gurila_user'));
         
-        // --- CONFIGURAÇÃO DISCRETA ---
+        // LIMITES (Só visual para o cliente)
         const LIMITE_JOGOS = 10;
         const LIMITE_GANHO = 2500.00;
 
-        if(usuario) document.getElementById('user-area').innerHTML = `<div class="bg-[#1c242c] px-3 py-1 rounded-lg border border-gray-700"><span class="block text-[8px] text-gray-400 uppercase">Saldo</span><span class="text-xs font-black text-green-500">R$ ${usuario.saldo}</span></div>`;
+        if(usuario) document.getElementById('user-area').innerHTML = `<div class="bg-[#1c242c] px-3 py-1 rounded-lg border border-gray-700"><span class="block text-[8px] text-gray-400 uppercase">Cliente</span><span class="text-xs font-black text-green-500">${usuario.nome}</span></div>`;
 
         function traduzir(texto) {
             const dic = { 'Brazil': 'Brasil', 'England': 'Inglaterra', 'Spain': 'Espanha', 'World': 'Mundial' };
@@ -175,83 +174,79 @@
             document.getElementById('container-jogos').innerHTML = html;
         }
 
-        // --- LÓGICA DO CARRINHO ---
         function addAposta(el, id, mercado, opcao, odd, nome) {
             if (odd == 0 || odd == "Bloq") return;
-            
             const jaExiste = carrinho.find(i => i.id === id && i.opcao === opcao);
-            if (!jaExiste && carrinho.length >= LIMITE_JOGOS) {
-                alert(`Máximo de ${LIMITE_JOGOS} jogos por bilhete.`);
-                return;
-            }
-
+            if (!jaExiste && carrinho.length >= LIMITE_JOGOS) { alert(`Máximo de ${LIMITE_JOGOS} jogos.`); return; }
             if(el) {
-                if(el.classList.contains('odd-active')) {
-                    el.classList.remove('odd-active');
-                    const idx = carrinho.findIndex(i => i.id === id && i.opcao === opcao);
-                    if(idx > -1) carrinho.splice(idx, 1);
-                    atualizarBarraCupom(); return;
-                }
+                if(el.classList.contains('odd-active')) { el.classList.remove('odd-active'); const idx = carrinho.findIndex(i => i.id === id && i.opcao === opcao); if(idx > -1) carrinho.splice(idx, 1); atualizarBarraCupom(); return; }
                 el.classList.add('odd-active');
             }
             const conflito = carrinho.findIndex(i => i.id === id && i.mercado === mercado);
             if(conflito > -1) carrinho.splice(conflito, 1);
-            
             carrinho.push({ id, mercado, opcao, odd, nome });
             atualizarBarraCupom();
         }
 
         function atualizarBarraCupom() {
             const qtd = carrinho.length;
-            if(qtd > 0) {
-                document.getElementById('cupom-bar').classList.remove('hidden');
-                document.getElementById('qtd-apostas-bar').innerText = qtd;
-                const oddTotal = carrinho.reduce((acc, item) => acc * parseFloat(item.odd), 1).toFixed(2);
-                document.getElementById('odd-total').innerText = oddTotal;
-            } else { document.getElementById('cupom-bar').classList.add('hidden'); }
+            if(qtd > 0) { document.getElementById('cupom-bar').classList.remove('hidden'); document.getElementById('qtd-apostas-bar').innerText = qtd; const oddTotal = carrinho.reduce((acc, item) => acc * parseFloat(item.odd), 1).toFixed(2); document.getElementById('odd-total').innerText = oddTotal; } else { document.getElementById('cupom-bar').classList.add('hidden'); }
         }
 
         function abrirCupomDetalhado() {
             const lista = document.getElementById('lista-apostas');
             lista.innerHTML = '';
-            carrinho.forEach((item, index) => {
-                lista.innerHTML += `<div class="flex justify-between items-center bg-black p-3 rounded-lg border border-gray-800"><div><div class="text-[10px] text-gray-500 uppercase font-bold">${item.nome}</div><div class="font-bold text-green-500 text-sm">${item.mercado}: ${item.opcao}</div></div><div class="text-right"><div class="font-black text-lg text-white">${item.odd}</div><button onclick="carrinho.splice(${index},1); abrirCupomDetalhado(); atualizarBarraCupom();" class="text-[9px] text-red-500 uppercase underline">Remover</button></div></div>`;
-            });
+            carrinho.forEach((item, index) => { lista.innerHTML += `<div class="flex justify-between items-center bg-black p-3 rounded-lg border border-gray-800"><div><div class="text-[10px] text-gray-500 uppercase font-bold">${item.nome}</div><div class="font-bold text-green-500 text-sm">${item.mercado}: ${item.opcao}</div></div><div class="text-right"><div class="font-black text-lg text-white">${item.odd}</div><button onclick="carrinho.splice(${index},1); abrirCupomDetalhado(); atualizarBarraCupom();" class="text-[9px] text-red-500 uppercase underline">Remover</button></div></div>`; });
             calcularRetorno();
             document.getElementById('modal-cupom').classList.remove('hidden');
         }
 
-        // --- GESTÃO DE BANCA VISUAL (LIMPO) ---
         function calcularRetorno() {
             const valor = parseFloat(document.getElementById('valor-aposta').value) || 0;
             const oddTotal = parseFloat(document.getElementById('odd-total').innerText);
             let potencial = valor * oddTotal;
-
             const elementoRetorno = document.getElementById('retorno-potencial');
-            
-            // SE PASSAR DO LIMITE, TRAVA E MUDA A COR PARA DOURADO (SEM TEXTO VERMELHO)
-            if (potencial > LIMITE_GANHO) {
-                potencial = LIMITE_GANHO;
-                elementoRetorno.classList.remove('text-green-500');
-                elementoRetorno.classList.add('max-win'); // Efeito Dourado
-            } else {
-                elementoRetorno.classList.remove('max-win');
-                elementoRetorno.classList.add('text-green-500');
-            }
-
+            if (potencial > LIMITE_GANHO) { potencial = LIMITE_GANHO; elementoRetorno.classList.remove('text-green-500'); elementoRetorno.classList.add('max-win'); } else { elementoRetorno.classList.remove('max-win'); elementoRetorno.classList.add('text-green-500'); }
             elementoRetorno.innerText = `R$ ${potencial.toFixed(2)}`;
         }
 
+        // --- INTEGRAÇÃO WHATSAPP ---
         async function enviarAposta() {
-            if(!usuario) { alert("Faça login!"); document.getElementById('modal-cadastro').classList.remove('hidden'); return; }
+            
+            // ⚠️ COLOQUE SEU NÚMERO AQUI (COM DDD, APENAS NÚMEROS)
+            const SEU_WHATSAPP = "5561995478204"; 
+
+            if(!usuario) { alert("Identifique-se primeiro!"); document.getElementById('modal-cadastro').classList.remove('hidden'); return; }
             const valor = document.getElementById('valor-aposta').value;
-            if(!valor || valor <= 0) return;
-            if(carrinho.length > LIMITE_JOGOS) return;
+            if(!valor || valor <= 0) { alert("Digite o valor!"); return; }
+            if(carrinho.length > LIMITE_JOGOS) { alert("Muitos jogos!"); return; }
 
             const oddTotal = document.getElementById('odd-total').innerText;
+            const retornoPotencial = document.getElementById('retorno-potencial').innerText;
+
+            // Salva no Banco de Dados
             const res = await fetch(`${API_URL}/api/finalizar`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ usuario_id: usuario.id, valor, apostas: carrinho, odd_total: oddTotal }) });
             const data = await res.json();
-            if(data.sucesso) { alert(`Aposta Confirmada: ${data.codigo}`); location.reload(); } else { alert(data.erro); }
+            
+            if(data.sucesso) {
+                // Monta mensagem do Zap
+                let listaJogos = "";
+                carrinho.forEach(i => { listaJogos += `⚽ ${i.nome}\n   👉 ${i.mercado}: ${i.opcao} (${i.odd})\n`; });
+
+                const msg = `🦍 *GURILA BET - PRÉ BILHETE* 🦍\n\n` +
+                            `👤 Cliente: *${usuario.nome}*\n` +
+                            `🎫 Código: *${data.codigo}*\n` +
+                            `💰 Valor: *R$ ${valor}*\n` +
+                            `🏆 Retorno: *${retornoPotencial}*\n\n` +
+                            `📋 *PALPITES:*\n${listaJogos}\n` +
+                            `_Envie o comprovante para validar!_`;
+
+                // Abre o WhatsApp
+                window.open(`https://wa.me/${SEU_WHATSAPP}?text=${encodeURIComponent(msg)}`, '_blank');
+                
+                carrinho = [];
+                location.reload();
+            } else { alert(data.erro); }
         }
 
         function abrirMercados(id) {
@@ -263,27 +258,27 @@
 
             let html = `
                 <div class="market-box"><div class="market-title">Dupla Chance</div><div class="market-grid-3">
-                    ${btn('Dupla Chance', 'Casa/Empate', m.dupla_chance.casa_empate)}
-                    ${btn('Dupla Chance', 'Casa/Fora', m.dupla_chance.casa_fora)}
-                    ${btn('Dupla Chance', 'Empate/Fora', m.dupla_chance.empate_fora)}
+                    ${btn('Dupla Chance', 'Casa/Empate', m.dupla_chance.casa_empate)} ${btn('Dupla Chance', 'Casa/Fora', m.dupla_chance.casa_fora)} ${btn('Dupla Chance', 'Empate/Fora', m.dupla_chance.empate_fora)}
                 </div></div>
-                 <div class="market-box"><div class="market-title">Total de Gols (Over/Under)</div><div class="market-grid">
-                    ${btn('Gols', 'Mais 0.5', m.total_gols.mais_05)} ${btn('Gols', 'Menos 0.5', m.total_gols.menos_05)}
+                 <div class="market-box"><div class="market-title">Total de Gols</div><div class="market-grid">
                     ${btn('Gols', 'Mais 1.5', m.total_gols.mais_15)} ${btn('Gols', 'Menos 1.5', m.total_gols.menos_15)}
                     ${btn('Gols', 'Mais 2.5', m.total_gols.mais_25)} ${btn('Gols', 'Menos 2.5', m.total_gols.menos_25)}
-                    ${btn('Gols', 'Mais 3.5', m.total_gols.mais_35)} ${btn('Gols', 'Menos 3.5', m.total_gols.menos_35)}
                 </div></div>
-                <div class="market-box"><div class="market-title">Intervalo / Final (HT/FT)</div><div class="market-grid-3">
-                    ${btn('HT/FT', 'Casa/Casa', m.intervalo_final["Casa/Casa"])}
-                    ${btn('HT/FT', 'Empate/Empate', m.intervalo_final["Empate/Empate"])}
-                    ${btn('HT/FT', 'Fora/Fora', m.intervalo_final["Fora/Fora"])}
+                <div class="market-box"><div class="market-title">Ambas Marcam</div><div class="market-grid">
+                    ${btn('Ambas Marcam', 'Sim', m.ambas_marcam.sim)} ${btn('Ambas Marcam', 'Não', m.ambas_marcam.nao)}
                 </div></div>
                 <div class="market-box"><div class="market-title">Placar Exato</div><div class="market-grid-3">
                     ${btn('Placar', '1-0', m.placar_exato["1-0"])} ${btn('Placar', '2-0', m.placar_exato["2-0"])} ${btn('Placar', '2-1', m.placar_exato["2-1"])}
                     ${btn('Placar', '0-0', m.placar_exato["0-0"])} ${btn('Placar', '1-1', m.placar_exato["1-1"])} ${btn('Placar', '0-1', m.placar_exato["0-1"])}
                 </div></div>
-                 <div class="market-box"><div class="market-title">Primeiro Gol</div><div class="market-grid-3">
-                    ${btn('Primeiro Gol', 'Casa', m.primeiro_gol["Casa"])} ${btn('Primeiro Gol', 'Fora', m.primeiro_gol["Fora"])} ${btn('Primeiro Gol', 'Sem Gols', m.primeiro_gol["Sem Gols"])}
+                <div class="market-box"><div class="market-title">Intervalo / Final</div><div class="market-grid-3">
+                    ${btn('HT/FT', 'Casa/Casa', m.intervalo_final["Casa/Casa"])} ${btn('HT/FT', 'Empate/Empate', m.intervalo_final["Empate/Empate"])} ${btn('HT/FT', 'Fora/Fora', m.intervalo_final["Fora/Fora"])}
+                </div></div>
+                <div class="market-box"><div class="market-title">Handicap</div><div class="market-grid-3">
+                    ${btn('Handicap', 'Casa -1', m.handicap["Casa -1"])} ${btn('Handicap', 'Empate -1', m.handicap["Empate -1"])} ${btn('Handicap', 'Fora +1', m.handicap["Fora +1"])}
+                </div></div>
+                <div class="market-box"><div class="market-title">Escanteios</div><div class="market-grid">
+                    ${btn('Escanteios', 'Mais 8', m.escanteios.mais_8)} ${btn('Escanteios', 'Mais 10', m.escanteios.mais_10)}
                 </div></div>`;
             document.getElementById('modal-corpo').innerHTML = html;
             document.getElementById('modal-extras').classList.remove('hidden');
