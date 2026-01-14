@@ -26,7 +26,6 @@
         .cupom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #11171e; border-top: 1px solid #00ff88; padding: 15px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; box-shadow: 0 -5px 30px rgba(0,0,0,0.9); }
         .max-win { color: #ffd700 !important; text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
         
-        /* Estilos Novos para Barra de Datas e Ícones */
         .date-btn { flex: 1; padding: 10px; text-align: center; font-size: 12px; font-weight: bold; color: #94a3b8; cursor: pointer; transition: 0.3s; background: #11171e; }
         .date-btn.active { background: linear-gradient(90deg, #10b981 0%, #059669 100%); color: #fff; border-bottom: 2px solid #00ff88; }
         .sport-icon { display: flex; flex-direction: column; align-items: center; gap: 5px; color: #94a3b8; width: 60px; }
@@ -126,37 +125,26 @@
         let todosJogos = [];
         let carrinho = [];
         let ligaAtiva = 'Todos';
-        let dataAtiva = new Date().toISOString().split('T')[0]; // Padrão HOJE
+        let dataAtiva = new Date().toISOString().split('T')[0];
         let usuario = JSON.parse(localStorage.getItem('gurila_user'));
         
         const LIMITE_JOGOS = 10;
         const LIMITE_GANHO = 2500.00;
 
-        // Configuração inicial das datas nos botões
         const hoje = new Date();
         const amanha = new Date(hoje); amanha.setDate(hoje.getDate() + 1);
         const depois = new Date(hoje); depois.setDate(hoje.getDate() + 2);
         
         document.getElementById('btn-depois').innerText = `DIA ${depois.getDate()}/${depois.getMonth()+1}`;
 
-        // Função para trocar a data e recarregar jogos
         function mudarData(tipo) {
             document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
-            
             let dataStr = '';
-            if(tipo === 'hoje') {
-                document.getElementById('btn-hoje').classList.add('active');
-                dataStr = hoje.toISOString().split('T')[0];
-            } else if (tipo === 'amanha') {
-                document.getElementById('btn-amanha').classList.add('active');
-                dataStr = amanha.toISOString().split('T')[0];
-            } else {
-                document.getElementById('btn-depois').classList.add('active');
-                dataStr = depois.toISOString().split('T')[0];
-            }
-            
+            if(tipo === 'hoje') { document.getElementById('btn-hoje').classList.add('active'); dataStr = hoje.toISOString().split('T')[0]; }
+            else if (tipo === 'amanha') { document.getElementById('btn-amanha').classList.add('active'); dataStr = amanha.toISOString().split('T')[0]; }
+            else { document.getElementById('btn-depois').classList.add('active'); dataStr = depois.toISOString().split('T')[0]; }
             dataAtiva = dataStr;
-            carregar(); // Recarrega com a nova data
+            carregar();
         }
 
         if(usuario) document.getElementById('user-area').innerHTML = `<div class="bg-[#1c242c] px-3 py-1 rounded-lg border border-gray-700"><span class="block text-[8px] text-gray-400 uppercase">Saldo</span><span class="text-xs font-black text-green-500">R$ ${usuario.saldo}</span></div>`;
@@ -169,7 +157,6 @@
         async function carregar() {
             document.getElementById('container-jogos').innerHTML = "<div class='text-center py-20 text-gray-600 animate-pulse font-bold uppercase italic text-xs'>Buscando Jogos...</div>";
             try {
-                // Envia a data selecionada para o servidor
                 const res = await fetch(`${API_URL}/api/jogos?data=${dataAtiva}`);
                 todosJogos = await res.json();
                 
@@ -177,7 +164,6 @@
                     document.getElementById('container-jogos').innerHTML = "<div class='text-center py-20 text-gray-500 font-bold'>Nenhum jogo encontrado para esta data.</div>";
                     return;
                 }
-
                 renderizarMenuLigas();
                 renderizarVitrine();
             } catch (e) { document.getElementById('container-jogos').innerHTML = "<p class='text-center py-20 text-red-500'>Erro Conexão</p>"; }
@@ -235,30 +221,64 @@
             document.getElementById('container-jogos').innerHTML = html;
         }
 
-        // --- SISTEMA DE CUPOM E MERCADOS (MANTIDO IGUAL) ---
+        // --- CORREÇÃO: SELEÇÃO ÚNICA POR JOGO ---
         function addAposta(el, id, mercado, opcao, odd, nome) {
             if (odd == 0 || odd == "Bloq") return;
+
+            // 1. Limpa seleção anterior VISUALMENTE
+            // Procura qualquer botão que tenha o mesmo ID de jogo no onclick
+            const ativos = document.querySelectorAll('.odd-active');
+            ativos.forEach(btn => {
+                // Truque: Verifica se o onclick do botão contém o ID do jogo atual
+                if(btn.getAttribute('onclick').includes(`, ${id},`)) {
+                    btn.classList.remove('odd-active');
+                }
+            });
+
+            // 2. Toggle (Se clicou no mesmo, remove e sai)
             const jaExiste = carrinho.find(i => i.id === id && i.opcao === opcao);
-            if (!jaExiste && carrinho.length >= LIMITE_JOGOS) { alert(`Máximo de ${LIMITE_JOGOS} jogos.`); return; }
-            if(el) {
-                if(el.classList.contains('odd-active')) { el.classList.remove('odd-active'); const idx = carrinho.findIndex(i => i.id === id && i.opcao === opcao); if(idx > -1) carrinho.splice(idx, 1); atualizarBarraCupom(); return; }
-                el.classList.add('odd-active');
+            if(jaExiste) {
+                // Se era o mesmo, já removemos o visual acima. Agora removemos do array.
+                carrinho = carrinho.filter(i => i.id !== id);
+                atualizarBarraCupom();
+                return;
             }
-            const conflito = carrinho.findIndex(i => i.id === id && i.mercado === mercado);
-            if(conflito > -1) carrinho.splice(conflito, 1);
+
+            // 3. Remove aposta anterior do mesmo jogo (Lógica de Substituição)
+            // Se já tinha aposta nesse jogo (mas opção diferente), remove ela.
+            // (Não conta como "novo jogo" para o limite se for substituição)
+            const jaTinhaJogo = carrinho.some(i => i.id === id);
+            
+            if (!jaTinhaJogo && carrinho.length >= LIMITE_JOGOS) {
+                alert(`Limite máximo de ${LIMITE_JOGOS} jogos atingido!`);
+                return;
+            }
+
+            // Remove qualquer aposta anterior desse ID
+            carrinho = carrinho.filter(i => i.id !== id);
+
+            // 4. Adiciona a nova
+            if(el) el.classList.add('odd-active');
             carrinho.push({ id, mercado, opcao, odd, nome });
             atualizarBarraCupom();
         }
 
         function atualizarBarraCupom() {
             const qtd = carrinho.length;
-            if(qtd > 0) { document.getElementById('cupom-bar').classList.remove('hidden'); document.getElementById('qtd-apostas-bar').innerText = qtd; const oddTotal = carrinho.reduce((acc, item) => acc * parseFloat(item.odd), 1).toFixed(2); document.getElementById('odd-total').innerText = oddTotal; } else { document.getElementById('cupom-bar').classList.add('hidden'); }
+            if(qtd > 0) {
+                document.getElementById('cupom-bar').classList.remove('hidden');
+                document.getElementById('qtd-apostas-bar').innerText = qtd; 
+                const oddTotal = carrinho.reduce((acc, item) => acc * parseFloat(item.odd), 1).toFixed(2);
+                document.getElementById('odd-total').innerText = oddTotal;
+            } else { document.getElementById('cupom-bar').classList.add('hidden'); }
         }
 
         function abrirCupomDetalhado() {
             const lista = document.getElementById('lista-apostas');
             lista.innerHTML = '';
-            carrinho.forEach((item, index) => { lista.innerHTML += `<div class="flex justify-between items-center bg-black p-3 rounded-lg border border-gray-800"><div><div class="text-[10px] text-gray-500 uppercase font-bold">${item.nome}</div><div class="font-bold text-green-500 text-sm">${item.mercado}: ${item.opcao}</div></div><div class="text-right"><div class="font-black text-lg text-white">${item.odd}</div><button onclick="carrinho.splice(${index},1); abrirCupomDetalhado(); atualizarBarraCupom();" class="text-[9px] text-red-500 uppercase underline">Remover</button></div></div>`; });
+            carrinho.forEach((item, index) => {
+                lista.innerHTML += `<div class="flex justify-between items-center bg-black p-3 rounded-lg border border-gray-800"><div><div class="text-[10px] text-gray-500 uppercase font-bold">${item.nome}</div><div class="font-bold text-green-500 text-sm">${item.mercado}: ${item.opcao}</div></div><div class="text-right"><div class="font-black text-lg text-white">${item.odd}</div><button onclick="carrinho.splice(${index},1); abrirCupomDetalhado(); atualizarBarraCupom();" class="text-[9px] text-red-500 uppercase underline">Remover</button></div></div>`;
+            });
             calcularRetorno();
             document.getElementById('modal-cupom').classList.remove('hidden');
         }
@@ -273,13 +293,37 @@
         }
 
         async function enviarAposta() {
+            // SEU ZAP AQUI
+            const SEU_WHATSAPP = "556100000000"; 
+
             if(!usuario) { alert("Faça login!"); document.getElementById('modal-cadastro').classList.remove('hidden'); return; }
             const valor = document.getElementById('valor-aposta').value;
             if(!valor || valor <= 0) return;
+            if(carrinho.length > LIMITE_JOGOS) return;
+
             const oddTotal = document.getElementById('odd-total').innerText;
+            const retornoPotencial = document.getElementById('retorno-potencial').innerText;
+
             const res = await fetch(`${API_URL}/api/finalizar`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ usuario_id: usuario.id, valor, apostas: carrinho, odd_total: oddTotal }) });
             const data = await res.json();
-            if(data.sucesso) { alert(`Aposta Confirmada: ${data.codigo}`); location.reload(); } else { alert(data.erro); }
+            
+            if(data.sucesso) {
+                 // Monta mensagem do Zap
+                let listaJogos = "";
+                carrinho.forEach(i => { listaJogos += `⚽ ${i.nome}\n   👉 ${i.mercado}: ${i.opcao} (${i.odd})\n`; });
+
+                const msg = `🦍 *GURILA BET - PRÉ BILHETE* 🦍\n\n` +
+                            `👤 Cliente: *${usuario.nome}*\n` +
+                            `🎫 Código: *${data.codigo}*\n` +
+                            `💰 Valor: *R$ ${valor}*\n` +
+                            `🏆 Retorno: *${retornoPotencial}*\n\n` +
+                            `📋 *PALPITES:*\n${listaJogos}\n` +
+                            `_Envie o comprovante para validar!_`;
+
+                window.open(`https://wa.me/${SEU_WHATSAPP}?text=${encodeURIComponent(msg)}`, '_blank');
+                carrinho = [];
+                location.reload();
+            } else { alert(data.erro); }
         }
 
         function abrirMercados(id) {
