@@ -2,14 +2,14 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GURILA BET | PROFESSIONAL</title>
+    <title>GURILA BET | PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { background: #060a0d; color: #fff; font-family: sans-serif; }
-        .league-header { background: #12171d; border-left: 4px solid #00ff88; padding: 10px; font-size: 11px; font-weight: 900; text-transform: uppercase; margin-top: 15px; display: flex; align-items: center; gap: 8px; }
-        .match-row { background: #11171e; border-bottom: 1px solid #1e262f; padding: 15px; display: flex; align-items: center; justify-content: space-between; }
-        .odd-btn { background: #1c242c; border: 1px solid #2d3741; border-radius: 8px; width: 55px; height: 45px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; font-weight: 900; color: #00ff88; }
+        .league-title { background: #11171e; border-left: 4px solid #00ff88; padding: 12px; font-size: 11px; font-weight: 900; text-transform: uppercase; margin-top: 15px; display: flex; align-items: center; gap: 10px; }
+        .match-row { background: #0b0f13; border-bottom: 1px solid #1e262f; padding: 15px; display: flex; align-items: center; justify-content: space-between; }
+        .odd-btn { background: #1c242c; border: 1px solid #2d3741; border-radius: 6px; width: 55px; height: 45px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; font-weight: 800; color: #00ff88; }
     </style>
 </head>
 <body class="pb-20">
@@ -17,56 +17,62 @@
         <h1 class="text-2xl font-black italic uppercase">Gurila<span class="text-green-500">Bet</span> 🦍</h1>
     </header>
 
-    <main id="lista-jogos">
-        <div class="text-center py-20 text-gray-500 font-bold uppercase italic text-xs animate-pulse">Buscando Jogos Reais...</div>
+    <main id="lista-jogos" class="max-w-2xl mx-auto p-2">
+        <div class="text-center py-20 text-gray-500 font-bold uppercase italic text-[10px] animate-pulse">Sincronizando Jogos Reais...</div>
     </main>
 
     <script>
-        // MUDAR PARA O SEU LINK DO RAILWAY
-        const API_URL = 'https://gurilabet-v2-production.up.railway.app'; 
+        const API_URL = 'https://gurilabet-v2-production.up.railway.app'; // <--- CONFIRME SEU LINK
 
         async function carregar() {
             try {
-                console.log("Chamando Motor...");
                 const res = await fetch(`${API_URL}/api/jogos`);
                 const jogos = await res.json();
                 
                 if(!jogos || jogos.length === 0) {
-                    document.getElementById('lista-jogos').innerHTML = "<p class='text-center py-20'>Nenhum jogo encontrado na API.</p>";
+                    document.getElementById('lista-jogos').innerHTML = "<p class='text-center py-20 text-gray-500 font-bold'>AGUARDANDO ABERTURA DE MERCADOS...</p>";
                     return;
                 }
 
-                // Agrupar por Ligas
-                const ligas = {};
-                jogos.forEach(j => { if(!ligas[j.liga]) ligas[j.liga] = []; ligas[j.liga].push(j); });
+                const grupos = {};
+                jogos.forEach(j => {
+                    const chave = `${j.pais} - ${j.liga}`;
+                    if(!grupos[chave]) grupos[chave] = [];
+                    grupos[chave].push(j);
+                });
 
                 let html = '';
-                for(let liga in ligas) {
-                    html += `<div class="league-header"><img src="${ligas[liga][0].logo_liga}" class="w-4 h-4"> ${ligas[liga][0].pais}: ${liga}</div>`;
-                    ligas[liga].forEach(j => {
+                for(let liga in grupos) {
+                    const info = grupos[liga][0];
+                    html += `
+                    <div class="league-title italic">
+                        <img src="${info.bandeira_pais}" class="w-5 h-4 object-cover" onerror="this.src='${info.logo_liga}'">
+                        ${liga}
+                    </div>`;
+                    
+                    grupos[liga].forEach(j => {
                         const dt = new Date(j.data);
                         html += `
                         <div class="match-row">
                             <div class="text-[9px] text-gray-500 font-bold w-12 text-center leading-tight">
                                 ${dt.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}<br>
-                                <span class="text-white text-xs">${dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</span>
+                                <b class="text-white text-xs">${dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</b>
                             </div>
                             <div class="flex-1 px-4">
-                                <div class="flex items-center gap-3 font-bold text-[11px] mb-2 uppercase text-gray-200"><img src="${j.home.logo}" class="w-5 h-5"> ${j.home.name}</div>
-                                <div class="flex items-center gap-3 font-bold text-[11px] uppercase text-gray-200"><img src="${j.away.logo}" class="w-5 h-5"> ${j.away.name}</div>
+                                <div class="flex items-center gap-3 font-bold text-[10px] mb-2 uppercase text-gray-200"><img src="${j.home.logo}" class="w-5 h-5 object-contain"> ${j.home.name}</div>
+                                <div class="flex items-center gap-3 font-bold text-[10px] uppercase text-gray-200"><img src="${j.away.logo}" class="w-5 h-5 object-contain"> ${j.away.name}</div>
                             </div>
-                            <div class="flex gap-2">
+                            <div class="flex gap-1.5">
                                 <div class="odd-btn"><span class="text-[7px] text-gray-600 mb-0.5">1</span>${j.odds.casa}</div>
                                 <div class="odd-btn"><span class="text-[7px] text-gray-600 mb-0.5">X</span>${j.odds.empate}</div>
-                                <div class="odd-box odd-btn"><span class="text-[7px] text-gray-600 mb-0.5">2</span>${j.odds.fora}</div>
+                                <div class="odd-btn"><span class="text-[7px] text-gray-600 mb-0.5">2</span>${j.odds.fora}</div>
                             </div>
                         </div>`;
                     });
                 }
                 document.getElementById('lista-jogos').innerHTML = html;
             } catch (e) {
-                console.error("Erro no Front:", e);
-                document.getElementById('lista-jogos').innerHTML = "<p class='text-center py-20 text-red-500'>ERRO AO LER DADOS DO MOTOR</p>";
+                document.getElementById('lista-jogos').innerHTML = "<p class='text-center py-20 text-red-500 font-bold'>ERRO DE CONEXÃO</p>";
             }
         }
         window.onload = carregar;
