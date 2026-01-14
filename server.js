@@ -114,4 +114,66 @@ function montarObjetoJogo(j) {
 }
 
 function gerarJogosFalsos(dataStr) {
-    const times = [{n:"Flamengo",l:"
+    const times = [{n:"Flamengo",l:"https://media.api-sports.io/football/teams/127.png"}, {n:"Palmeiras",l:"https://media.api-sports.io/football/teams/121.png"}, {n:"Real Madrid",l:"https://media.api-sports.io/football/teams/541.png"}, {n:"Barcelona",l:"https://media.api-sports.io/football/teams/529.png"}];
+    const ligas = [{n:"Brasileirão A",p:"Brazil",f:"https://media.api-sports.io/flags/br.svg"}, {n:"Champions League",p:"World",f:"https://media.api-sports.io/flags/eu.svg"}];
+    let lista = [];
+    for(let i=0; i<6; i++) {
+        let t1 = times[Math.floor(Math.random()*times.length)];
+        let t2 = times[Math.floor(Math.random()*times.length)];
+        if(t1.n===t2.n) t2 = times[(times.indexOf(t2)+1)%times.length];
+        let d = new Date(dataStr); d.setHours(19+i, 0, 0);
+        let j = montarObjetoJogo({ fixture: { id: 9000+i, date: d.toISOString(), status: { short: "NS" } }, league: { name: ligas[i%2].n, logo: ligas[i%2].f, country: ligas[i%2].p, flag: ligas[i%2].f }, teams: { home: { name: t1.n, logo: t1.l }, away: { name: t2.n, logo: t2.l } } });
+        j.mercados = gerarMercadosCompletos();
+        lista.push(j);
+    }
+    return lista;
+}
+
+// Rotas de Auth e Aposta (Mantidas)
+app.post('/api/login', async (req, res) => {
+    try {
+        const { email, senha } = req.body;
+        const hash = crypto.createHash('sha256').update(senha).digest('hex');
+        const result = await pool.query('SELECT id, nome, saldo FROM usuarios WHERE email = $1 AND senha = $2', [email, hash]);
+        if (result.rows.length > 0) res.json({ sucesso: true, usuario: result.rows[0] });
+        else res.status(401).json({ erro: "Dados incorretos." });
+    } catch (e) { res.status(500).json({ erro: "Erro servidor." }); }
+});
+
+app.post('/api/cadastro', async (req, res) => {
+    try {
+        const { nome, email, senha } = req.body;
+        const hash = crypto.createHash('sha256').update(senha).digest('hex');
+        const result = await pool.query('INSERT INTO usuarios (nome, email, senha) VALUES ($1, $2, $3) RETURNING id, nome, saldo', [nome, email, hash]);
+        res.json({ sucesso: true, usuario: result.rows[0] });
+    } catch (e) { res.status(400).json({ erro: "Email já existe." }); }
+});
+
+app.post('/api/finalizar', async (req, res) => {
+    const { usuario_id, valor, apostas, odd_total } = req.body;
+    const codigo = "GB" + Math.floor(100000 + Math.random() * 900000);
+    const userId = usuario_id || 1;
+    let ret = parseFloat(valor * odd_total).toFixed(2);
+    if(ret > 2500) ret = 2500.00;
+    try {
+        await pool.query('INSERT INTO bilhetes (usuario_id, codigo, valor, retorno, odds_total, detalhes) VALUES ($1, $2, $3, $4, $5, $6)', [userId, codigo, valor, ret, odd_total, JSON.stringify(apostas)]);
+        res.json({ sucesso: true, codigo, retorno: ret });
+    } catch (e) { 
+        try {
+            await pool.query("INSERT INTO usuarios (id, nome, email, senha) VALUES (1, 'Visitante', 'v@v.com', '123') ON CONFLICT DO NOTHING");
+            await pool.query('INSERT INTO bilhetes (usuario_id, codigo, valor, retorno, odds_total, detalhes) VALUES ($1, $2, $3, $4, $5, $6)', [1, codigo, valor, ret, odd_total, JSON.stringify(apostas)]);
+            res.json({ sucesso: true, codigo, retorno: ret });
+        } catch(err) { res.status(500).json({ erro: "Erro ao apostar" }); }
+    }
+});
+
+app.get('/api/bilhete/:codigo', async (req, res) => {
+    try {
+        const { codigo } = req.params;
+        const result = await pool.query(`SELECT b.*, u.nome as cliente FROM bilhetes b LEFT JOIN usuarios u ON b.usuario_id = u.id WHERE b.codigo = $1`, [codigo]);
+        if(result.rows.length > 0) res.json({ sucesso: true, bilhete: result.rows[0] });
+        else res.json({ sucesso: false, erro: "Não encontrado" });
+    } catch(e) { res.status(500).json({ erro: e.message }); }
+});
+
+app.listen(process.env.PORT || 3000);
