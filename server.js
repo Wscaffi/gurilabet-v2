@@ -3,27 +3,26 @@ const axios = require('axios');
 const { Pool } = require('pg');
 const cors = require('cors');
 const crypto = require('crypto');
-const path = require('path'); // MÓDULO NECESSÁRIO PARA LER O ARQUIVO NOVO
+const path = require('path'); // Importante para carregar o site
 
 const app = express();
 app.use(express.json());
 app.use(cors({ origin: '*' }));
 
-// --- COMANDO PARA FORÇAR O SITE NOVO A APARECER ---
+// --- O TRUQUE: SERVIR O SEU INDEX.HTML NOVO ---
 app.use(express.static(path.join(__dirname)));
 
 app.get('/', (req, res) => {
-    // Isso obriga o servidor a entregar o index.html que está na pasta
     res.sendFile(path.join(__dirname, 'index.html'));
 });
-// --------------------------------------------------
+// ----------------------------------------------
 
 const pool = new Pool({ 
     connectionString: process.env.DATABASE_URL,
     ssl: { rejectUnauthorized: false }
 });
 
-// Inicializa Banco
+// Banco de Dados
 async function initDb() {
     try {
         await pool.query(`CREATE TABLE IF NOT EXISTS usuarios (
@@ -39,7 +38,7 @@ async function initDb() {
 }
 initDb();
 
-// --- ROTA DE JOGOS (COM BACKUP AUTOMÁTICO SE A API FALHAR) ---
+// --- ROTA DE JOGOS (COM PROTEÇÃO DE FALHA DA API) ---
 app.get('/api/jogos', async (req, res) => {
     try {
         const headers = { 
@@ -58,17 +57,19 @@ app.get('/api/jogos', async (req, res) => {
             url = `https://v3.football.api-sports.io/fixtures?date=${dataFiltro}`;
         }
 
+        // Tenta buscar na API Oficial
         const resp = await axios.get(url, { headers, timeout: 10000 });
         
-        // Se a API estiver bloqueada ou vazia
+        // Se a API bloquear ou vier vazia
         if ((!resp.data.response || resp.data.response.length === 0) && !isAoVivo) {
-            throw new Error("API Limite ou Vazia");
+            throw new Error("API Vazia ou Limite");
         }
 
         res.json(formatar(resp.data.response));
 
     } catch (e) {
-        console.log("⚠️ API falhou. Ativando JOGOS DE SEGURANÇA.");
+        console.log("⚠️ API OFF/Limitada. Usando Backup.");
+        // DATA DE HOJE PARA OS JOGOS FALSOS
         res.json(gerarJogosFalsos(req.query.data || new Date().toISOString().split('T')[0]));
     }
 });
@@ -144,7 +145,7 @@ function gerarJogosFalsos(dataStr) {
     return lista;
 }
 
-// ROTA DE LOGIN (Para o botão Entrar funcionar)
+// ROTA DE LOGIN
 app.post('/api/login', async (req, res) => {
     try {
         const { email, senha } = req.body;
@@ -193,4 +194,9 @@ app.get('/api/bilhete/:codigo', async (req, res) => {
     try {
         const { codigo } = req.params;
         const result = await pool.query(`SELECT b.*, u.nome as cliente FROM bilhetes b LEFT JOIN usuarios u ON b.usuario_id = u.id WHERE b.codigo = $1`, [codigo]);
-        if(result.rows.length > 0) res.json({ sucesso: true, bilhete:
+        if(result.rows.length > 0) res.json({ sucesso: true, bilhete: result.rows[0] });
+        else res.json({ sucesso: false, erro: "Não encontrado" });
+    } catch(e) { res.status(500).json({ erro: e.message }); }
+});
+
+app.listen(process.env.PORT || 3000);
