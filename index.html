@@ -7,139 +7,111 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { background: #060a0d; color: #fff; font-family: 'Inter', sans-serif; }
-        .league-row { background: linear-gradient(90deg, #12171d 0%, #060a0d 100%); border-left: 4px solid #00ff88; margin-top: 15px; }
-        .odd-btn { background: #1c242c; border: 1px solid #2d3741; transition: 0.2s; cursor: pointer; }
-        .camp-btn { background: #11171e; border: 1px solid #2d3741; padding: 8px 15px; border-radius: 50px; white-space: nowrap; font-size: 10px; font-weight: 900; color: #94a3b8; }
-        .camp-btn.active { background: #00ff88; color: #000; border-color: #00ff88; }
-        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .league-group { margin-bottom: 20px; }
+        .league-header { 
+            background: #12171d; 
+            border-left: 4px solid #00ff88; 
+            padding: 12px; 
+            font-size: 11px; 
+            font-weight: 900; 
+            text-transform: uppercase; 
+            display: flex; 
+            align-items: center; 
+            gap: 10px;
+            color: #94a3b8;
+        }
+        .match-card { 
+            background: #0f141a; 
+            border-bottom: 1px solid #1e262f; 
+            padding: 15px; 
+            display: flex; 
+            align-items: center; 
+            justify-content: space-between; 
+        }
+        .odd-btn { 
+            background: #1c242c; 
+            border: 1px solid #2d3741; 
+            border-radius: 6px; 
+            width: 55px; 
+            height: 45px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            font-size: 12px; 
+            font-weight: 800; 
+            color: #00ff88; 
+            transition: 0.2s;
+        }
+        .odd-btn:hover { border-color: #00ff88; transform: scale(1.05); }
     </style>
 </head>
-<body class="pb-32">
-
+<body class="pb-20">
     <header class="p-4 bg-[#0b0f13] border-b border-gray-800 flex justify-between items-center sticky top-0 z-50">
-        <h1 class="text-2xl font-black italic uppercase text-white tracking-tighter">Gurila<span class="text-green-500">Bet</span> 🦍</h1>
-        <div id="user-area" class="flex gap-2 text-[10px] font-bold">
-            <button onclick="toggleModal('modal-cadastro')" class="text-gray-400 px-2 uppercase tracking-widest">Cadastrar</button>
-            <button class="bg-green-600 text-black px-4 py-2 rounded-lg uppercase italic font-black">Entrar</button>
-        </div>
+        <h1 class="text-2xl font-black italic uppercase tracking-tighter">Gurila<span class="text-green-500">Bet</span> 🦍</h1>
     </header>
 
-    <div class="p-3 bg-[#0b0f13] sticky top-[65px] z-40 border-b border-gray-900 overflow-x-auto no-scrollbar flex gap-2" id="menu-campeonatos">
-        <button onclick="filtrarLiga('Todos')" class="camp-btn active uppercase">Todos</button>
-    </div>
-
-    <main class="p-2 max-w-2xl mx-auto" id="lista-jogos">
-        <div class="text-center py-20 text-gray-600 animate-pulse font-bold text-xs uppercase italic tracking-widest">
-            Sincronizando Mercados Reais...
-        </div>
+    <main id="container-jogos" class="max-w-3xl mx-auto p-2">
+        <div class="text-center py-20 text-gray-600 animate-pulse font-bold uppercase italic text-xs">Organizando Ligas Globais...</div>
     </main>
-
-    <div id="modal-extras" class="fixed inset-0 bg-black/98 z-[600] hidden flex-col">
-        <header class="p-5 border-b border-gray-800 flex justify-between items-center">
-            <h3 id="modal-titulo" class="text-sm font-black uppercase text-green-500 italic"></h3>
-            <button onclick="fecharMercados()" class="text-2xl text-white">&times;</button>
-        </header>
-        <div id="modal-corpo" class="p-4 overflow-y-auto space-y-4"></div>
-    </div>
-
-    <div id="modal-cadastro" class="fixed inset-0 bg-black/95 z-[400] hidden items-center justify-center p-4">
-        <div class="bg-[#11171e] p-8 rounded-3xl w-full max-w-sm border border-gray-800">
-            <h2 class="text-xl font-black italic mb-6 uppercase">Criar Conta 🦍</h2>
-            <input id="cad-nome" type="text" placeholder="Nome" class="w-full bg-black border border-gray-800 p-4 rounded-xl mb-3 outline-none text-white">
-            <button onclick="realizarCadastro()" class="w-full bg-green-600 text-black font-black p-4 rounded-xl uppercase italic">Finalizar Cadastro</button>
-        </div>
-    </div>
 
     <script>
         const API_URL = 'https://gurilabet-v2-production.up.railway.app'; 
-        let todosJogos = [];
-        let ligaAtiva = 'Todos';
 
-        function traduzir(texto) {
-            const dic = { 'Brazil': 'Brasil', 'England': 'Inglaterra', 'Spain': 'Espanha', 'World': 'Mundial' };
-            return dic[texto] || texto;
-        }
-
-        function getFlag(pais, logoLiga) {
-            const flags = { 'Brazil': 'BR', 'England': 'GB', 'Spain': 'ES', 'Italy': 'IT' };
-            const code = flags[pais];
-            return code ? `https://flagsapi.com/${code}/flat/64.png` : logoLiga;
-        }
-
-        async function carregarJogos() {
+        async function carregar() {
             try {
                 const res = await fetch(`${API_URL}/api/jogos`);
-                todosJogos = await res.json();
+                const jogos = await res.json();
                 
-                renderizarMenuLigas();
-                renderizarVitrine();
-            } catch (e) { 
-                console.error(e);
-                document.getElementById('lista-jogos').innerHTML = "<div class='text-center py-20 text-red-500 font-bold'>ERRO AO CARREGAR JOGOS</div>";
-            }
-        }
-
-        function renderizarMenuLigas() {
-            const paises = [...new Set(todosJogos.map(j => traduzir(j.pais)))];
-            let html = `<button onclick="filtrarLiga('Todos')" class="camp-btn ${ligaAtiva === 'Todos' ? 'active' : ''}">TODOS</button>`;
-            paises.forEach(p => {
-                html += `<button onclick="filtrarLiga('${p}')" class="camp-btn ${ligaAtiva === p ? 'active' : ''}">${p.toUpperCase()}</button>`;
-            });
-            document.getElementById('menu-campeonatos').innerHTML = html;
-        }
-
-        function filtrarLiga(liga) {
-            ligaAtiva = liga;
-            renderizarMenuLigas();
-            renderizarVitrine();
-        }
-
-        function renderizarVitrine() {
-            const filtrados = ligaAtiva === 'Todos' ? todosJogos : todosJogos.filter(j => traduzir(j.pais) === ligaAtiva);
-            const grupos = {};
-            filtrados.forEach(j => { if(!grupos[j.liga]) grupos[j.liga] = []; grupos[j.liga].push(j); });
-
-            let html = '';
-            for(let liga in grupos) {
-                const info = grupos[liga][0];
-                html += `<div class="league-row p-3 mb-1 mt-4 text-[10px] font-black uppercase italic flex items-center gap-2 text-gray-400">
-                    <img src="${getFlag(info.pais, info.bandeira)}" class="w-5 h-4 object-cover">
-                    ${traduzir(info.pais)}: ${liga}
-                </div>`;
-                
-                grupos[liga].forEach(j => {
-                    const dt = new Date(j.data);
-                    html += `
-                    <div class="bg-[#11171e] p-4 border-b border-gray-900 flex items-center justify-between gap-3 shadow-lg">
-                        <div class="text-[9px] text-gray-500 font-bold w-12 text-center uppercase border-r border-gray-800 pr-2">
-                            ${dt.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}<br><span class="text-white">${dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</span>
-                        </div>
-                        <div class="flex-1 flex flex-col gap-2">
-                            <div class="flex items-center gap-2 text-[10px] font-black uppercase text-gray-200"><img src="${j.home.logo}" class="w-4 h-4"> ${j.home.name}</div>
-                            <div class="flex items-center gap-2 text-[10px] font-black uppercase text-gray-200"><img src="${j.away.logo}" class="w-4 h-4"> ${j.away.name}</div>
-                        </div>
-                        <div class="flex gap-1.5 items-center">
-                            <div class="odd-btn w-12 h-10 rounded-xl text-[11px] font-black text-green-500 flex flex-col items-center justify-center">
-                                <span class="text-[6px] text-gray-500 font-bold mb-0.5">1</span>${j.odds.casa}
-                            </div>
-                            <div class="odd-btn w-12 h-10 rounded-xl text-[11px] font-black text-green-500 flex flex-col items-center justify-center">
-                                <span class="text-[6px] text-gray-500 font-bold mb-0.5">X</span>${j.odds.empate}
-                            </div>
-                            <div class="odd-btn w-12 h-10 rounded-xl text-[11px] font-black text-green-500 flex flex-col items-center justify-center">
-                                <span class="text-[6px] text-gray-500 font-bold mb-0.5">2</span>${j.odds.fora}
-                            </div>
-                            <button onclick="abrirMercados(${j.id})" class="h-10 px-2 bg-gray-800 rounded-lg text-white font-black">+</button>
-                        </div>
-                    </div>`;
+                // Agrupar por Ligas
+                const grupos = {};
+                jogos.forEach(j => {
+                    const chave = `${j.pais} - ${j.liga}`;
+                    if(!grupos[chave]) grupos[chave] = [];
+                    grupos[chave].push(j);
                 });
-            }
-            document.getElementById('lista-jogos').innerHTML = html;
-        }
 
-        function abrirMercados(id) {
-            const j = todosJogos.find(item => item.id === id);
-            document.getElementById('modal-titulo').innerText = `${j.home.name} X ${j.away.name}`;
-            document.getElementById('modal-corpo').innerHTML = `
-                <div class="bg-[#1c242c] p-5 rounded-2xl border border-gray-800 mb-4">
-                    <p class="text-[10px] font-black uppercase text-gray-500 mb-3">Total de Gols</p>
-                    <div class="flex gap-3"><button class="odd-btn flex-1 py-4
+                let html = '';
+                for(let ligaNome in grupos) {
+                    const info = grupos[ligaNome][0];
+                    html += `
+                    <div class="league-group">
+                        <div class="league-header">
+                            <img src="${info.bandeira_pais}" class="w-5 h-4 object-cover rounded-sm shadow-sm" onerror="this.src='${info.logo_liga}'">
+                            <span>${ligaNome}</span>
+                        </div>`;
+                    
+                    grupos[ligaNome].forEach(j => {
+                        const dt = new Date(j.data);
+                        html += `
+                        <div class="match-card">
+                            <div class="text-[10px] text-gray-500 font-bold w-12 text-center leading-tight">
+                                ${dt.toLocaleDateString('pt-BR', {day:'2-digit', month:'2-digit'})}<br>
+                                <span class="text-white text-xs font-black">${dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}</span>
+                            </div>
+                            <div class="flex-1 px-4 border-l border-gray-800 ml-2">
+                                <div class="flex items-center gap-3 font-bold text-[11px] mb-2 uppercase text-gray-200">
+                                    <img src="${j.home.logo}" class="w-5 h-5 object-contain"> ${j.home.name}
+                                </div>
+                                <div class="flex items-center gap-3 font-bold text-[11px] uppercase text-gray-200">
+                                    <img src="${j.away.logo}" class="w-5 h-5 object-contain"> ${j.away.name}
+                                </div>
+                            </div>
+                            <div class="flex gap-2">
+                                <button class="odd-btn"><span class="text-[7px] text-gray-500 mb-0.5">1</span>${j.odds.casa}</button>
+                                <button class="odd-btn"><span class="text-[7px] text-gray-500 mb-0.5">X</span>${j.odds.empate}</button>
+                                <button class="odd-btn"><span class="text-[7px] text-gray-500 mb-0.5">2</span>${j.odds.fora}</button>
+                            </div>
+                        </div>`;
+                    });
+                    html += `</div>`;
+                }
+                document.getElementById('container-jogos').innerHTML = html || "<p class='text-center py-20'>Nenhum mercado aberto agora.</p>";
+            } catch (e) {
+                document.getElementById('container-jogos').innerHTML = "<p class='text-center py-20 text-red-500 font-bold'>ERRO DE SINCRONIZAÇÃO</p>";
+            }
+        }
+        window.onload = carregar;
+    </script>
+</body>
+</html>
