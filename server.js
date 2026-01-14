@@ -28,6 +28,7 @@ async function initDb() {
 }
 initDb();
 
+// ROTA DE JOGOS COM FILTRO DE DATA
 app.get('/api/jogos', async (req, res) => {
     try {
         const headers = { 
@@ -35,14 +36,15 @@ app.get('/api/jogos', async (req, res) => {
             'x-rapidapi-host': 'v3.football.api-sports.io'
         };
         
+        // Pega a data da URL ou usa HOJE como padrão
         const hoje = new Date().toISOString().split('T')[0];
-        const resp = await axios.get(`https://v3.football.api-sports.io/fixtures?date=${hoje}`, { headers, timeout: 15000 });
+        const dataFiltro = req.query.data || hoje;
+
+        const resp = await axios.get(`https://v3.football.api-sports.io/fixtures?date=${dataFiltro}`, { headers, timeout: 15000 });
 
         let fixtures = resp.data.response;
-        if (!fixtures || fixtures.length === 0) {
-            const backup = await axios.get('https://v3.football.api-sports.io/fixtures?next=50', { headers });
-            fixtures = backup.data.response;
-        }
+        // Se não tiver jogos no dia, retorna vazio (o front avisa)
+        if (!fixtures) fixtures = [];
 
         res.json(formatar(fixtures));
     } catch (e) {
@@ -55,8 +57,8 @@ function formatar(data) {
     return data.map(j => {
         const dataJogo = new Date(j.fixture.date);
         const status = j.fixture.status.short;
-        const statusOk = status === 'NS';
-        const tempoOk = dataJogo > agora;
+        const statusOk = status === 'NS'; 
+        const tempoOk = dataJogo > agora; 
         const ativo = statusOk && tempoOk;
 
         return {
@@ -81,9 +83,6 @@ function formatar(data) {
                 placar_exato: { "1-0": "6.00", "2-0": "9.00", "2-1": "9.50", "0-0": "8.00", "0-1": "7.50" },
                 intervalo_final: { "Casa/Casa": "2.50", "Empate/Empate": "4.50", "Fora/Fora": "5.00" },
                 handicap: { "Casa -1": "2.80", "Empate -1": "3.40", "Fora +1": "1.45" },
-                impar_par: { "Impar": "1.90", "Par": "1.90" },
-                margem_vitoria: { "Casa por 1": "3.50", "Fora por 1": "4.00" },
-                primeiro_gol: { "Casa": "1.70", "Fora": "2.20", "Sem Gols": "8.00" },
                 escanteios: { mais_8: "1.50", mais_10: "2.10", menos_10: "1.65" }
             } : null
         };
@@ -102,34 +101,20 @@ app.post('/api/cadastro', async (req, res) => {
     } catch (e) { res.status(400).json({ erro: "E-mail já cadastrado." }); }
 });
 
-// --- ROTA DE FINALIZAÇÃO COM GESTÃO DE RISCO ---
 app.post('/api/finalizar', async (req, res) => {
     const { usuario_id, valor, apostas, odd_total } = req.body;
-    
-    // 1. REGRA: MÁXIMO 10 JOGOS
-    if (apostas.length > 10) {
-        return res.status(400).json({ erro: "Limite de 10 jogos por bilhete excedido." });
-    }
-
+    if (apostas.length > 10) return res.status(400).json({ erro: "Limite de 10 jogos excedido." });
     const codigo = "GB" + Math.floor(100000 + Math.random() * 900000);
-    
-    // 2. REGRA: TETO DE R$ 2500,00
-    let retornoCalculado = (valor * odd_total);
-    if (retornoCalculado > 2500) {
-        retornoCalculado = 2500.00; // Trava o valor no banco de dados
-    }
+    let retornoCalc = (valor * odd_total);
+    if(retornoCalc > 2500) retornoCalc = 2500;
     const retornoFinal = parseFloat(retornoCalculado).toFixed(2);
-    
     try {
         await pool.query(
             'INSERT INTO bilhetes (usuario_id, codigo, valor, retorno, odds_total, detalhes) VALUES ($1, $2, $3, $4, $5, $6)',
             [usuario_id, codigo, valor, retornoFinal, odd_total, JSON.stringify(apostas)]
         );
         res.json({ sucesso: true, codigo, retorno: retornoFinal });
-    } catch (e) { 
-        console.error(e);
-        res.status(500).json({ erro: "Erro ao processar aposta" }); 
-    }
+    } catch (e) { res.status(500).json({ erro: "Erro ao processar aposta" }); }
 });
 
 app.listen(process.env.PORT || 3000);
