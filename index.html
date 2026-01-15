@@ -36,10 +36,6 @@
         <div id="user-area" class="flex items-center"></div>
     </header>
 
-    <div class="bg-[#0f141a] p-2 text-center text-xs font-black text-[#00ff88] border-b border-gray-800 uppercase">
-        <i class="fas fa-check-circle mr-2"></i> Mínimo 2 Jogos | Máximo 10
-    </div>
-
     <div class="flex border-b border-gray-800 bg-[#0b0f13]">
         <div id="btn-hoje" onclick="mudarData('hoje')" class="date-btn active">HOJE</div>
         <div id="btn-amanha" onclick="mudarData('amanha')" class="date-btn">AMANHÃ</div>
@@ -56,7 +52,7 @@
     </div>
 
     <main id="container-jogos" class="max-w-3xl mx-auto p-2 pb-40">
-        <div class="text-center py-20 text-gray-600 animate-pulse font-bold uppercase italic text-xs">Carregando Jogos...</div>
+        <div class="text-center py-20 text-gray-600 animate-pulse font-bold uppercase italic text-xs">Carregando Jogos Futuros...</div>
     </main>
     
     <footer class="text-center py-4 bg-[#0b0f13] border-t border-gray-800 mb-20">
@@ -109,8 +105,8 @@
         const WHATSAPP_NUMERO = "5561995478204"; 
         
         // --- REGRAS DO JOGO ---
-        const MIN_JOGOS = 2; // Alterado para 2
-        const MAX_JOGOS = 10; // Alterado para 10
+        const MIN_JOGOS = 2; 
+        const MAX_JOGOS = 10; 
         const LIMITE_GANHO = 5000.00;
         
         let todosJogos = [], jogosExibidos = [], carrinho = [];
@@ -218,23 +214,15 @@
             document.getElementById('container-jogos').innerHTML = html || "<div class='text-center py-10 text-gray-500'>Nenhum jogo encontrado.</div>";
         }
 
-        // --- VALIDAÇÃO DE MÍNIMO E MÁXIMO DE JOGOS ---
+        // --- CARRINHO E REGRAS ---
         function addAposta(el, id, mercado, opcao, odd, nome) {
             if(odd==0) return;
             document.querySelectorAll('.odd-active').forEach(b => { if(b.getAttribute('onclick').includes(`,${id},`)) b.classList.remove('odd-active'); });
             const idx = carrinho.findIndex(i => i.id === id);
             
-            // Remove se já existe e é a mesma opção
-            if(idx !== -1 && carrinho[idx].opcao === opcao) { 
-                carrinho.splice(idx, 1); 
-                atualizarBarra(); 
-                return; 
-            }
-            
-            // Remove a aposta antiga se for o mesmo jogo
+            if(idx !== -1 && carrinho[idx].opcao === opcao) { carrinho.splice(idx, 1); atualizarBarra(); return; }
             if(idx !== -1) carrinho.splice(idx, 1);
             
-            // VERIFICA MÁXIMO DE JOGOS (Trava de 10)
             if(carrinho.length >= MAX_JOGOS) return alert(`Limite de ${MAX_JOGOS} jogos atingido!`);
 
             if(el) el.classList.add('odd-active');
@@ -256,7 +244,7 @@
             carrinho.forEach((i, idx) => { lista.innerHTML += `<div class="bet-item"><div class="bet-info"><h4>${i.nome}</h4><p>${i.mercado}: ${i.opcao} @ ${i.odd}</p></div><button onclick="removerAposta(${idx}, ${i.id})" class="bet-delete"><i class="fas fa-trash"></i></button></div>`; });
             if(usuario) document.getElementById('cliente-nome').value = usuario.nome;
             
-            // LÓGICA DE VALIDAÇÃO VISUAL (MÍNIMO)
+            // VALIDAÇÃO VISUAL
             if(carrinho.length < MIN_JOGOS) {
                 document.getElementById('alerta-jogos').classList.remove('hidden');
                 document.getElementById('btn-gerar').disabled = true;
@@ -288,7 +276,6 @@
             const nome = document.getElementById('cliente-nome').value, valor = document.getElementById('valor-aposta').value;
             if(!nome || !valor) return alert("Preencha nome e valor.");
             
-            // DUPLA VERIFICAÇÃO (FRONTEND)
             if(carrinho.length < MIN_JOGOS) return alert(`Mínimo de ${MIN_JOGOS} jogos!`);
             
             const btn = document.getElementById('btn-gerar'); btn.innerText = "GERANDO..."; btn.disabled = true;
