@@ -2,16 +2,14 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GURILA BET | PROFESSIONAL</title>
+    <title>GURILA BET | SYSTEM</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         body { background: #060a0d; color: #fff; font-family: 'Inter', sans-serif; }
         .match-card-grid { display: grid; grid-template-columns: 40px 1fr auto; gap: 8px; align-items: center; background: #0f141a; border-bottom: 1px solid #1e262f; padding: 12px 10px; }
         .league-header { background: #12171d; border-left: 4px solid #00ff88; padding: 12px; font-size: 11px; font-weight: 900; text-transform: uppercase; display: flex; align-items: center; gap: 10px; color: #94a3b8; }
-        .league-top { border-left: 4px solid #fbbf24; background: #1e1b0b; color: #fbbf24; }
         .odd-btn { background: #1c242c; border: 1px solid #2d3741; border-radius: 6px; width: 48px; height: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #00ff88; transition: 0.2s; cursor: pointer; }
-        .odd-btn:hover { background: #2d3741; border-color: #00ff88; }
         .odd-active { background: #00ff88 !important; color: #000 !important; border-color: #00ff88 !important; }
         .date-btn { flex: 1; padding: 10px; text-align: center; font-size: 12px; font-weight: bold; color: #94a3b8; cursor: pointer; transition: 0.3s; background: #11171e; }
         .date-btn.active { background: linear-gradient(90deg, #10b981 0%, #059669 100%); color: #fff; border-bottom: 2px solid #00ff88; }
@@ -21,8 +19,6 @@
         .market-btn { background: #0d1117; color: #fff; padding: 12px; border-radius: 6px; text-align: center; font-size: 11px; font-bold; border: 1px solid #30363d; display: flex; justify-content: space-between; cursor: pointer; }
         .cupom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #11171e; border-top: 1px solid #00ff88; padding: 15px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; box-shadow: 0 -5px 30px rgba(0,0,0,0.9); }
         .input-dark { width: 100%; background: #0d1117; border: 1px solid #30363d; padding: 10px; border-radius: 8px; color: white; outline: none; font-size: 12px; }
-        .input-dark:focus { border-color: #00ff88; }
-        .max-win { color: #ffd700 !important; text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
         .market-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
         .market-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
         .market-title { font-size: 10px; font-weight: 900; color: #94a3b8; text-transform: uppercase; margin-bottom: 8px; border-bottom: 1px solid #2d3741; padding-bottom: 4px; }
@@ -61,7 +57,7 @@
     </footer>
 
     <div id="cupom-bar" class="cupom-bar hidden">
-        <div class="flex flex-col"><span class="text-[10px] text-gray-400 font-bold uppercase">Boletim (<span id="qtd-apostas-bar">0</span>/10)</span><div class="text-white font-black text-sm">Odd: <span id="odd-total" class="text-green-500">1.00</span></div></div>
+        <div class="flex flex-col"><span class="text-[10px] text-gray-400 font-bold uppercase">Boletim (<span id="qtd-apostas-bar">0</span>)</span><div class="text-white font-black text-sm">Odd: <span id="odd-total" class="text-green-500">1.00</span></div></div>
         <button onclick="abrirCupomDetalhado()" class="bg-green-600 text-black font-black uppercase italic px-6 py-2 rounded-lg text-xs hover:bg-white transition">Concluir</button>
     </div>
 
@@ -73,23 +69,19 @@
             </div>
             <div class="flex-1 overflow-y-auto p-4 space-y-4">
                 <div id="lista-apostas"></div>
-                <div id="alerta-jogos" class="bg-red-900/30 text-red-400 p-2 rounded text-[10px] font-bold text-center border border-red-900 hidden">⚠️ Selecione entre 2 e 10 jogos!</div>
-                
-                <div class="grid grid-cols-5 gap-2"><button onclick="definirValor(2)" class="bg-[#1f2937] text-gray-400 font-bold p-2 rounded text-xs">R$2</button><button onclick="definirValor(5)" class="bg-[#1f2937] text-gray-400 font-bold p-2 rounded text-xs">R$5</button><button onclick="definirValor(10)" class="bg-[#1f2937] text-gray-400 font-bold p-2 rounded text-xs">R$10</button><button onclick="definirValor(20)" class="bg-[#1f2937] text-gray-400 font-bold p-2 rounded text-xs">R$20</button><button onclick="definirValor(50)" class="bg-[#1f2937] text-gray-400 font-bold p-2 rounded text-xs">R$50</button></div>
                 <div class="space-y-3 bg-[#0d1117] p-3 rounded-lg border border-[#30363d]">
-                    <div class="text-[10px] text-gray-500 font-bold uppercase">Valor (Mín R$ 2,00)</div>
-                    <input type="number" id="valor-aposta" class="input-dark text-green-500 font-bold text-lg" placeholder="0.00" oninput="calcularRetorno()" min="2">
+                    <div class="text-[10px] text-gray-500 font-bold uppercase">Valor</div>
+                    <input type="number" id="valor-aposta" class="input-dark text-green-500 font-bold text-lg" placeholder="0.00" oninput="calcularRetorno()" min="1">
                     <input type="text" id="cliente-nome" class="input-dark mt-2" placeholder="Nome do Cliente">
                 </div>
                 <div class="bg-[#11171e] p-4 rounded-lg border border-gray-800">
                     <div class="flex justify-between text-xs text-gray-400 font-bold"><span>Odds:</span><span id="odd-final" class="text-white">1.00</span></div>
                     <div class="flex justify-between text-sm font-black border-t border-gray-700 pt-2 mt-1"><span class="text-white">RETORNO:</span><span id="retorno-liquido" class="text-green-500 text-lg">R$ 0.00</span></div>
-                    <div id="aviso-limite" class="text-[9px] text-red-500 font-bold uppercase text-right hidden">Teto da Banca: R$ 5.000</div>
                 </div>
             </div>
             <div class="p-4 bg-[#11171e] border-t border-gray-800 grid grid-cols-2 gap-3 pb-8">
                 <button onclick="limparCupom()" class="bg-red-900/20 text-red-500 font-bold p-3 rounded-xl uppercase text-xs">Limpar</button>
-                <button onclick="enviarAposta()" id="btn-gerar" class="bg-green-600 text-black font-black p-3 rounded-xl uppercase text-xs hover:bg-white shadow-[0_0_15px_rgba(0,255,136,0.3)]">Gerar Bilhete 🦍</button>
+                <button onclick="enviarAposta()" id="btn-gerar" class="bg-green-600 text-black font-black p-3 rounded-xl uppercase text-xs hover:bg-white shadow-[0_0_15px_rgba(0,255,136,0.3)]">GERAR BILHETE 🦍</button>
             </div>
         </div>
     </div>
@@ -103,11 +95,7 @@
     <script>
         const API_URL = 'https://gurilabet-v2-production.up.railway.app'; 
         const WHATSAPP_NUMERO = "5561995478204"; 
-        
-        // --- REGRAS DO JOGO ---
-        const MIN_JOGOS = 2; 
-        const MAX_JOGOS = 10; 
-        const LIMITE_GANHO = 5000.00;
+        const LIMITE_GANHO = 10000.00;
         
         let todosJogos = [], jogosExibidos = [], carrinho = [];
         let ligaAtiva = 'Todos', modoAtual = 'hoje', dataAtiva = new Date().toISOString().split('T')[0];
@@ -146,7 +134,6 @@
         }
         function logout() { localStorage.removeItem('gurila_user'); usuario = null; atualizarUserArea(); }
 
-        // --- NAVEGAÇÃO ---
         function mudarData(tipo) {
             document.querySelectorAll('.date-btn').forEach(b => b.classList.remove('active'));
             modoAtual = tipo;
@@ -221,8 +208,6 @@
             if(idx !== -1 && carrinho[idx].opcao === opcao) { carrinho.splice(idx, 1); atualizarBarra(); return; }
             if(idx !== -1) carrinho.splice(idx, 1);
             
-            if(carrinho.length >= MAX_JOGOS) return alert(`Limite de ${MAX_JOGOS} jogos atingido!`);
-
             if(el) el.classList.add('odd-active');
             carrinho.push({ id, mercado, opcao, odd, nome });
             atualizarBarra();
@@ -241,16 +226,6 @@
             const lista = document.getElementById('lista-apostas'); lista.innerHTML = ''; 
             carrinho.forEach((i, idx) => { lista.innerHTML += `<div class="bet-item"><div class="bet-info"><h4>${i.nome}</h4><p>${i.mercado}: ${i.opcao} @ ${i.odd}</p></div><button onclick="removerAposta(${idx}, ${i.id})" class="bet-delete"><i class="fas fa-trash"></i></button></div>`; });
             if(usuario) document.getElementById('cliente-nome').value = usuario.nome;
-            
-            // CORREÇÃO: Botão sempre ativo (visual), só dá alerta se clicar
-            if(carrinho.length < MIN_JOGOS) {
-                document.getElementById('alerta-jogos').classList.remove('hidden');
-                // document.getElementById('btn-gerar').disabled = true; // REMOVIDO: O botão fica sempre clicável para não parecer quebrado
-            } else {
-                document.getElementById('alerta-jogos').classList.add('hidden');
-                document.getElementById('btn-gerar').disabled = false;
-            }
-
             calcularRetorno(); document.getElementById('cupom-bar').classList.add('hidden'); document.getElementById('modal-cupom').classList.remove('hidden');
         }
         function fecharModalCupom() { document.getElementById('modal-cupom').classList.add('hidden'); if(carrinho.length>0) document.getElementById('cupom-bar').classList.remove('hidden'); }
@@ -263,8 +238,7 @@
             document.getElementById('odd-final').innerText = odds.toFixed(2);
             document.getElementById('retorno-bruto').innerText = `R$ ${pot.toFixed(2)}`;
             const elLiq = document.getElementById('retorno-liquido');
-            if(pot > LIMITE_GANHO) { pot = LIMITE_GANHO; elLiq.classList.add('max-win'); document.getElementById('aviso-limite').classList.remove('hidden'); }
-            else { elLiq.classList.remove('max-win'); document.getElementById('aviso-limite').classList.add('hidden'); }
+            if(pot > LIMITE_GANHO) { pot = LIMITE_GANHO; elLiq.classList.add('max-win'); } else { elLiq.classList.remove('max-win'); }
             elLiq.innerText = `R$ ${pot.toFixed(2)}`;
         }
 
@@ -272,21 +246,41 @@
             const nome = document.getElementById('cliente-nome').value, valor = document.getElementById('valor-aposta').value;
             if(!nome || !valor) return alert("Preencha nome e valor.");
             
-            if(carrinho.length < MIN_JOGOS) return alert(`Selecione no mínimo ${MIN_JOGOS} jogos para apostar!`);
+            const btn = document.getElementById('btn-gerar'); 
+            const textoOriginal = btn.innerText;
+            btn.innerText = "⏳ GERANDO..."; 
+            btn.disabled = true;
             
-            const btn = document.getElementById('btn-gerar'); btn.innerText = "GERANDO..."; btn.disabled = true;
             try {
                 const uid = usuario ? usuario.id : 1;
                 const oddTotal = document.getElementById('odd-final').innerText;
-                const res = await fetch(`${API_URL}/api/finalizar`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ usuario_id: uid, valor, apostas: carrinho, odd_total: oddTotal }) });
+                const res = await fetch(`${API_URL}/api/finalizar`, { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify({ usuario_id: uid, valor, apostas: carrinho, odd_total: oddTotal }) 
+                });
+                
+                // Trata erro de servidor (500/400)
+                if(!res.ok) {
+                    const errData = await res.json();
+                    throw new Error(errData.erro || "Erro desconhecido no servidor");
+                }
+
                 const data = await res.json();
                 if(data.sucesso) {
                     let palpites = ""; carrinho.forEach(i => palpites += `⚽ ${i.nome}\n   👉 ${i.mercado}: ${i.opcao} (${i.odd})\n`);
                     const msg = `🦍 *GURILA BET* 🦍\n\n👤 Cliente: *${nome}*\n🎫 Código: *${data.codigo}*\n💰 Valor: *R$ ${valor}*\n🏆 Retorno: *${data.retorno}*\n\n📋 *PALPITES:*\n${palpites}\n_Valide seu bilhete no site!_`;
-                    window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(msg)}`, '_blank'); limparCupom();
-                } else { alert(data.erro); }
-            } catch(e) { alert("Erro ao enviar."); }
-            btn.innerText = "GERAR BILHETE 🦍"; btn.disabled = false;
+                    window.open(`https://wa.me/${WHATSAPP_NUMERO}?text=${encodeURIComponent(msg)}`, '_blank'); 
+                    limparCupom();
+                } else { 
+                    alert("ALERTA: " + data.erro); 
+                }
+            } catch(e) { 
+                alert("ERRO AO APOSTAR: " + e.message); 
+            }
+            
+            btn.innerText = textoOriginal; 
+            btn.disabled = false;
         }
         async function validarBilhete() {
             const cod = document.getElementById('input-codigo').value; if(!cod) return;
