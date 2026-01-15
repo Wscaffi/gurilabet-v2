@@ -12,14 +12,14 @@ app.use(cors({ origin: '*' }));
 const CONFIG = {
     LUCRO_CASA: 0.92,       
     ODD_MAXIMA: 2000.00,    
-    TEMPO_CACHE: 20 * 60 * 1000, // 20 Minutos (Atualiza mais rápido pra sumir com jogos velhos)
+    TEMPO_CACHE: 10 * 60 * 1000, // 10 Minutos (Atualiza rápido pra limpar jogos velhos)
     SENHA_ADMIN: "admin_gurila_2026",
     
-    // Regras (Valendo, mas invisíveis no topo)
+    // Regras
     MIN_VALOR_APOSTA: 2.00,   
     MAX_VALOR_APOSTA: 200.00, 
     MAX_PREMIO_PAGO: 5000.00, 
-    MIN_JOGOS_BILHETE: 2,     
+    MIN_JOGOS_BILHETE: 2, // Mínimo 2 jogos (Casadinha)
     MAX_JOGOS_BILHETE: 10     
 };
 
@@ -47,7 +47,7 @@ async function initDb() {
         await pool.query(`CREATE TABLE IF NOT EXISTS bilhetes (id SERIAL PRIMARY KEY, usuario_id INTEGER, codigo TEXT UNIQUE, valor NUMERIC, retorno NUMERIC, odds_total NUMERIC, status TEXT DEFAULT 'pendente', detalhes JSONB, data TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         const u = await pool.query("SELECT id FROM usuarios WHERE id = 1");
         if(u.rows.length === 0) await pool.query("INSERT INTO usuarios (id, nome, email, senha) VALUES (1, 'Balcão', 'sistema@gurila.com', '123')");
-        console.log("✅ Servidor V14 (Filtro Futuro) Online!");
+        console.log("✅ Servidor V15 (Filtro Horário Rigoroso) Online!");
     } catch (e) { console.error(e.message); }
 }
 initDb();
@@ -56,6 +56,7 @@ app.get('/api/jogos', async (req, res) => {
     const dataFiltro = req.query.data || new Date().toISOString().split('T')[0];
     const agora = Date.now();
 
+    // Cache reduzido para 10 min para limpar jogos velhos logo
     if (cacheJogos.dados && (agora - cacheJogos.ultimaAtualizacao < CONFIG.TEMPO_CACHE)) {
         return res.json(cacheJogos.dados);
     }
@@ -80,7 +81,9 @@ app.post('/api/finalizar', async (req, res) => {
     let { usuario_id, valor, apostas, odd_total } = req.body;
     
     if (!Array.isArray(apostas)) return res.status(400).json({ erro: "Erro dados" });
-    if (apostas.length < CONFIG.MIN_JOGOS_BILHETE) return res.status(400).json({ erro: `Mínimo de ${CONFIG.MIN_JOGOS_BILHETE} jogos!` });
+    
+    // Validação da Casadinha
+    if (apostas.length < CONFIG.MIN_JOGOS_BILHETE) return res.status(400).json({ erro: `Selecione pelo menos ${CONFIG.MIN_JOGOS_BILHETE} jogos!` });
     if (apostas.length > CONFIG.MAX_JOGOS_BILHETE) return res.status(400).json({ erro: `Máximo de ${CONFIG.MAX_JOGOS_BILHETE} jogos!` });
     
     valor = parseFloat(valor);
@@ -126,18 +129,22 @@ function calcularOdds(fixture) {
 }
 
 function formatar(data) {
+    const agora = Date.now();
     return data.map(j => {
-        const st = j.fixture.status.short;
-        // --- O FILTRO MÁGICO ---
-        // Se NÃO for 'NS' (Not Started) ou 'TBD' (A definir), joga fora.
-        // Isso remove jogos ao vivo (1H, 2H) e finalizados (FT).
-        if (!['NS', 'TBD'].includes(st)) return null;
+        // FILTRO DE SEGURANÇA MÁXIMA
+        const horaJogo = new Date(j.fixture.date).getTime();
+        
+        // 1. Se o horário do jogo JÁ PASSOU (mesmo 1 minuto), retorna NULL.
+        if (horaJogo < agora) return null;
+
+        // 2. Se o status não for 'NS' (Not Started) ou 'TBD', retorna NULL.
+        if (!['NS', 'TBD'].includes(j.fixture.status.short)) return null;
 
         const odds = calcularOdds(j);
         return {
             id: j.fixture.id, liga: j.league.name, logo_liga: j.league.logo, pais: j.league.country,
             home: { name: j.teams.home.name, logo: j.teams.home.logo }, away: { name: j.teams.away.name, logo: j.teams.away.logo },
-            data: j.fixture.date, status: st, ativo: true, odds: odds,
+            data: j.fixture.date, status: j.fixture.status.short, ativo: true, odds: odds,
             mercados: { total_gols: { mais_25: "1.85", menos_25: "1.85" }, dupla_chance: { casa_empate: "1.30", casa_fora: "1.30", empate_fora: "1.30" } }
         };
     }).filter(Boolean);
@@ -145,9 +152,8 @@ function formatar(data) {
 
 function gerarJogosFalsos(d) { return []; } 
 
-// Rotas User
 app.post('/api/cadastro', async (req, res) => { try { const { nome, email, senha } = req.body; const hash = await bcrypt.hash(senha, 10); const result = await pool.query('INSERT INTO usuarios (nome, email, senha) VALUES ($1, $2, $3) RETURNING id, nome, saldo', [nome, email, hash]); res.json({ sucesso: true, usuario: result.rows[0] }); } catch (e) { res.status(500).json({ erro: "Erro" }); } });
 app.post('/api/login', async (req, res) => { try { const { email, senha } = req.body; const r = await pool.query('SELECT * FROM usuarios WHERE email = $1', [email]); if(r.rows.length && await bcrypt.compare(senha, r.rows[0].senha)) { const u = r.rows[0]; delete u.senha; res.json({sucesso:true, usuario:u}); } else res.status(400).json({erro:"Erro"}); } catch(e){ res.status(500).json({erro:"Erro"}); } });
 app.get('/api/bilhete/:codigo', async (req, res) => { try { const r = await pool.query(`SELECT b.*, u.nome as cliente FROM bilhetes b LEFT JOIN usuarios u ON b.usuario_id = u.id WHERE b.codigo = $1`, [req.params.codigo]); res.json({sucesso: r.rows.length>0, bilhete: r.rows[0]}); } catch(e){ res.status(500).json({erro:"Erro"}); } });
 
-app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V14 (Filtro Futuro) On!"));
+app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V15 (Fix Final) On!"));
