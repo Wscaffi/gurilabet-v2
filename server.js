@@ -25,7 +25,6 @@ async function initDb() {
             detalhes JSONB, data TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )`);
         
-        // Cria usuário Balcão se não existir
         const userCheck = await pool.query("SELECT id FROM usuarios WHERE id = 1");
         if(userCheck.rows.length === 0) {
             const hash = await bcrypt.hash('sistema123', 10);
@@ -36,13 +35,15 @@ async function initDb() {
 }
 initDb();
 
-// --- ROTA DE JOGOS (CORRIGIDA PARA SEMPRE MOSTRAR ALGO) ---
+// --- ROTA DE DIAGNÓSTICO (SEM MÁSCARA) ---
 app.get('/api/jogos', async (req, res) => {
     const dataFiltro = req.query.data || new Date().toISOString().split('T')[0];
     
     try {
-        // Se não tiver chave, vai pro backup direto
-        if (!process.env.API_FOOTBALL_KEY) throw new Error("Sem API Key");
+        // Verifica se a chave existe mesmo
+        if (!process.env.API_FOOTBALL_KEY) {
+            throw new Error("A variável API_FOOTBALL_KEY não foi encontrada no Railway.");
+        }
 
         const headers = { 
             'x-rapidapi-key': process.env.API_FOOTBALL_KEY,
@@ -54,29 +55,52 @@ app.get('/api/jogos', async (req, res) => {
             ? `https://v3.football.api-sports.io/fixtures?live=all`
             : `https://v3.football.api-sports.io/fixtures?date=${dataFiltro}`;
 
-        const resp = await axios.get(url, { headers, timeout: 5000 });
-        
-        if (!resp.data.response || resp.data.response.length === 0) throw new Error("Lista Vazia");
+        console.log(`Tentando conectar na API: ${url}`); // Log para debug
 
-        const jogosReais = formatar(resp.data.response);
+        // Aumentei o tempo limite para 15 segundos para garantir
+        const resp = await axios.get(url, { headers, timeout: 15000 });
         
-        // SE FILTROU TUDO (Ex: Jogos acabaram), USA FAKE
-        if (jogosReais.length === 0) throw new Error("Jogos do dia encerrados");
+        // Se a API retornar erro de permissão/conta
+        if (resp.data.errors && Object.keys(resp.data.errors).length > 0) {
+            return res.status(500).json({ 
+                erro_tipo: "API_REJEITOU",
+                detalhes: resp.data.errors,
+                dica: "Sua conta na API pode estar bloqueada, sem limite ou a chave está errada."
+            });
+        }
 
-        res.json(jogosReais);
+        let fixtures = resp.data.response;
+        
+        // Se a lista vier vazia da API
+        if (!fixtures || fixtures.length === 0) {
+             return res.status(200).json({ 
+                 erro_tipo: "LISTA_VAZIA",
+                 mensagem: "A API funcionou, mas não retornou nenhum jogo para hoje.",
+                 data_buscada: dataFiltro,
+                 dica: "Pode ser que os jogos de hoje já tenham acabado ou o fuso horário esteja diferente."
+             });
+        }
+
+        // Se chegou aqui, deu certo! Formata e manda.
+        res.json(formatar(fixtures));
 
     } catch (e) {
-        console.log(`⚠️ Usando Backup: ${e.message}`);
-        // GERA JOGOS FALSOS PARA O DIA SOLICITADO
-        res.json(gerarJogosFalsos(dataFiltro));
+        // AQUI ESTÁ O DIAGNÓSTICO: Mostra o erro real na tela
+        res.status(500).json({
+            erro_critico: "Ocorreu um erro na conexão",
+            mensagem_erro: e.message,
+            codigo_erro: e.code || "Sem código",
+            chave_configurada: process.env.API_FOOTBALL_KEY ? "SIM (Oculta)" : "NÃO",
+            host_usado: 'v3.football.api-sports.io'
+        });
     }
 });
 
 function formatar(data) {
     return data.map(j => {
         const status = j.fixture.status.short;
-        // Filtra jogos encerrados para não poluir
-        if (['FT', 'AET', 'PEN'].includes(status)) return null;
+        // Removi o filtro de 'FT' (Finished) temporariamente para vermos se aparece algo
+        // if (['FT', 'AET', 'PEN'].includes(status)) return null; 
 
         return {
             id: j.fixture.id,
@@ -93,81 +117,17 @@ function formatar(data) {
                 empate: (3.0 + (j.fixture.id % 5)/10).toFixed(2), 
                 fora: (2.2 + (j.fixture.id % 8)/10).toFixed(2) 
             },
-            mercados: gerarMercadosPadrao() // Garante que o botão +45 funcione
+            mercados: {
+                dupla_chance: { casa_empate: "1.25", casa_fora: "1.30", empate_fora: "1.60" },
+                total_gols: { mais_15: "1.30", menos_15: "3.20", mais_25: "1.90", menos_25: "1.80" },
+                ambas_marcam: { sim: "1.75", nao: "1.95" },
+                intervalo_final: { "Casa/Casa": "2.50", "Empate/Empate": "4.50", "Fora/Fora": "5.00" }
+            }
         };
     }).filter(Boolean);
 }
 
-// --- GERADOR DE JOGOS FALSOS (RECUPERADO E MELHORADO) ---
-function gerarJogosFalsos(dataBase) {
-    const times = [
-        {n: "Flamengo", l: "https://media.api-sports.io/football/teams/127.png"},
-        {n: "Vasco", l: "https://media.api-sports.io/football/teams/133.png"},
-        {n: "Palmeiras", l: "https://media.api-sports.io/football/teams/121.png"},
-        {n: "Corinthians", l: "https://media.api-sports.io/football/teams/131.png"},
-        {n: "São Paulo", l: "https://media.api-sports.io/football/teams/126.png"},
-        {n: "Real Madrid", l: "https://media.api-sports.io/football/teams/541.png"},
-        {n: "Barcelona", l: "https://media.api-sports.io/football/teams/529.png"},
-        {n: "Man City", l: "https://media.api-sports.io/football/teams/50.png"},
-        {n: "Liverpool", l: "https://media.api-sports.io/football/teams/40.png"},
-        {n: "PSG", l: "https://media.api-sports.io/football/teams/85.png"}
-    ];
-
-    const ligas = [
-        {n: "Brasileirão Série A", p: "Brazil", f: "https://media.api-sports.io/flags/br.svg"},
-        {n: "Premier League", p: "England", f: "https://media.api-sports.io/flags/gb.svg"},
-        {n: "La Liga", p: "Spain", f: "https://media.api-sports.io/flags/es.svg"},
-        {n: "UEFA Champions League", p: "World", f: "https://media.api-sports.io/flags/eu.svg"}
-    ];
-
-    let lista = [];
-    
-    // Gera 15 jogos
-    for(let i=0; i<15; i++) {
-        let t1 = times[Math.floor(Math.random() * times.length)];
-        let t2 = times[Math.floor(Math.random() * times.length)];
-        let liga = ligas[Math.floor(Math.random() * ligas.length)];
-        
-        if(t1.n === t2.n) t2 = times[(times.indexOf(t2) + 1) % times.length];
-
-        // Define horários futuros para parecer real
-        let dataJogo = new Date(dataBase);
-        dataJogo.setHours(12 + (i%10), 0, 0); 
-        // Se for hoje e já passou das 12h, joga pra mais tarde
-        if(new Date() > dataJogo) dataJogo.setHours(new Date().getHours() + 1 + i);
-
-        lista.push({
-            id: 2000 + i,
-            liga: liga.n,
-            logo_liga: "https://media.api-sports.io/football/leagues/71.png",
-            pais: liga.p,
-            bandeira_pais: liga.f,
-            home: { name: t1.n, logo: t1.l },
-            away: { name: t2.n, logo: t2.l },
-            data: dataJogo.toISOString(),
-            status: "NS", // Not Started
-            ativo: true,
-            odds: { 
-                casa: (1.5 + (i%5)/10).toFixed(2), 
-                empate: (3.0 + (i%3)/10).toFixed(2), 
-                fora: (2.5 + (i%4)/10).toFixed(2) 
-            },
-            mercados: gerarMercadosPadrao()
-        });
-    }
-    return lista;
-}
-
-function gerarMercadosPadrao() {
-    return {
-        dupla_chance: { casa_empate: "1.25", casa_fora: "1.30", empate_fora: "1.60" },
-        ambas_marcam: { sim: "1.75", nao: "1.95" },
-        total_gols: { mais_15: "1.30", menos_15: "3.20", mais_25: "1.90", menos_25: "1.80" },
-        intervalo_final: { "Casa/Casa": "2.50", "Empate/Empate": "4.50", "Fora/Fora": "5.00" }
-    };
-}
-
-// --- ROTAS DE USUÁRIO E APOSTA ---
+// Mantenha as outras rotas (login, cadastro, finalizar) iguais...
 app.post('/api/cadastro', async (req, res) => {
     try {
         const { nome, email, senha } = req.body;
@@ -175,11 +135,7 @@ app.post('/api/cadastro', async (req, res) => {
         const hash = await bcrypt.hash(senha, 10);
         const result = await pool.query('INSERT INTO usuarios (nome, email, senha) VALUES ($1, $2, $3) RETURNING id, nome, saldo', [nome, email, hash]);
         res.json({ sucesso: true, usuario: result.rows[0] });
-    } catch (e) { 
-        console.error(e);
-        if(e.code === '23505') return res.status(400).json({ erro: "E-mail já cadastrado." });
-        res.status(500).json({ erro: "Erro no servidor." }); 
-    }
+    } catch (e) { if(e.code === '23505') return res.status(400).json({ erro: "E-mail já cadastrado." }); res.status(500).json({ erro: "Erro no servidor." }); }
 });
 
 app.post('/api/login', async (req, res) => {
@@ -199,7 +155,6 @@ app.post('/api/finalizar', async (req, res) => {
     const codigo = "GB" + Math.floor(100000 + Math.random() * 900000);
     let retorno = (valor * odd_total);
     if(retorno > 2500) retorno = 2500;
-    
     try {
         await pool.query('INSERT INTO bilhetes (usuario_id, codigo, valor, retorno, odds_total, detalhes) VALUES ($1, $2, $3, $4, $5, $6)', 
         [usuario_id || 1, codigo, valor, retorno.toFixed(2), odd_total, JSON.stringify(apostas)]);
