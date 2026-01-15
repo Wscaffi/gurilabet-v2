@@ -171,7 +171,7 @@
 
             <div class="p-4 bg-[#11171e] border-t border-gray-800 grid grid-cols-2 gap-3 pb-8">
                 <button onclick="limparCupom()" class="bg-red-900/50 text-red-500 font-bold p-3 rounded-xl uppercase text-xs border border-red-900 hover:bg-red-900 hover:text-white transition">Limpar</button>
-                <button onclick="enviarAposta()" class="bg-green-600 text-black font-black p-3 rounded-xl uppercase text-xs hover:bg-white transition shadow-[0_0_15px_rgba(0,255,136,0.4)]">Gerar Pré-Bilhete 🦍</button>
+                <button onclick="enviarAposta()" id="btn-gerar" class="bg-green-600 text-black font-black p-3 rounded-xl uppercase text-xs hover:bg-white transition shadow-[0_0_15px_rgba(0,255,136,0.4)]">Gerar Pré-Bilhete 🦍</button>
             </div>
         </div>
     </div>
@@ -199,9 +199,9 @@
             <button onclick="toggleLogin()" class="absolute top-4 right-4 text-gray-500 hover:text-white font-bold">X</button>
             <h2 class="text-lg font-black text-white uppercase mb-4 text-center">Entrar na Conta</h2>
             <div class="space-y-3">
-                <input type="text" id="login-user" class="input-dark" placeholder="Usuário">
+                <input type="email" id="login-email" class="input-dark" placeholder="E-mail">
                 <input type="password" id="login-pass" class="input-dark" placeholder="Senha">
-                <button onclick="fazerLogin()" class="w-full bg-green-600 text-black font-bold p-3 rounded-lg uppercase mt-2 hover:bg-white transition">ENTRAR</button>
+                <button onclick="fazerLogin()" id="btn-login-action" class="w-full bg-green-600 text-black font-bold p-3 rounded-lg uppercase mt-2 hover:bg-white transition">ENTRAR</button>
             </div>
             <div class="mt-4 text-center">
                 <button onclick="toggleLogin(); toggleCadastro()" class="text-xs text-green-500 font-bold uppercase underline">Criar Conta</button>
@@ -215,9 +215,9 @@
             <h2 class="text-lg font-black text-white uppercase mb-4 text-center">Criar Nova Conta</h2>
             <div class="space-y-3">
                 <input type="text" id="cad-nome" class="input-dark" placeholder="Nome Completo">
-                <input type="tel" id="cad-tel" class="input-dark" placeholder="WhatsApp">
-                <input type="password" id="cad-pass" class="input-dark" placeholder="Senha">
-                <button onclick="fazerCadastro()" class="w-full bg-white text-black font-bold p-3 rounded-lg uppercase mt-2 hover:bg-green-500 transition">CADASTRAR</button>
+                <input type="email" id="cad-email" class="input-dark" placeholder="E-mail">
+                <input type="password" id="cad-pass" class="input-dark" placeholder="Senha (Mín 6 dígitos)">
+                <button onclick="fazerCadastro()" id="btn-cad-action" class="w-full bg-white text-black font-bold p-3 rounded-lg uppercase mt-2 hover:bg-green-500 transition">CADASTRAR</button>
             </div>
             <div class="mt-4 text-center">
                 <button onclick="toggleCadastro(); toggleLogin()" class="text-xs text-gray-500 font-bold uppercase underline">Já tenho conta</button>
@@ -226,7 +226,9 @@
     </div>
 
     <script>
+        // ATENÇÃO: Troque pelo link real da Railway ou localhost para testar
         const API_URL = 'https://gurilabet-v2-production.up.railway.app'; 
+        
         let todosJogos = [];
         let jogosExibidos = [];
         let carrinho = [];
@@ -247,7 +249,7 @@
         
         document.getElementById('btn-depois').innerText = `DIA ${depois.getDate()}/${depois.getMonth()+1}`;
 
-        /* --- LÓGICA DE LOGIN / CADASTRO --- */
+        /* --- LÓGICA DE LOGIN / CADASTRO INTEGRADA --- */
         function atualizarUserArea() {
             const area = document.getElementById('user-area');
             if(usuario && usuario.nome) {
@@ -271,28 +273,67 @@
         function toggleLogin() { document.getElementById('modal-login').classList.toggle('hidden'); }
         function toggleCadastro() { document.getElementById('modal-cadastro').classList.toggle('hidden'); }
 
-        function fazerLogin() {
-            const user = document.getElementById('login-user').value;
-            if(!user) return alert("Digite o usuário!");
+        async function fazerLogin() {
+            const email = document.getElementById('login-email').value;
+            const senha = document.getElementById('login-pass').value;
+            const btn = document.getElementById('btn-login-action');
+
+            if(!email || !senha) return alert("Preencha todos os campos!");
             
-            // Simulação de login
-            usuario = { nome: user, saldo: 0 };
-            localStorage.setItem('gurila_user', JSON.stringify(usuario));
-            toggleLogin();
-            atualizarUserArea();
+            btn.innerText = "ENTRANDO..."; btn.disabled = true;
+
+            try {
+                const res = await fetch(`${API_URL}/api/login`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ email, senha })
+                });
+                const data = await res.json();
+
+                if(data.sucesso) {
+                    usuario = data.usuario;
+                    localStorage.setItem('gurila_user', JSON.stringify(usuario));
+                    toggleLogin();
+                    atualizarUserArea();
+                    if(document.getElementById('cliente-nome')) document.getElementById('cliente-nome').value = usuario.nome;
+                } else {
+                    alert(data.erro || "Erro ao entrar.");
+                }
+            } catch(e) { alert("Erro de conexão com o servidor."); }
             
-            // Preenche o nome no bilhete se estiver aberto
-            if(document.getElementById('cliente-nome')) document.getElementById('cliente-nome').value = usuario.nome;
+            btn.innerText = "ENTRAR"; btn.disabled = false;
         }
 
-        function fazerCadastro() {
+        async function fazerCadastro() {
             const nome = document.getElementById('cad-nome').value;
-            if(!nome) return alert("Digite seu nome!");
-            
-            alert("Cadastro realizado com sucesso! Faça login.");
-            toggleCadastro();
-            toggleLogin();
-            document.getElementById('login-user').value = nome;
+            const email = document.getElementById('cad-email').value;
+            const senha = document.getElementById('cad-pass').value;
+            const btn = document.getElementById('btn-cad-action');
+
+            if(!nome || !email || !senha) return alert("Preencha tudo!");
+            if(senha.length < 6) return alert("Senha muito curta (mín 6).");
+
+            btn.innerText = "CRIANDO..."; btn.disabled = true;
+
+            try {
+                const res = await fetch(`${API_URL}/api/cadastro`, {
+                    method: 'POST',
+                    headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify({ nome, email, senha })
+                });
+                const data = await res.json();
+
+                if(data.sucesso) {
+                    alert("Conta criada! Faça login.");
+                    toggleCadastro();
+                    toggleLogin();
+                    document.getElementById('login-email').value = email;
+                } else {
+                    alert(data.erro || "Erro ao cadastrar.");
+                }
+            } catch(e) { alert("Erro de conexão."); }
+
+            btn.innerText = "CADASTRAR"; btn.disabled = false;
         }
 
         function logout() {
@@ -477,7 +518,7 @@
         }
 
         async function enviarAposta() {
-            const SEU_WHATSAPP = "556100000000"; 
+            const SEU_WHATSAPP = "5561995478204"; 
             const nomeCliente = document.getElementById('cliente-nome').value;
             const valor = document.getElementById('valor-aposta').value;
             if(!nomeCliente) { alert("Digite seu nome no bilhete!"); return; }
@@ -486,32 +527,53 @@
             const oddTotal = document.getElementById('odd-final').innerText;
             const retornoPotencial = document.getElementById('retorno-liquido').innerText;
             
-            // Se usuário não existir, cria um temporário
-            if(!usuario) { 
-                usuario = { nome: nomeCliente, saldo: '0.00' }; 
-                localStorage.setItem('gurila_user', JSON.stringify(usuario));
-                atualizarUserArea();
-            }
+            const btn = document.getElementById('btn-gerar');
+            btn.innerText = "GERANDO..."; btn.disabled = true;
 
-            const res = await fetch(`${API_URL}/api/finalizar`, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({ usuario_id: 1, valor, apostas: carrinho, odd_total: oddTotal }) });
-            const data = await res.json();
-            if(data.sucesso) {
-                let listaJogos = ""; carrinho.forEach(i => { listaJogos += `⚽ ${i.nome}\n   👉 ${i.mercado}: ${i.opcao} (${i.odd})\n`; });
-                const msg = `🦍 *GURILA BET - PRÉ BILHETE* 🦍\n\n👤 Cliente: *${nomeCliente}*\n🎫 Código: *${data.codigo}*\n💰 Valor: *R$ ${valor}*\n🏆 Retorno: *${retornoPotencial}*\n\n📋 *PALPITES:*\n${listaJogos}\n_Envie o comprovante para validar!_`;
-                window.open(`https://wa.me/${SEU_WHATSAPP}?text=${encodeURIComponent(msg)}`, '_blank');
-                limparCupom();
-            } else { alert(data.erro); }
+            try {
+                // Se usuário não existir, usa ID 1 (Balcão)
+                const userId = usuario ? usuario.id : 1;
+
+                const res = await fetch(`${API_URL}/api/finalizar`, { 
+                    method: 'POST', 
+                    headers: {'Content-Type': 'application/json'}, 
+                    body: JSON.stringify({ usuario_id: userId, valor, apostas: carrinho, odd_total: oddTotal }) 
+                });
+                
+                const data = await res.json();
+                
+                if(data.sucesso) {
+                    let listaJogos = ""; carrinho.forEach(i => { listaJogos += `⚽ ${i.nome}\n   👉 ${i.mercado}: ${i.opcao} (${i.odd})\n`; });
+                    const msg = `🦍 *GURILA BET - PRÉ BILHETE* 🦍\n\n👤 Cliente: *${nomeCliente}*\n🎫 Código: *${data.codigo}*\n💰 Valor: *R$ ${valor}*\n🏆 Retorno: *${retornoPotencial}*\n\n📋 *PALPITES:*\n${listaJogos}\n_Envie o comprovante para validar!_`;
+                    window.open(`https://wa.me/${SEU_WHATSAPP}?text=${encodeURIComponent(msg)}`, '_blank');
+                    limparCupom();
+                } else { alert(data.erro); }
+            } catch(e) {
+                alert("Erro ao enviar aposta.");
+            }
+            btn.innerText = "GERAR PRÉ-BILHETE 🦍"; btn.disabled = false;
         }
 
         async function validarBilhete() {
             const cod = document.getElementById('input-codigo').value;
             if(!cod) return;
-            const res = await fetch(`${API_URL}/api/bilhete/${cod}`);
-            const data = await res.json();
-            const divRes = document.getElementById('resultado-validacao');
-            divRes.classList.remove('hidden');
-            if(data.sucesso) { const b = data.bilhete; divRes.innerHTML = `<span class="text-green-500 font-black">✅ VÁLIDO</span><br>Cliente: ${b.cliente}<br>Valor: R$ ${b.valor}<br>Retorno: R$ ${b.retorno}<br>Data: ${new Date(b.data).toLocaleString()}`; } 
-            else { divRes.innerHTML = `<span class="text-red-500 font-black">❌ INVÁLIDO</span>`; }
+            try {
+                const res = await fetch(`${API_URL}/api/bilhete/${cod}`);
+                const data = await res.json();
+                const divRes = document.getElementById('resultado-validacao');
+                divRes.classList.remove('hidden');
+                
+                if(data.sucesso) { 
+                    const b = data.bilhete; 
+                    // PROTEÇÃO XSS: Usamos textContent/innerText para evitar injeção de script
+                    divRes.innerHTML = `<span class="text-green-500 font-black">✅ VÁLIDO</span><br>Valor: R$ ${b.valor}<br>Retorno: R$ ${b.retorno}<br>Data: ${new Date(b.data).toLocaleString()}`; 
+                    
+                    const pCliente = document.createElement('div');
+                    pCliente.innerText = `Cliente: ${b.cliente}`; // Seguro
+                    divRes.appendChild(pCliente);
+                } 
+                else { divRes.innerHTML = `<span class="text-red-500 font-black">❌ INVÁLIDO</span>`; }
+            } catch(e) { alert("Erro ao validar."); }
         }
 
         function abrirMercados(id) {
