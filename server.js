@@ -12,10 +12,10 @@ app.use(cors({ origin: '*' }));
 const CONFIG = {
     LUCRO_CASA: 0.92,       
     ODD_MAXIMA: 2000.00,    
-    TEMPO_CACHE: 10 * 60 * 1000, 
+    TEMPO_CACHE: 10 * 60 * 1000, // 10 Minutos
     SENHA_ADMIN: "admin_gurila_2026",
     
-    // Regras
+    // Regras do Jogo
     MIN_VALOR_APOSTA: 2.00,   
     MAX_VALOR_APOSTA: 200.00, 
     MAX_PREMIO_PAGO: 5000.00, 
@@ -39,7 +39,9 @@ function rateLimiter(ip) {
 }
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
-let cacheJogos = { dados: null, ultimaAtualizacao: 0 };
+
+// --- CORREÇÃO DO BUG: CACHE AGORA GUARDA A DATA ---
+let cacheJogos = { dataRef: null, dados: null, ultimaAtualizacao: 0 };
 
 async function initDb() {
     try {
@@ -47,7 +49,7 @@ async function initDb() {
         await pool.query(`CREATE TABLE IF NOT EXISTS bilhetes (id SERIAL PRIMARY KEY, usuario_id INTEGER, codigo TEXT UNIQUE, valor NUMERIC, retorno NUMERIC, odds_total NUMERIC, status TEXT DEFAULT 'pendente', detalhes JSONB, data TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         const u = await pool.query("SELECT id FROM usuarios WHERE id = 1");
         if(u.rows.length === 0) await pool.query("INSERT INTO usuarios (id, nome, email, senha) VALUES (1, 'Balcão', 'sistema@gurila.com', '123')");
-        console.log("✅ Servidor V16 (Status Fixo) Online!");
+        console.log("✅ Servidor V17 (Cache Corrigido) Online!");
     } catch (e) { console.error(e.message); }
 }
 initDb();
@@ -56,18 +58,29 @@ app.get('/api/jogos', async (req, res) => {
     const dataFiltro = req.query.data || new Date().toISOString().split('T')[0];
     const agora = Date.now();
 
-    if (cacheJogos.dados && (agora - cacheJogos.ultimaAtualizacao < CONFIG.TEMPO_CACHE)) {
+    // --- CORREÇÃO DO BUG AQUI ---
+    // Agora verificamos se o cache é da MESMA DATA que o usuário pediu
+    if (cacheJogos.dados && cacheJogos.dataRef === dataFiltro && (agora - cacheJogos.ultimaAtualizacao < CONFIG.TEMPO_CACHE)) {
+        console.log(`♻️ Cache Usado para ${dataFiltro}`);
         return res.json(cacheJogos.dados);
     }
     
     try {
+        console.log(`🌍 Buscando na API para: ${dataFiltro}`);
         if (!process.env.API_FOOTBALL_KEY) throw new Error("Sem Key");
+        
         const url = `https://v3.football.api-sports.io/fixtures?date=${dataFiltro}`;
         const resp = await axios.get(url, { headers: { 'x-apisports-key': process.env.API_FOOTBALL_KEY.trim() }, timeout: 6000 });
+        
         const jogosReais = formatar(resp.data.response);
-        cacheJogos = { dados: jogosReais, ultimaAtualizacao: agora };
+        
+        // Atualiza o Cache com a DATA CERTA
+        cacheJogos = { dataRef: dataFiltro, dados: jogosReais, ultimaAtualizacao: agora };
+        
         res.json(jogosReais);
     } catch (e) {
+        console.log("Erro API:", e.message);
+        // Se der erro e tiver cache (mesmo de outra data), retorna pra não quebrar, ou gera falso
         if (cacheJogos.dados) return res.json(cacheJogos.dados);
         res.json(gerarJogosFalsos(dataFiltro));
     }
@@ -129,12 +142,11 @@ function formatar(data) {
     return data.map(j => {
         const st = j.fixture.status.short;
         
-        // --- FILTRO CORRIGIDO V16 ---
-        // Apenas confere o STATUS. Removemos a checagem de horário para evitar bugs de fuso.
-        // NS = Not Started (Não Iniciado)
-        // TBD = Time To Be Defined (A Definir)
-        // Se for 1H, 2H, FT, ele remove.
-        if (!['NS', 'TBD'].includes(st)) return null;
+        // --- FILTRO REVERTIDO (SEGURANÇA) ---
+        // Remove apenas o que JÁ ACABOU (FT, PEN, AET).
+        // Deixa passar NS (Não iniciado), TBD (A definir), 1H, 2H (Ao vivo).
+        // Assim a lista nunca fica vazia se tiver jogo rolando.
+        if (['FT', 'AET', 'PEN', 'SUSP', 'INT'].includes(st)) return null;
 
         const odds = calcularOdds(j);
         return {
@@ -152,4 +164,4 @@ app.post('/api/cadastro', async (req, res) => { try { const { nome, email, senha
 app.post('/api/login', async (req, res) => { try { const { email, senha } = req.body; const r = await pool.query('SELECT * FROM usuarios WHERE email = $1', [email]); if(r.rows.length && await bcrypt.compare(senha, r.rows[0].senha)) { const u = r.rows[0]; delete u.senha; res.json({sucesso:true, usuario:u}); } else res.status(400).json({erro:"Erro"}); } catch(e){ res.status(500).json({erro:"Erro"}); } });
 app.get('/api/bilhete/:codigo', async (req, res) => { try { const r = await pool.query(`SELECT b.*, u.nome as cliente FROM bilhetes b LEFT JOIN usuarios u ON b.usuario_id = u.id WHERE b.codigo = $1`, [req.params.codigo]); res.json({sucesso: r.rows.length>0, bilhete: r.rows[0]}); } catch(e){ res.status(500).json({erro:"Erro"}); } });
 
-app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V16 (Status Fixo) On!"));
+app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V17 (Cache Corrigido) On!"));
