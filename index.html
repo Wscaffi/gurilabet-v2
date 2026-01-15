@@ -226,7 +226,7 @@
     </div>
 
     <script>
-        // ATENÇÃO: Troque pelo link real da Railway ou localhost para testar
+        // ATENÇÃO: Se seu Railway mudar de link, atualize aqui
         const API_URL = 'https://gurilabet-v2-production.up.railway.app'; 
         
         let todosJogos = [];
@@ -368,11 +368,20 @@
                 if (modoAtual === 'aovivo') url += `?aovivo=true`; else url += `?data=${dataAtiva}`;
                 const res = await fetch(url);
                 todosJogos = await res.json();
+
+                // Verifica se veio uma lista de verdade
+                if (!Array.isArray(todosJogos) || todosJogos.length === 0) {
+                     document.getElementById('container-jogos').innerHTML = "<div class='text-center py-20 text-gray-500 font-bold'>Nenhum jogo disponível.</div>"; 
+                     return; 
+                }
+
                 jogosExibidos = todosJogos;
-                if(todosJogos.length === 0) { document.getElementById('container-jogos').innerHTML = "<div class='text-center py-20 text-gray-500 font-bold'>Nenhum jogo disponível.</div>"; return; }
                 renderizarMenuLigas();
                 renderizarVitrine();
-            } catch (e) { document.getElementById('container-jogos').innerHTML = "<p class='text-center py-20 text-red-500'>Erro Conexão</p>"; }
+            } catch (e) { 
+                console.error(e);
+                document.getElementById('container-jogos').innerHTML = "<p class='text-center py-20 text-red-500'>Erro Conexão com Servidor</p>"; 
+            }
         }
 
         function filtrarBusca(termo) {
