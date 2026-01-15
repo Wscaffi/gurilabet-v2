@@ -8,23 +8,21 @@ const app = express();
 app.use(express.json());
 app.use(cors({ origin: '*' }));
 
-// --- ⚙️ CONFIGURAÇÕES DE RISCO ---
+// --- ⚙️ CONFIGURAÇÕES ---
 const CONFIG = {
     LUCRO_CASA: 0.92,       
     ODD_MAXIMA: 2000.00,    
-    TEMPO_CACHE: 30 * 60 * 1000, 
+    TEMPO_CACHE: 20 * 60 * 1000, // 20 Minutos (Atualiza mais rápido pra sumir com jogos velhos)
     SENHA_ADMIN: "admin_gurila_2026",
     
-    // --- 🔒 REGRAS DO BILHETE (ATUALIZADO V13) ---
+    // Regras (Valendo, mas invisíveis no topo)
     MIN_VALOR_APOSTA: 2.00,   
     MAX_VALOR_APOSTA: 200.00, 
     MAX_PREMIO_PAGO: 5000.00, 
-    
-    MIN_JOGOS_BILHETE: 2,     // Mínimo: Casadinha (2 jogos)
-    MAX_JOGOS_BILHETE: 10     // Máximo: 10 jogos
+    MIN_JOGOS_BILHETE: 2,     
+    MAX_JOGOS_BILHETE: 10     
 };
 
-// --- TIMES FORTES (Correção de Odds) ---
 const TIMES_FORTES = [
     "Flamengo", "Palmeiras", "Atlético Mineiro", "River Plate", "Boca Juniors",
     "Real Madrid", "Barcelona", "Atletico Madrid", "Man City", "Liverpool", "Arsenal",
@@ -49,7 +47,7 @@ async function initDb() {
         await pool.query(`CREATE TABLE IF NOT EXISTS bilhetes (id SERIAL PRIMARY KEY, usuario_id INTEGER, codigo TEXT UNIQUE, valor NUMERIC, retorno NUMERIC, odds_total NUMERIC, status TEXT DEFAULT 'pendente', detalhes JSONB, data TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         const u = await pool.query("SELECT id FROM usuarios WHERE id = 1");
         if(u.rows.length === 0) await pool.query("INSERT INTO usuarios (id, nome, email, senha) VALUES (1, 'Balcão', 'sistema@gurila.com', '123')");
-        console.log("✅ Servidor V13 (Regra 2 a 10 Jogos) Online!");
+        console.log("✅ Servidor V14 (Filtro Futuro) Online!");
     } catch (e) { console.error(e.message); }
 }
 initDb();
@@ -75,27 +73,19 @@ app.get('/api/jogos', async (req, res) => {
     }
 });
 
-// --- ROTA FINALIZAR (COM NOVA VALIDAÇÃO) ---
 app.post('/api/finalizar', async (req, res) => {
     const ip = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
     if (!rateLimiter(ip)) return res.status(429).json({ erro: "Aguarde..." });
 
     let { usuario_id, valor, apostas, odd_total } = req.body;
     
-    // 1. Valida Quantidade de Jogos (Min 2, Max 10)
-    if (!Array.isArray(apostas)) return res.status(400).json({ erro: "Erro nos dados." });
+    if (!Array.isArray(apostas)) return res.status(400).json({ erro: "Erro dados" });
+    if (apostas.length < CONFIG.MIN_JOGOS_BILHETE) return res.status(400).json({ erro: `Mínimo de ${CONFIG.MIN_JOGOS_BILHETE} jogos!` });
+    if (apostas.length > CONFIG.MAX_JOGOS_BILHETE) return res.status(400).json({ erro: `Máximo de ${CONFIG.MAX_JOGOS_BILHETE} jogos!` });
     
-    if (apostas.length < CONFIG.MIN_JOGOS_BILHETE) {
-        return res.status(400).json({ erro: `Mínimo de ${CONFIG.MIN_JOGOS_BILHETE} jogos para apostar!` });
-    }
-    if (apostas.length > CONFIG.MAX_JOGOS_BILHETE) {
-        return res.status(400).json({ erro: `Máximo de ${CONFIG.MAX_JOGOS_BILHETE} jogos permitidos!` });
-    }
-    
-    // 2. Valida Valor
     valor = parseFloat(valor);
-    if (isNaN(valor) || valor < CONFIG.MIN_VALOR_APOSTA) return res.status(400).json({ erro: `Aposta mínima: R$ ${CONFIG.MIN_VALOR_APOSTA}` });
-    if (valor > CONFIG.MAX_VALOR_APOSTA) return res.status(400).json({ erro: `Aposta máxima: R$ ${CONFIG.MAX_VALOR_APOSTA}` });
+    if (isNaN(valor) || valor < CONFIG.MIN_VALOR_APOSTA) return res.status(400).json({ erro: `Mínimo R$ ${CONFIG.MIN_VALOR_APOSTA}` });
+    if (valor > CONFIG.MAX_VALOR_APOSTA) return res.status(400).json({ erro: `Máximo R$ ${CONFIG.MAX_VALOR_APOSTA}` });
 
     odd_total = parseFloat(odd_total);
     if (odd_total > CONFIG.ODD_MAXIMA) odd_total = CONFIG.ODD_MAXIMA;
@@ -108,7 +98,7 @@ app.post('/api/finalizar', async (req, res) => {
         await pool.query('INSERT INTO bilhetes (usuario_id, codigo, valor, retorno, odds_total, detalhes) VALUES ($1, $2, $3, $4, $5, $6)', 
         [usuario_id || 1, codigo, valor, retorno.toFixed(2), odd_total, JSON.stringify(apostas)]);
         res.json({ sucesso: true, codigo, retorno: retorno.toFixed(2) });
-    } catch (e) { res.status(500).json({ erro: "Erro ao processar" }); }
+    } catch (e) { res.status(500).json({ erro: "Erro processar" }); }
 });
 
 app.get('/api/admin/resumo', async (req, res) => {
@@ -120,7 +110,6 @@ app.get('/api/admin/resumo', async (req, res) => {
     } catch (e) { res.status(500).json({ erro: "Erro" }); }
 });
 
-// --- FUNÇÕES DE SIMULAÇÃO ---
 function aplicarMargem(v) { return (parseFloat(v) * CONFIG.LUCRO_CASA).toFixed(2); }
 
 function calcularOdds(fixture) {
@@ -139,7 +128,11 @@ function calcularOdds(fixture) {
 function formatar(data) {
     return data.map(j => {
         const st = j.fixture.status.short;
-        if (['FT','AET','PEN'].includes(st)) return null;
+        // --- O FILTRO MÁGICO ---
+        // Se NÃO for 'NS' (Not Started) ou 'TBD' (A definir), joga fora.
+        // Isso remove jogos ao vivo (1H, 2H) e finalizados (FT).
+        if (!['NS', 'TBD'].includes(st)) return null;
+
         const odds = calcularOdds(j);
         return {
             id: j.fixture.id, liga: j.league.name, logo_liga: j.league.logo, pais: j.league.country,
@@ -157,4 +150,4 @@ app.post('/api/cadastro', async (req, res) => { try { const { nome, email, senha
 app.post('/api/login', async (req, res) => { try { const { email, senha } = req.body; const r = await pool.query('SELECT * FROM usuarios WHERE email = $1', [email]); if(r.rows.length && await bcrypt.compare(senha, r.rows[0].senha)) { const u = r.rows[0]; delete u.senha; res.json({sucesso:true, usuario:u}); } else res.status(400).json({erro:"Erro"}); } catch(e){ res.status(500).json({erro:"Erro"}); } });
 app.get('/api/bilhete/:codigo', async (req, res) => { try { const r = await pool.query(`SELECT b.*, u.nome as cliente FROM bilhetes b LEFT JOIN usuarios u ON b.usuario_id = u.id WHERE b.codigo = $1`, [req.params.codigo]); res.json({sucesso: r.rows.length>0, bilhete: r.rows[0]}); } catch(e){ res.status(500).json({erro:"Erro"}); } });
 
-app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V13 (Casadinha) On!"));
+app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V14 (Filtro Futuro) On!"));
