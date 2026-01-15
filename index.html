@@ -8,11 +8,7 @@
     <style>
         body { background: #060a0d; color: #fff; font-family: 'Inter', sans-serif; }
         
-        /* --- ESTRUTURA DO CARD (GRID PERFEITO) --- */
-        /* Isso aqui é a mágica do alinhamento. Define 3 colunas: 
-           1. 40px pro tempo 
-           2. O que sobrar pros times 
-           3. Espaço automático pros botões */
+        /* GRID PERFEITO (MÁGICA DO ALINHAMENTO MOBILE) */
         .match-card-grid {
             display: grid;
             grid-template-columns: 40px 1fr auto; 
@@ -23,25 +19,22 @@
             padding: 12px 10px;
         }
 
-        /* Headers */
         .league-header { background: #12171d; border-left: 4px solid #00ff88; padding: 12px; font-size: 11px; font-weight: 900; text-transform: uppercase; display: flex; align-items: center; gap: 10px; color: #94a3b8; }
         .league-top { border-left: 4px solid #fbbf24; background: #1e1b0b; color: #fbbf24; }
         
-        /* Botões de Odd */
         .odd-btn { background: #1c242c; border: 1px solid #2d3741; border-radius: 6px; width: 48px; height: 40px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: 800; color: #00ff88; transition: 0.2s; cursor: pointer; }
         .odd-btn:hover { background: #2d3741; border-color: #00ff88; }
         .odd-active { background: #00ff88 !important; color: #000 !important; border-color: #00ff88 !important; }
         
-        /* Placar */
+        /* PLACAR AMARELO (Destacado e Fixo) */
         .placar-box {
             font-size: 11px; font-weight: 900; color: #fbbf24; 
             background: rgba(251, 191, 36, 0.1); 
             padding: 2px 6px; border-radius: 4px; 
             border: 1px solid rgba(251, 191, 36, 0.2);
-            min-width: 20px; text-align: center;
+            min-width: 24px; text-align: center;
         }
 
-        /* Utils */
         .date-btn { flex: 1; padding: 10px; text-align: center; font-size: 12px; font-weight: bold; color: #94a3b8; cursor: pointer; transition: 0.3s; background: #11171e; }
         .date-btn.active { background: linear-gradient(90deg, #10b981 0%, #059669 100%); color: #fff; border-bottom: 2px solid #00ff88; }
         .live-pulse { animation: pulseRed 1.5s infinite; color: #ef4444; }
@@ -49,8 +42,6 @@
         .camp-btn { background: #11171e; border: 1px solid #2d3741; padding: 8px 15px; border-radius: 50px; white-space: nowrap; font-size: 10px; font-weight: 900; color: #94a3b8; transition: 0.2s; }
         .camp-btn.active { background: #00ff88; color: #000; border-color: #00ff88; }
         .no-scrollbar::-webkit-scrollbar { display: none; }
-        
-        /* Modais e Mercados */
         .market-btn { background: #0d1117; color: #fff; padding: 12px; border-radius: 6px; text-align: center; font-size: 11px; font-bold; border: 1px solid #30363d; display: flex; justify-content: space-between; cursor: pointer; }
         .cupom-bar { position: fixed; bottom: 0; left: 0; right: 0; background: #11171e; border-top: 1px solid #00ff88; padding: 15px; display: flex; justify-content: space-between; align-items: center; z-index: 1000; box-shadow: 0 -5px 30px rgba(0,0,0,0.9); }
         .input-dark { width: 100%; background: #0d1117; border: 1px solid #30363d; padding: 10px; border-radius: 8px; color: white; outline: none; font-size: 12px; }
