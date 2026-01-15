@@ -52,7 +52,7 @@
     </div>
 
     <main id="container-jogos" class="max-w-3xl mx-auto p-2 pb-40">
-        <div class="text-center py-20 text-gray-600 animate-pulse font-bold uppercase italic text-xs">Carregando Jogos Futuros...</div>
+        <div class="text-center py-20 text-gray-600 animate-pulse font-bold uppercase italic text-xs">Carregando Jogos...</div>
     </main>
     
     <footer class="text-center py-4 bg-[#0b0f13] border-t border-gray-800 mb-20">
@@ -117,7 +117,6 @@
         amanha.setDate(hoje.getDate()+1); depois.setDate(hoje.getDate()+2);
         document.getElementById('btn-depois').innerText = `DIA ${depois.getDate()}/${depois.getMonth()+1}`;
 
-        // --- SISTEMAS ---
         setInterval(() => { if (carrinho.length === 0) carregar(true); }, 60000);
 
         function atualizarUserArea() {
@@ -214,7 +213,6 @@
             document.getElementById('container-jogos').innerHTML = html || "<div class='text-center py-10 text-gray-500'>Nenhum jogo encontrado.</div>";
         }
 
-        // --- CARRINHO E REGRAS ---
         function addAposta(el, id, mercado, opcao, odd, nome) {
             if(odd==0) return;
             document.querySelectorAll('.odd-active').forEach(b => { if(b.getAttribute('onclick').includes(`,${id},`)) b.classList.remove('odd-active'); });
@@ -244,15 +242,13 @@
             carrinho.forEach((i, idx) => { lista.innerHTML += `<div class="bet-item"><div class="bet-info"><h4>${i.nome}</h4><p>${i.mercado}: ${i.opcao} @ ${i.odd}</p></div><button onclick="removerAposta(${idx}, ${i.id})" class="bet-delete"><i class="fas fa-trash"></i></button></div>`; });
             if(usuario) document.getElementById('cliente-nome').value = usuario.nome;
             
-            // VALIDAÇÃO VISUAL
+            // CORREÇÃO: Botão sempre ativo (visual), só dá alerta se clicar
             if(carrinho.length < MIN_JOGOS) {
                 document.getElementById('alerta-jogos').classList.remove('hidden');
-                document.getElementById('btn-gerar').disabled = true;
-                document.getElementById('btn-gerar').classList.add('opacity-50');
+                // document.getElementById('btn-gerar').disabled = true; // REMOVIDO: O botão fica sempre clicável para não parecer quebrado
             } else {
                 document.getElementById('alerta-jogos').classList.add('hidden');
                 document.getElementById('btn-gerar').disabled = false;
-                document.getElementById('btn-gerar').classList.remove('opacity-50');
             }
 
             calcularRetorno(); document.getElementById('cupom-bar').classList.add('hidden'); document.getElementById('modal-cupom').classList.remove('hidden');
@@ -276,7 +272,7 @@
             const nome = document.getElementById('cliente-nome').value, valor = document.getElementById('valor-aposta').value;
             if(!nome || !valor) return alert("Preencha nome e valor.");
             
-            if(carrinho.length < MIN_JOGOS) return alert(`Mínimo de ${MIN_JOGOS} jogos!`);
+            if(carrinho.length < MIN_JOGOS) return alert(`Selecione no mínimo ${MIN_JOGOS} jogos para apostar!`);
             
             const btn = document.getElementById('btn-gerar'); btn.innerText = "GERANDO..."; btn.disabled = true;
             try {
