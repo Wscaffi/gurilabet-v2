@@ -44,7 +44,20 @@
         .input-dark { width: 100%; background: #0d1117; border: 1px solid #30363d; padding: 10px; border-radius: 8px; color: white; outline: none; font-size: 12px; }
         .input-dark:focus { border-color: #00ff88; }
         .max-win { color: #ffd700 !important; text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
-        .placar-live { color: #fbbf24; font-weight: 900; font-size: 12px; background: rgba(251, 191, 36, 0.1); padding: 2px 6px; border-radius: 4px; margin-left: auto; border: 1px solid rgba(251, 191, 36, 0.3); min-width: 30px; text-align: center; }
+        
+        /* PLACAR NOVO (AMARELO e FIXO) */
+        .placar-live { 
+            color: #fbbf24; 
+            font-weight: 900; 
+            font-size: 12px; 
+            background: rgba(251, 191, 36, 0.1); 
+            padding: 2px 6px; 
+            border-radius: 4px; 
+            border: 1px solid rgba(251, 191, 36, 0.3); 
+            min-width: 24px; 
+            text-align: center;
+            display: inline-block;
+        }
     </style>
 </head>
 <body class="pb-24 bg-[#060a0d]">
@@ -54,7 +67,7 @@
         <div id="user-area" class="flex items-center"></div>
     </header>
 
-    <div class="sport-title"><i class="fas fa-futbol mr-2"></i> FUTEBOL V5.0</div>
+    <div class="sport-title"><i class="fas fa-futbol mr-2"></i> FUTEBOL V5.1 (MOBILE FIX)</div>
 
     <div class="flex border-b border-gray-800 bg-[#0b0f13]">
         <div id="btn-aovivo" onclick="mudarData('aovivo')" class="date-btn flex items-center justify-center gap-1">AO VIVO <span class="live-pulse">●</span></div>
@@ -134,7 +147,7 @@
         const depois = new Date(hoje); depois.setDate(hoje.getDate() + 2);
         document.getElementById('btn-depois').innerText = `DIA ${depois.getDate()}/${depois.getMonth()+1}`;
 
-        // --- AUTO-UPDATE (A CADA 60s) ---
+        // --- AUTO-UPDATE ---
         setInterval(() => {
             if (carrinho.length === 0) { console.log("Atualizando..."); carregar(true); }
         }, 60000);
@@ -191,7 +204,7 @@
         function renderizarMenuLigas() { const paises = [...new Set(todosJogos.map(j => traduzir(j.pais)))]; let html = `<button onclick="filtrarLiga('Todos')" class="camp-btn ${ligaAtiva === 'Todos' ? 'active' : ''}">TODOS</button>`; paises.forEach(p => { html += `<button onclick="filtrarLiga('${p}')" class="camp-btn ${traduzir(ligaAtiva) === p ? 'active' : ''}">${p.toUpperCase()}</button>`; }); document.getElementById('menu-campeonatos').innerHTML = html; }
         function filtrarLiga(liga) { ligaAtiva = liga; renderizarMenuLigas(); renderizarVitrine(); }
         
-        // --- VITRINE CORRIGIDA (PLACAR SEPARADO) ---
+        // --- RENDERIZAR VITRINE COM CORREÇÃO MOBILE ---
         function renderizarVitrine() {
             let filtrados = ligaAtiva === 'Todos' ? jogosExibidos : jogosExibidos.filter(j => traduzir(j.pais) === ligaAtiva);
             const gruposTop = {}, gruposNormal = {};
@@ -210,32 +223,35 @@
                         let info = ['1H','2H','HT'].includes(j.status) ? `<span class="text-red-500 font-black animate-pulse">${j.status}</span>` : `${dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}`;
                         const errImg = "this.src='https://cdn-icons-png.flaticon.com/512/168/168733.png'";
                         
-                        // Lógica para separar o placar (2 - 1)
                         let scoreCasa = '', scoreFora = '';
                         if (j.placar) {
                             const partes = j.placar.split(' - ');
                             if(partes.length === 2) {
-                                scoreCasa = `<span class="placar-live">${partes[0]}</span>`;
-                                scoreFora = `<span class="placar-live">${partes[1]}</span>`;
+                                scoreCasa = `<div class="placar-live">${partes[0]}</div>`;
+                                scoreFora = `<div class="placar-live">${partes[1]}</div>`;
                             }
                         }
 
                         html += `<div class="match-card">
                         <div class="text-[10px] text-gray-500 font-bold w-12 text-center flex flex-col justify-center">${info}</div>
-                        <div class="flex-1 px-3 border-l border-gray-800 ml-2 mr-2 grid grid-rows-2 gap-1">
-                            <div class="flex justify-between items-center h-full">
-                                <div class="flex items-center gap-2 font-bold text-[10px] uppercase text-gray-200 truncate">
-                                    <img src="${j.home.logo}" class="w-4 h-4 object-contain" onerror="${errImg}"> ${j.home.name}
+                        
+                        <div class="flex-1 px-3 border-l border-gray-800 ml-2 mr-2 grid grid-rows-2 gap-2">
+                            <div class="flex justify-between items-center h-full gap-2">
+                                <div class="flex items-center gap-2 font-bold text-[10px] uppercase text-gray-200 truncate flex-1 min-w-0">
+                                    <img src="${j.home.logo}" class="w-4 h-4 object-contain shrink-0" onerror="${errImg}"> 
+                                    <span class="truncate">${j.home.name}</span>
                                 </div>
-                                ${scoreCasa}
+                                <div class="shrink-0">${scoreCasa}</div>
                             </div>
-                            <div class="flex justify-between items-center h-full">
-                                <div class="flex items-center gap-2 font-bold text-[10px] uppercase text-gray-200 truncate">
-                                    <img src="${j.away.logo}" class="w-4 h-4 object-contain" onerror="${errImg}"> ${j.away.name}
+                            <div class="flex justify-between items-center h-full gap-2">
+                                <div class="flex items-center gap-2 font-bold text-[10px] uppercase text-gray-200 truncate flex-1 min-w-0">
+                                    <img src="${j.away.logo}" class="w-4 h-4 object-contain shrink-0" onerror="${errImg}"> 
+                                    <span class="truncate">${j.away.name}</span>
                                 </div>
-                                ${scoreFora}
+                                <div class="shrink-0">${scoreFora}</div>
                             </div>
                         </div>
+
                         <div class="flex gap-1 items-center">
                             <button onclick="addAposta(this,${j.id},'Resultado','1',${j.odds.casa},'${j.home.name} x ${j.away.name}')" class="odd-btn"><span>1</span>${j.odds.casa}</button>
                             <button onclick="addAposta(this,${j.id},'Resultado','X',${j.odds.empate},'${j.home.name} x ${j.away.name}')" class="odd-btn"><span>X</span>${j.odds.empate}</button>
@@ -334,7 +350,6 @@
             document.getElementById('modal-extras').classList.remove('hidden'); document.getElementById('modal-extras').classList.add('flex');
         }
 
-        // --- PAINEL ADMIN (CLIQUE TRIPLO) ---
         let adminClicks = 0;
         async function acessarAdmin() {
             adminClicks++; if(adminClicks < 3) return; adminClicks = 0;
