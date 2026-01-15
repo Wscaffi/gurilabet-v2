@@ -8,18 +8,22 @@ const app = express();
 app.use(express.json());
 app.use(cors({ origin: '*' }));
 
-// --- CONFIGURAÇÕES DO CHEFE ---
+// --- ⚙️ CONFIGURAÇÕES DO DONO (SEU COFRE) ---
 const CONFIG = {
-    ODD_MAXIMA: 2000.00,
-    PAGAMENTO_MAXIMO: 5000.00,
-    TEMPO_CACHE: 15 * 60 * 1000, // 15 Minutos
+    // LUCRO DA CASA: 0.90 significa que você repassa 90% da odd e guarda 10%
+    // Quer lucrar mais? Mude para 0.85. Quer ser mais competitivo? Mude para 0.93.
+    LUCRO_CASA: 0.90, 
+    
+    ODD_MAXIMA: 1000.00,        // Teto de odd (Segurança)
+    PAGAMENTO_MAXIMO: 5000.00,  // Teto de prêmio (R$)
+    TEMPO_CACHE: 15 * 60 * 1000, // 15 Minutos de Cache
     SENHA_ADMIN: "admin_gurila_2026"
 };
 
-// --- LISTA DE LIGAS VIP (Onde liberamos todos os mercados) ---
+// --- LIGAS ONDE LIBERAMOS TUDO (Mercados Extras) ---
 const LIGAS_VIP = [
     "Serie A", "Serie B", "Premier League", "La Liga", "Bundesliga", 
-    "Ligue 1", "UEFA Champions League", "Copa Libertadores", "Copa Sudamericana"
+    "Ligue 1", "UEFA Champions League", "Copa Libertadores"
 ];
 
 // --- ANTI-SPAM ---
@@ -55,7 +59,7 @@ async function initDb() {
             const hash = await bcrypt.hash('sistema123', 10);
             await pool.query("INSERT INTO usuarios (id, nome, email, senha) VALUES (1, 'Cliente Balcão', 'sistema@gurila.com', $1)", [hash]);
         }
-        console.log("✅ Servidor V5.0 (Smart Markets) Online!");
+        console.log("✅ Servidor V6.0 (Modo Lucro Ativado) Online!");
     } catch (e) { console.error("⚠️ Erro Banco:", e.message); }
 }
 initDb();
@@ -95,7 +99,7 @@ app.get('/api/jogos', async (req, res) => {
 
         if (!isAoVivo) { cacheJogos = { dados: jogosReais, ultimaAtualizacao: agora }; }
 
-        console.log(`✅ ${jogosReais.length} jogos carregados.`);
+        console.log(`✅ ${jogosReais.length} jogos carregados com Margem de Lucro.`);
         res.json(jogosReais);
 
     } catch (e) {
@@ -145,53 +149,72 @@ app.get('/api/admin/resumo', async (req, res) => {
     } catch (e) { res.status(500).json({ erro: "Erro" }); }
 });
 
-// --- FUNÇÕES INTELIGENTES ---
+// --- FUNÇÃO APLICAR MARGEM DE LUCRO (SEGREDO DO NEGÓCIO) ---
+function aplicarMargem(valorBase) {
+    let odd = parseFloat(valorBase);
+    // Aplica a porcentagem da casa (Ex: 0.90)
+    let oddComMargem = odd * CONFIG.LUCRO_CASA;
+    // Nunca deixa odd menor que 1.01
+    if (oddComMargem < 1.01) oddComMargem = 1.01;
+    return oddComMargem.toFixed(2);
+}
+
+// --- FORMATAÇÃO INTELIGENTE ---
 function formatar(data) {
     return data.map(j => {
         const status = j.fixture.status.short;
         if (['FT', 'AET', 'PEN'].includes(status)) return null;
 
-        // EXTRAI O PLACAR (Se existir)
         let placar = null;
-        if (j.goals.home !== null && j.goals.away !== null) {
-            placar = `${j.goals.home} - ${j.goals.away}`;
-        }
+        if (j.goals.home !== null && j.goals.away !== null) placar = `${j.goals.home} - ${j.goals.away}`;
+
+        // CÁLCULO DAS ODDS COM MARGEM DE LUCRO APLICADA
+        // Se a API não der odds, usamos a base matemática, mas AGORA aplicando a margem
+        const baseCasa = 1.5 + (j.fixture.id % 10)/20;
+        const baseEmpate = 3.0 + (j.fixture.id % 5)/10;
+        const baseFora = 2.2 + (j.fixture.id % 8)/10;
 
         return {
             id: j.fixture.id, liga: j.league.name, logo_liga: j.league.logo, pais: j.league.country,
             home: { name: j.teams.home.name, logo: j.teams.home.logo }, 
             away: { name: j.teams.away.name, logo: j.teams.away.logo },
             data: j.fixture.date, status: status, ativo: true,
-            placar: placar, // ENVIA O PLACAR PRO FRONT
+            placar: placar,
             odds: { 
-                casa: (1.5 + (j.fixture.id % 10)/20).toFixed(2), 
-                empate: (3.0 + (j.fixture.id % 5)/10).toFixed(2), 
-                fora: (2.2 + (j.fixture.id % 8)/10).toFixed(2) 
+                // APLICA O LUCRO DA CASA AQUI
+                casa: aplicarMargem(baseCasa), 
+                empate: aplicarMargem(baseEmpate), 
+                fora: aplicarMargem(baseFora) 
             },
-            mercados: gerarMercadosInteligentes(j.league.name) // CHAMA A NOVA FUNÇÃO
+            mercados: gerarMercadosInteligentes(j.league.name)
         };
     }).filter(Boolean);
 }
 
-// LÓGICA DE MERCADO INTELIGENTE (CASA DE APOSTA)
 function gerarMercadosInteligentes(nomeLiga) {
-    // Mercados Básicos (Todo jogo tem)
+    // Mercados Básicos (Com margem aplicada também!)
     let mercados = {
-        dupla_chance: { casa_empate: "1.25", casa_fora: "1.30", empate_fora: "1.60" },
-        total_gols: { mais_25: "1.90", menos_25: "1.80" }
+        dupla_chance: { 
+            casa_empate: aplicarMargem(1.25), 
+            casa_fora: aplicarMargem(1.30), 
+            empate_fora: aplicarMargem(1.60) 
+        },
+        total_gols: { 
+            mais_25: aplicarMargem(1.90), 
+            menos_25: aplicarMargem(1.80) 
+        }
     };
 
-    // Verifica se é uma Liga VIP (Top Mundial)
     const ehLigaTop = LIGAS_VIP.some(vip => nomeLiga && nomeLiga.includes(vip));
 
     if (ehLigaTop) {
-        // Se for Top, libera tudo (Alto volume, difícil manipulação)
-        mercados.ambas_marcam = { sim: "1.75", nao: "1.95" };
-        mercados.intervalo_final = { "Casa/Casa": "2.50", "Empate/Empate": "4.50", "Fora/Fora": "5.00" };
-        mercados.total_gols_extra = { mais_15: "1.30", menos_15: "3.20" };
+        mercados.ambas_marcam = { sim: aplicarMargem(1.75), nao: aplicarMargem(1.95) };
+        mercados.intervalo_final = { 
+            "Casa/Casa": aplicarMargem(2.50), 
+            "Empate/Empate": aplicarMargem(4.50), 
+            "Fora/Fora": aplicarMargem(5.00) 
+        };
     } 
-    // Se for liga pequena, não retorna os outros mercados (Proteção da Casa)
-
     return mercados;
 }
 
@@ -206,7 +229,7 @@ function gerarJogosFalsos(dataBase) {
             id: 9000+i, liga: "Brasileirão", logo_liga: "https://media.api-sports.io/football/leagues/71.png", pais: "Brazil", 
             home: {name:t1.n,logo:t1.l}, away: {name:t2.n,logo:t2.l}, 
             data: d.toISOString(), status: "NS", ativo: true, placar: null,
-            odds: {casa:"1.90",empate:"3.20",fora:"2.50"}, 
+            odds: {casa: aplicarMargem(1.90), empate: aplicarMargem(3.20), fora: aplicarMargem(2.50)}, 
             mercados: gerarMercadosInteligentes("Serie A") 
         });
     }
@@ -224,4 +247,4 @@ app.get('/api/bilhete/:codigo', async (req, res) => {
     try { const r = await pool.query(`SELECT b.*, u.nome as cliente FROM bilhetes b LEFT JOIN usuarios u ON b.usuario_id = u.id WHERE b.codigo = $1`, [req.params.codigo]); res.json({sucesso: r.rows.length>0, bilhete: r.rows[0]}); } catch(e){ res.status(500).json({erro:"Erro"}); }
 });
 
-app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V5 On!"));
+app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V6 On (Modo Lucro)!"));
