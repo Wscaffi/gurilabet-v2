@@ -44,7 +44,7 @@
         .input-dark { width: 100%; background: #0d1117; border: 1px solid #30363d; padding: 10px; border-radius: 8px; color: white; outline: none; font-size: 12px; }
         .input-dark:focus { border-color: #00ff88; }
         .max-win { color: #ffd700 !important; text-shadow: 0 0 10px rgba(255, 215, 0, 0.3); }
-        .placar-live { color: #fbbf24; font-weight: 900; font-size: 12px; background: rgba(251, 191, 36, 0.1); padding: 2px 6px; border-radius: 4px; margin-left: 5px; border: 1px solid rgba(251, 191, 36, 0.3); }
+        .placar-live { color: #fbbf24; font-weight: 900; font-size: 12px; background: rgba(251, 191, 36, 0.1); padding: 2px 6px; border-radius: 4px; margin-left: auto; border: 1px solid rgba(251, 191, 36, 0.3); min-width: 30px; text-align: center; }
     </style>
 </head>
 <body class="pb-24 bg-[#060a0d]">
@@ -134,13 +134,9 @@
         const depois = new Date(hoje); depois.setDate(hoje.getDate() + 2);
         document.getElementById('btn-depois').innerText = `DIA ${depois.getDate()}/${depois.getMonth()+1}`;
 
-        // --- AUTO-UPDATE (Simula mudança de Odds) ---
-        // A cada 60 segundos, recarrega os dados sem o usuário perceber
+        // --- AUTO-UPDATE (A CADA 60s) ---
         setInterval(() => {
-            if (carrinho.length === 0) { // Só atualiza se o carrinho estiver vazio para não atrapalhar
-                console.log("Atualizando Odds e Placar...");
-                carregar(true); // true = silencioso
-            }
+            if (carrinho.length === 0) { console.log("Atualizando..."); carregar(true); }
         }, 60000);
 
         function atualizarUserArea() {
@@ -195,6 +191,7 @@
         function renderizarMenuLigas() { const paises = [...new Set(todosJogos.map(j => traduzir(j.pais)))]; let html = `<button onclick="filtrarLiga('Todos')" class="camp-btn ${ligaAtiva === 'Todos' ? 'active' : ''}">TODOS</button>`; paises.forEach(p => { html += `<button onclick="filtrarLiga('${p}')" class="camp-btn ${traduzir(ligaAtiva) === p ? 'active' : ''}">${p.toUpperCase()}</button>`; }); document.getElementById('menu-campeonatos').innerHTML = html; }
         function filtrarLiga(liga) { ligaAtiva = liga; renderizarMenuLigas(); renderizarVitrine(); }
         
+        // --- VITRINE CORRIGIDA (PLACAR SEPARADO) ---
         function renderizarVitrine() {
             let filtrados = ligaAtiva === 'Todos' ? jogosExibidos : jogosExibidos.filter(j => traduzir(j.pais) === ligaAtiva);
             const gruposTop = {}, gruposNormal = {};
@@ -213,24 +210,37 @@
                         let info = ['1H','2H','HT'].includes(j.status) ? `<span class="text-red-500 font-black animate-pulse">${j.status}</span>` : `${dt.toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'})}`;
                         const errImg = "this.src='https://cdn-icons-png.flaticon.com/512/168/168733.png'";
                         
-                        // LÓGICA DO PLACAR AO VIVO
-                        const placarHTML = j.placar ? `<span class="placar-live">${j.placar}</span>` : '';
+                        // Lógica para separar o placar (2 - 1)
+                        let scoreCasa = '', scoreFora = '';
+                        if (j.placar) {
+                            const partes = j.placar.split(' - ');
+                            if(partes.length === 2) {
+                                scoreCasa = `<span class="placar-live">${partes[0]}</span>`;
+                                scoreFora = `<span class="placar-live">${partes[1]}</span>`;
+                            }
+                        }
 
                         html += `<div class="match-card">
-                        <div class="text-[10px] text-gray-500 font-bold w-12 text-center">${info}</div>
-                        <div class="flex-1 px-4 border-l border-gray-800 ml-2">
-                            <div class="flex items-center gap-2 font-bold text-[10px] mb-2 uppercase text-gray-200">
-                                <img src="${j.home.logo}" class="w-4 h-4" onerror="${errImg}"> ${j.home.name} ${placarHTML}
+                        <div class="text-[10px] text-gray-500 font-bold w-12 text-center flex flex-col justify-center">${info}</div>
+                        <div class="flex-1 px-3 border-l border-gray-800 ml-2 mr-2 grid grid-rows-2 gap-1">
+                            <div class="flex justify-between items-center h-full">
+                                <div class="flex items-center gap-2 font-bold text-[10px] uppercase text-gray-200 truncate">
+                                    <img src="${j.home.logo}" class="w-4 h-4 object-contain" onerror="${errImg}"> ${j.home.name}
+                                </div>
+                                ${scoreCasa}
                             </div>
-                            <div class="flex items-center gap-2 font-bold text-[10px] uppercase text-gray-200">
-                                <img src="${j.away.logo}" class="w-4 h-4" onerror="${errImg}"> ${j.away.name}
+                            <div class="flex justify-between items-center h-full">
+                                <div class="flex items-center gap-2 font-bold text-[10px] uppercase text-gray-200 truncate">
+                                    <img src="${j.away.logo}" class="w-4 h-4 object-contain" onerror="${errImg}"> ${j.away.name}
+                                </div>
+                                ${scoreFora}
                             </div>
                         </div>
-                        <div class="flex gap-1">
+                        <div class="flex gap-1 items-center">
                             <button onclick="addAposta(this,${j.id},'Resultado','1',${j.odds.casa},'${j.home.name} x ${j.away.name}')" class="odd-btn"><span>1</span>${j.odds.casa}</button>
                             <button onclick="addAposta(this,${j.id},'Resultado','X',${j.odds.empate},'${j.home.name} x ${j.away.name}')" class="odd-btn"><span>X</span>${j.odds.empate}</button>
                             <button onclick="addAposta(this,${j.id},'Resultado','2',${j.odds.fora},'${j.home.name} x ${j.away.name}')" class="odd-btn"><span>2</span>${j.odds.fora}</button>
-                            <button onclick="abrirMercados(${j.id})" class="w-8 h-10 bg-[#2d3741] hover:bg-green-600 rounded text-white font-black text-xs ml-1 flex items-center justify-center">+45</button>
+                            <button onclick="abrirMercados(${j.id})" class="w-8 h-10 bg-[#2d3741] hover:bg-green-600 rounded text-white font-black text-xs ml-1 flex items-center justify-center transition">+45</button>
                         </div></div>`;
                     }); html += `</div>`;
                 }
@@ -309,12 +319,11 @@
         }
 
         function abrirMercados(id) {
-            const j = todosJogos.find(i => i.id == id); if(!j || !j.mercados) return; // Se não tiver mercados, não abre
+            const j = todosJogos.find(i => i.id == id); if(!j || !j.mercados) return; 
             document.getElementById('modal-titulo').innerText = `${j.home.name} X ${j.away.name}`;
             const m = j.mercados, nome = `${j.home.name} x ${j.away.name}`;
             const btn = (mt, sel, od) => `<div onclick="addAposta(this,${id},'${mt}','${sel}',${od},'${nome}')" class="market-btn">${sel} <span class="text-green-500">${od}</span></div>`;
             
-            // GERA HTML DINÂMICO BASEADO NO QUE O SERVIDOR MANDOU
             let html = '';
             if(m.dupla_chance) html += `<div class="market-box"><div class="market-title">Dupla Chance</div><div class="market-grid-3">${btn('Dupla','1X',m.dupla_chance.casa_empate)}${btn('Dupla','12',m.dupla_chance.casa_fora)}${btn('Dupla','X2',m.dupla_chance.empate_fora)}</div></div>`;
             if(m.total_gols) html += `<div class="market-box"><div class="market-title">Gols (+/- 2.5)</div><div class="market-grid">${btn('Gols','+2.5',m.total_gols.mais_25)}${btn('Gols','-2.5',m.total_gols.menos_25)}</div></div>`;
