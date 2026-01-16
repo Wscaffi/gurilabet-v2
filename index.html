@@ -2,178 +2,189 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GURILA BET | SISTEMA</title>
+    <title>SB99 | GURILA</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Arial', sans-serif; -webkit-tap-highlight-color: transparent; }
-        body { background-color: #e0e0e0; color: #000; padding-bottom: 60px; }
+        /* RESET E CORES SB99 */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Arial', sans-serif; }
+        body { background-color: #f0f0f0; padding-bottom: 50px; }
         
-        /* HEADER (Preto Sólido) */
-        .header { background: #000; height: 50px; display: flex; align-items: center; justify-content: space-between; padding: 0 10px; position: sticky; top: 0; z-index: 100; border-bottom: 3px solid #009933; }
-        .logo { color: #fff; font-weight: 900; font-size: 18px; font-style: italic; }
-        .btn-login { background: #333; color: #fff; border: 1px solid #555; padding: 5px 10px; font-size: 11px; border-radius: 3px; text-decoration: none; font-weight: bold; }
-
-        /* DATA NAV (Cinza Escuro) */
-        .nav-dates { background: #212121; display: flex; overflow-x: auto; white-space: nowrap; }
-        .nav-item { flex: 1; padding: 10px 15px; color: #aaa; text-align: center; font-size: 11px; font-weight: bold; border-right: 1px solid #333; cursor: pointer; }
-        .nav-item.active { background: #009933; color: #fff; }
-
-        /* ESTRUTURA DO JOGO (Igual SB99) */
-        .league-bar { background: linear-gradient(to bottom, #333, #000); color: #fff; padding: 8px 10px; font-size: 11px; font-weight: bold; text-transform: uppercase; border-top: 1px solid #555; display: flex; align-items: center; gap: 5px; }
-        .league-bar img { height: 14px; width: 14px; }
-
-        .match-row { background: #fff; border-bottom: 1px solid #ccc; display: flex; padding: 8px 5px; align-items: center; min-height: 55px; }
-        
-        /* Coluna Hora */
-        .col-time { width: 40px; text-align: center; font-size: 10px; color: #333; line-height: 1.2; border-right: 1px solid #eee; margin-right: 5px; font-weight: bold; }
-        
-        /* Coluna Times */
-        .col-teams { flex: 1; display: flex; flex-direction: column; justify-content: center; gap: 2px; }
-        .team-name { font-size: 12px; font-weight: bold; color: #000; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 160px; }
-        
-        /* Coluna Odds (Botões Quadrados) */
-        .col-odds { display: flex; gap: 2px; }
-        .odd-btn { 
-            width: 42px; height: 38px; 
-            background: #eee; border: 1px solid #ccc; 
-            border-radius: 3px; 
-            display: flex; flex-direction: column; 
-            align-items: center; justify-content: center;
-            cursor: pointer;
+        /* CORES */
+        :root {
+            --sb-green: #8bc34a; /* Verde Claro do Topo */
+            --sb-dark-green: #689f38; /* Verde Escuro do Botão */
+            --sb-list-green: #99cc00; /* Verde da Lista */
+            --bg-gray: #e0e0e0;
         }
-        .odd-btn span { font-size: 9px; color: #666; font-weight: bold; }
-        .odd-btn b { font-size: 11px; color: #000; font-weight: bold; }
+
+        /* HEADER */
+        .header { background-color: var(--sb-green); padding: 10px 15px; display: flex; justify-content: space-between; align-items: center; color: #fff; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .brand { font-size: 18px; font-weight: bold; text-shadow: 1px 1px 2px rgba(0,0,0,0.2); }
+        .menu-icon { font-size: 20px; cursor: pointer; }
+
+        /* BARRA DE APOSTA (TOPO) - IGUAL PRINT */
+        .bet-bar { 
+            background: #fff; padding: 8px; display: flex; align-items: center; justify-content: space-between; 
+            border-bottom: 1px solid #ccc; position: sticky; top: 0; z-index: 100; 
+        }
+        .input-money { 
+            background: #e0e0e0; border: 1px solid #999; padding: 8px; width: 100px; 
+            border-radius: 4px; font-size: 14px; color: #333; 
+        }
+        .return-info { text-align: center; font-size: 11px; color: #333; line-height: 1.3; }
+        .return-info b { display: block; font-size: 14px; color: #000; }
+        .btn-cupom { 
+            background: var(--sb-list-green); color: #fff; font-weight: bold; 
+            padding: 8px 15px; border-radius: 4px; border: none; font-size: 13px;
+            box-shadow: 0 2px 2px rgba(0,0,0,0.2); cursor: pointer;
+        }
+        .badge { background: #ffeb3b; color: #000; padding: 1px 5px; border-radius: 3px; font-size: 10px; margin-left: 5px; }
+
+        /* TITULO */
+        .page-title { text-align: center; padding: 15px 0 5px 0; }
+        .page-title h2 { font-size: 20px; font-weight: bold; color: #000; margin-bottom: 2px; }
+        .page-title p { font-size: 12px; color: #666; }
+
+        /* LISTA ACORDEÃO (ESTILO SB99) */
+        .league-container { padding: 5px; }
         
-        /* Estado Ativo (Amarelo ou Verde) */
-        .odd-btn.active { background: #ffcc00; border-color: #c9a30a; }
+        .league-btn {
+            background: var(--sb-list-green);
+            color: #fff;
+            padding: 12px 15px;
+            margin-bottom: 5px;
+            border-radius: 5px;
+            font-weight: bold;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+            text-transform: capitalize;
+        }
+        .league-btn i { margin-right: 10px; }
+        .league-btn .arrow { float: right; transition: 0.3s; }
+        .league-btn.open .arrow { transform: rotate(180deg); }
+
+        /* CONTEUDO DO ACORDEÃO (JOGOS) */
+        .league-games { display: none; background: #fff; margin-bottom: 5px; border-radius: 0 0 5px 5px; overflow: hidden; }
+        .league-games.show { display: block; }
+
+        .game-row { border-bottom: 1px solid #eee; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
         
-        .btn-more { width: 30px; height: 38px; background: #333; color: #fff; font-size: 10px; font-weight: bold; display: flex; align-items: center; justify-content: center; border-radius: 3px; margin-left: 2px; }
+        .game-info { display: flex; justify-content: space-between; font-size: 12px; color: #333; font-weight: bold; }
+        .teams-names { font-size: 13px; margin-bottom: 5px; color: #000; }
 
-        /* RODAPÉ (Fixo Embaixo) */
-        .footer-bet { position: fixed; bottom: 0; width: 100%; background: #000; border-top: 3px solid #009933; padding: 10px; display: flex; justify-content: space-between; align-items: center; z-index: 500; display: none; }
-        .footer-info { color: #fff; font-size: 12px; font-weight: bold; }
-        .footer-info span { color: #009933; font-size: 14px; }
-        .btn-concluir { background: #009933; color: #fff; border: none; padding: 8px 20px; font-weight: bold; font-size: 12px; border-radius: 3px; text-transform: uppercase; cursor: pointer; }
+        .odds-row { display: flex; gap: 5px; }
+        .odd-sq { 
+            flex: 1; background: #f0f0f0; border: 1px solid #ccc; 
+            padding: 8px; text-align: center; border-radius: 4px; cursor: pointer; 
+        }
+        .odd-sq span { display: block; font-size: 10px; color: #666; }
+        .odd-sq b { display: block; font-size: 12px; color: #000; }
+        .odd-sq.active { background: #ffeb3b; border-color: #fdd835; } /* Amarelo ao selecionar */
 
-        /* MODAL (Estilo Janela) */
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; display: none; align-items: center; justify-content: center; }
-        .modal-box { background: #fff; width: 90%; max-width: 400px; border-radius: 5px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
-        .modal-header { background: #000; color: #fff; padding: 10px; font-weight: bold; display: flex; justify-content: space-between; border-bottom: 3px solid #009933; }
-        .modal-body { padding: 15px; max-height: 60vh; overflow-y: auto; background: #f5f5f5; }
-        .modal-footer { padding: 15px; background: #e0e0e0; text-align: center; }
+        /* MENU LATERAL / LOGIN */
+        .sidebar { position: fixed; top: 0; right: -250px; width: 250px; height: 100%; background: #fff; z-index: 200; transition: 0.3s; box-shadow: -2px 0 5px rgba(0,0,0,0.2); padding: 20px; }
+        .sidebar.open { right: 0; }
+        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 150; display: none; }
+        .overlay.open { display: block; }
 
-        .cupom-item { background: #fff; border: 1px solid #ccc; padding: 8px; margin-bottom: 5px; border-left: 4px solid #009933; font-size: 11px; display: flex; justify-content: space-between; }
-        .cupom-del { color: red; font-weight: bold; padding: 0 5px; cursor: pointer; }
+        .form-group { margin-bottom: 15px; }
+        .form-control { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 4px; font-size: 14px; }
+        .btn-action { width: 100%; padding: 10px; background: var(--sb-dark-green); color: #fff; border: none; border-radius: 4px; font-weight: bold; cursor: pointer; margin-top: 5px; }
+        .btn-outline { background: transparent; border: 1px solid var(--sb-dark-green); color: var(--sb-dark-green); margin-top: 10px; }
 
-        .input-sys { width: 100%; padding: 10px; border: 1px solid #ccc; border-radius: 3px; margin-bottom: 10px; font-size: 14px; }
-        .btn-block { width: 100%; padding: 12px; background: #009933; color: #fff; font-weight: bold; border: none; border-radius: 3px; cursor: pointer; font-size: 14px; }
+        /* BOTÃO MAIS (+) */
+        .btn-more { background: #333; color: #fff; width: 40px; display: flex; align-items: center; justify-content: center; border-radius: 4px; font-size: 10px; font-weight: bold; }
     </style>
 </head>
 <body>
 
     <div class="header">
-        <div class="logo">GURILA<span style="color:#009933">BET</span></div>
-        <a href="#" onclick="toggleLogin()" class="btn-login">LOGIN</a>
+        <div class="brand">SB99 <small style="font-size:10px;">v2.0</small></div>
+        <i class="fas fa-bars menu-icon" onclick="toggleMenu()"></i>
     </div>
 
-    <div class="nav-dates">
-        <div class="nav-item active" onclick="loadJogos('hoje', this)">HOJE</div>
-        <div class="nav-item" onclick="loadJogos('amanha', this)">AMANHÃ</div>
-        <div class="nav-item" onclick="loadJogos('depois', this)">SÁBADO</div>
-        <div class="nav-item">DOMINGO</div>
-    </div>
-
-    <div id="container-jogos">
-        <div style="padding: 20px; text-align: center; font-size: 12px; color: #666;">Carregando sistema...</div>
-    </div>
-
-    <div id="footer-bet" class="footer-bet">
-        <div class="footer-info">
-            JOGOS: <span id="qtd-jogos">0</span> <br>
-            COTAÇÃO: <span id="total-odd">1.00</span>
+    <div class="bet-bar">
+        <input type="number" id="valor-topo" class="input-money" placeholder="R$ 0,00" oninput="atualizarCalculo()">
+        <div class="return-info">
+            Possível Retorno<br>
+            <b id="retorno-topo">R$ 0,00</b>
         </div>
-        <button onclick="abrirModal()" class="btn-concluir">CONCLUIR APOSTA</button>
+        <button class="btn-cupom" onclick="finalizarZap()">
+            Cupom <span class="badge" id="qtd-cupom">0</span>
+        </button>
     </div>
 
-    <div id="modal-cupom" class="modal-overlay">
-        <div class="modal-box">
-            <div class="modal-header">
-                <span>SEU BILHETE</span>
-                <span onclick="fecharModal()" style="cursor:pointer">X</span>
-            </div>
-            <div class="modal-body">
-                <div id="lista-cupom"></div>
-                
-                <hr style="border: 0; border-top: 1px solid #ccc; margin: 10px 0;">
-                
-                <label style="font-size: 11px; font-weight: bold; color: #333;">VALOR APOSTA</label>
-                <input type="number" id="valor" class="input-sys" value="2.00" oninput="calcular()">
-                
-                <label style="font-size: 11px; font-weight: bold; color: #333;">NOME CLIENTE</label>
-                <input type="text" id="cliente" class="input-sys" placeholder="Digite o nome">
+    <div class="page-title">
+        <h2>Futebol</h2>
+        <p>Campeonatos disponíveis</p>
+    </div>
 
-                <div style="background: #fff; padding: 10px; border: 1px solid #ccc; text-align: center;">
-                    <small>RETORNO</small><br>
-                    <b id="retorno" style="font-size: 18px; color: #009933;">R$ 0,00</b>
-                </div>
+    <div id="container-ligas" class="league-container">
+        <div style="text-align:center; padding:20px; color:#999;">Carregando Ligas...</div>
+    </div>
+
+    <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
+    <div class="sidebar" id="sidebar">
+        <h3 style="margin-bottom:20px;">Área do Cliente</h3>
+        
+        <div id="form-login">
+            <div class="form-group">
+                <input type="email" id="email" class="form-control" placeholder="Usuário / Email">
             </div>
-            <div class="modal-footer">
-                <button onclick="enviarAposta()" id="btn-finalizar" class="btn-block">CONFIRMAR</button>
+            <div class="form-group">
+                <input type="password" id="senha" class="form-control" placeholder="Senha">
             </div>
+            <button class="btn-action" onclick="fazerLogin()">ENTRAR</button>
+            <button class="btn-action btn-outline" onclick="mostrarCadastro()">CRIAR CONTA</button>
         </div>
-    </div>
 
-    <div id="modal-login" class="modal-overlay">
-        <div class="modal-box" style="max-width: 300px;">
-            <div class="modal-header">ÁREA RESTRITA <span onclick="toggleLogin()" style="cursor:pointer">X</span></div>
-            <div class="modal-body" style="background: #fff;">
-                <input type="email" id="email-login" class="input-sys" placeholder="Usuário">
-                <input type="password" id="senha-login" class="input-sys" placeholder="Senha">
-                <button onclick="fazerLogin()" class="btn-block" style="background:#333;">ACESSAR</button>
-            </div>
+        <div id="form-cadastro" style="display:none;">
+            <h4 style="margin-bottom:10px;">Novo Cadastro</h4>
+            <div class="form-group"><input type="text" id="cad-nome" class="form-control" placeholder="Seu Nome"></div>
+            <div class="form-group"><input type="email" id="cad-email" class="form-control" placeholder="Email"></div>
+            <div class="form-group"><input type="password" id="cad-senha" class="form-control" placeholder="Senha"></div>
+            <button class="btn-action" onclick="fazerCadastro()">CADASTRAR</button>
+            <button class="btn-action btn-outline" onclick="mostrarLogin()">VOLTAR</button>
+        </div>
+
+        <div id="user-logged" style="display:none;">
+            <p>Olá, <b id="user-name">Usuário</b></p>
+            <p style="font-size:12px; color:#666;">Saldo: R$ 0,00</p>
+            <button class="btn-action btn-outline" style="border-color:red; color:red;" onclick="logout()">SAIR</button>
         </div>
     </div>
 
     <script>
-        // CONFIGURAÇÕES
-        const API_URL = 'https://gurilabet-v2-production.up.railway.app'; // SEU BACKEND
-        const WHATSAPP = "5561995478204"; 
+        const API_URL = 'https://gurilabet-v2-production.up.railway.app'; 
+        const ZAP_NUMERO = "5561995478204"; 
 
         let CARRINHO = [];
-        let JOGOS_CACHE = [];
+        let USUARIO = JSON.parse(localStorage.getItem('sb_user'));
 
         // --- INICIALIZAÇÃO ---
         window.onload = () => {
-            loadJogos('hoje', null);
+            carregarJogos();
+            verificarLogin();
         };
 
-        async function loadJogos(dataTipo, el) {
-            if(el) {
-                document.querySelectorAll('.nav-item').forEach(i => i.classList.remove('active'));
-                el.classList.add('active');
-            }
-
-            let dataStr = new Date().toISOString().split('T')[0]; // Padrão hoje
-            // Lógica simples de data (Pode melhorar depois)
-            if(dataTipo === 'amanha') {
-                let d = new Date(); d.setDate(d.getDate() + 1);
-                dataStr = d.toISOString().split('T')[0];
-            }
-
-            document.getElementById('container-jogos').innerHTML = `<div style="padding: 20px; text-align: center; font-size: 12px; color: #666;">BUSCANDO DADOS...</div>`;
-
+        // --- LÓGICA DE DADOS ---
+        async function carregarJogos() {
             try {
-                // Chama seu Backend V26 (que busca na ESPN ou Backup)
-                const res = await fetch(`${API_URL}/api/jogos?data=${dataStr}`);
+                // Pega os dados do backend (que busca na ESPN ou Backup)
+                const res = await fetch(`${API_URL}/api/jogos`);
                 const jogos = await res.json();
-                JOGOS_CACHE = jogos;
-                renderizarLista(jogos);
+                renderizarLigas(jogos);
             } catch (e) {
-                document.getElementById('container-jogos').innerHTML = `<div style="padding: 20px; text-align: center; color: red;">ERRO AO CARREGAR<br>Verifique conexão</div>`;
+                document.getElementById('container-ligas').innerHTML = "Erro ao carregar.";
             }
         }
 
-        function renderizarLista(jogos) {
-            // Agrupar por liga (Lógica SB99)
+        function renderizarLigas(jogos) {
+            // Agrupa jogos por liga
             const grupos = {};
             jogos.forEach(j => {
                 if(!grupos[j.liga]) grupos[j.liga] = [];
@@ -181,166 +192,203 @@
             });
 
             let html = '';
+            // Ícones fixos para ficar bonito igual o print (simulado)
+            const icones = {
+                "BRASILEIRÃO": "🇧🇷", "INGLATERRA": "🏴󠁧󠁢󠁥󠁮󠁧󠁿", "ESPANHA": "🇪🇸", 
+                "ITÁLIA": "🇮🇹", "ALEMANHA": "🇩🇪", "FRANÇA": "🇫🇷", "PORTUGAL": "🇵🇹"
+            };
+
             for(let liga in grupos) {
-                // Header da Liga (Preto com Texto Branco)
-                html += `<div class="league-bar">${liga}</div>`;
+                // Limpa nome da liga para tentar achar ícone
+                let ligaKey = Object.keys(icones).find(k => liga.toUpperCase().includes(k)) || "⚽";
+                let icone = icones[ligaKey] || "⚽";
+
+                html += `
+                <div class="league-btn" onclick="toggleLiga('liga-${liga.replace(/\s/g, '')}')">
+                    <span>${icone} &nbsp; ${liga}</span>
+                    <i class="fas fa-chevron-down arrow"></i>
+                </div>
                 
+                <div id="liga-${liga.replace(/\s/g, '')}" class="league-games">
+                `;
+
                 grupos[liga].forEach(j => {
-                    const hora = new Date(j.data).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
-                    // Linha do Jogo (Branco com divisórias)
+                    let hora = new Date(j.data).toLocaleTimeString('pt-BR', {hour:'2-digit', minute:'2-digit'});
                     html += `
-                    <div class="match-row">
-                        <div class="col-time">${hora}<br><span style="color:#009933">${j.status}</span></div>
-                        <div class="col-teams">
-                            <div class="team-name">${j.home.name}</div>
-                            <div class="team-name">${j.away.name}</div>
+                    <div class="game-row">
+                        <div class="game-info">
+                            <span>${hora}</span>
+                            <span style="color:#666;">${j.id}</span>
                         </div>
-                        <div class="col-odds">
-                            <div class="odd-btn" onclick="addAposta(this, ${j.id}, '1', ${j.odds.casa}, '${j.home.name} x ${j.away.name}')">
+                        <div class="teams-names">
+                            ${j.home.name} x ${j.away.name}
+                        </div>
+                        <div class="odds-row">
+                            <div class="odd-sq" onclick="addAposta(this, ${j.id}, '1', ${j.odds.casa}, '${j.home.name} x ${j.away.name}')">
                                 <span>1</span><b>${j.odds.casa}</b>
                             </div>
-                            <div class="odd-btn" onclick="addAposta(this, ${j.id}, 'X', ${j.odds.empate}, '${j.home.name} x ${j.away.name}')">
+                            <div class="odd-sq" onclick="addAposta(this, ${j.id}, 'X', ${j.odds.empate}, '${j.home.name} x ${j.away.name}')">
                                 <span>X</span><b>${j.odds.empate}</b>
                             </div>
-                            <div class="odd-btn" onclick="addAposta(this, ${j.id}, '2', ${j.odds.fora}, '${j.home.name} x ${j.away.name}')">
+                            <div class="odd-sq" onclick="addAposta(this, ${j.id}, '2', ${j.odds.fora}, '${j.home.name} x ${j.away.name}')">
                                 <span>2</span><b>${j.odds.fora}</b>
                             </div>
-                            <div class="btn-more">+</div>
+                            <div class="btn-more">+${Math.floor(Math.random()*20)+10}</div>
                         </div>
                     </div>`;
                 });
+
+                html += `</div>`; // Fecha div da liga
             }
-            document.getElementById('container-jogos').innerHTML = html;
+            document.getElementById('container-ligas').innerHTML = html;
         }
 
-        // --- LÓGICA DO CARRINHO (SIMPLIFICADA) ---
-        function addAposta(btn, id, opcao, odd, nome) {
-            // Remove seleção visual anterior desse jogo
-            const pai = btn.parentElement;
-            pai.querySelectorAll('.odd-btn').forEach(b => b.classList.remove('active'));
+        // --- INTERAÇÃO VISUAL ---
+        function toggleLiga(id) {
+            // Abre/Fecha a sanfona
+            const el = document.getElementById(id);
+            el.classList.toggle('show');
+            // Gira a seta
+            const btn = el.previousElementSibling;
+            btn.classList.toggle('open');
+        }
 
-            // Remove do array se já existir aposta nesse jogo
+        // --- SISTEMA DE APOSTA ---
+        function addAposta(el, id, opcao, odd, nome) {
+            // Remove seleção visual anterior
+            const pai = el.parentElement;
+            pai.querySelectorAll('.odd-sq').forEach(b => b.classList.remove('active'));
+
+            // Remove do carrinho se já existe
             const idx = CARRINHO.findIndex(i => i.id === id);
             if(idx !== -1) {
-                // Se clicou na mesma, remove e sai (toggle)
                 if(CARRINHO[idx].opcao === opcao) {
                     CARRINHO.splice(idx, 1);
-                    atualizarFooter();
-                    return;
+                    atualizarTopo();
+                    return; // Clicou no mesmo, desmarca
                 }
                 CARRINHO.splice(idx, 1);
             }
 
-            // Adiciona nova
+            // Adiciona
             CARRINHO.push({ id, opcao, odd, nome });
-            btn.classList.add('active'); // Fica Amarelo
-            atualizarFooter();
+            el.classList.add('active'); // Amarelo
+            atualizarTopo();
         }
 
-        function atualizarFooter() {
-            if(CARRINHO.length > 0) {
-                document.getElementById('footer-bet').style.display = 'flex';
-                document.getElementById('qtd-jogos').innerText = CARRINHO.length;
-                
-                let total = CARRINHO.reduce((acc, item) => acc * parseFloat(item.odd), 1);
-                document.getElementById('total-odd').innerText = total.toFixed(2);
-            } else {
-                document.getElementById('footer-bet').style.display = 'none';
-            }
+        function atualizarTopo() {
+            const qtd = CARRINHO.length;
+            document.getElementById('qtd-cupom').innerText = qtd;
+            
+            // Calcula total das odds
+            let oddsTotal = CARRINHO.reduce((acc, i) => acc * parseFloat(i.odd), 1);
+            if(qtd === 0) oddsTotal = 0;
+
+            // Pega valor do input
+            const valor = parseFloat(document.getElementById('valor-topo').value) || 0;
+            const retorno = valor * oddsTotal;
+
+            document.getElementById('retorno-topo').innerText = `R$ ${retorno.toFixed(2)}`;
         }
 
-        // --- MODAIS E FINALIZAÇÃO ---
-        function abrirModal() {
-            document.getElementById('modal-cupom').style.display = 'flex';
-            renderizarCupom();
-            calcular();
+        function atualizarCalculo() {
+            atualizarTopo(); // Chama ao digitar no input
         }
-        function fecharModal() { document.getElementById('modal-cupom').style.display = 'none'; }
 
-        function renderizarCupom() {
-            let html = '';
-            CARRINHO.forEach((item, i) => {
-                html += `
-                <div class="cupom-item">
-                    <div>
-                        <b>${item.nome}</b><br>
-                        Opção: ${item.opcao} | Odd: ${item.odd}
-                    </div>
-                    <div class="cupom-del" onclick="removerItem(${i})">X</div>
-                </div>`;
+        // --- FINALIZAR NO ZAP ---
+        async function finalizarZap() {
+            const valor = parseFloat(document.getElementById('valor-topo').value);
+            if(!valor || valor <= 0) return alert("Digite o valor da aposta lá em cima!");
+            if(CARRINHO.length === 0) return alert("Selecione pelo menos 1 jogo!");
+
+            // Envia para o backend salvar (opcional, mas bom pra registro)
+            // Aqui vamos direto pro ZAP para ser rápido igual o sistema
+            
+            let oddTotal = CARRINHO.reduce((acc, i) => acc * parseFloat(i.odd), 1);
+            let retorno = (valor * oddTotal).toFixed(2);
+            let codigo = "SB" + Math.floor(Math.random() * 90000);
+
+            let msg = `🟢 *SB99 - APOSTA REALIZADA* 🟢\n\n`;
+            msg += `📄 Bilhete: *${codigo}*\n`;
+            msg += `👤 Cliente: *${USUARIO ? USUARIO.nome : 'Anônimo'}*\n`;
+            msg += `📅 Data: ${new Date().toLocaleString()}\n`;
+            msg += `------------------------------\n`;
+            
+            CARRINHO.forEach(c => {
+                msg += `⚽ ${c.nome}\n🎯 Palpite: ${c.opcao} (Odd: ${c.odd})\n\n`;
             });
-            document.getElementById('lista-cupom').innerHTML = html;
+            
+            msg += `------------------------------\n`;
+            msg += `💰 Investimento: *R$ ${valor.toFixed(2)}*\n`;
+            msg += `🏆 Retorno: *R$ ${retorno}*\n`;
+            msg += `📊 Cotação: *${oddTotal.toFixed(2)}*`;
+
+            window.open(`https://wa.me/${ZAP_NUMERO}?text=${encodeURIComponent(msg)}`, '_blank');
+            
+            // Limpa tudo
+            CARRINHO = [];
+            document.querySelectorAll('.odd-sq.active').forEach(b => b.classList.remove('active'));
+            atualizarTopo();
         }
 
-        function removerItem(i) {
-            CARRINHO.splice(i, 1);
-            renderizarCupom();
-            atualizarFooter();
-            calcular();
-            if(CARRINHO.length === 0) fecharModal();
+        // --- LOGIN E CADASTRO ---
+        function toggleMenu() {
+            document.getElementById('sidebar').classList.toggle('open');
+            document.getElementById('overlay').classList.toggle('open');
+        }
+        
+        function mostrarCadastro() {
+            document.getElementById('form-login').style.display = 'none';
+            document.getElementById('form-cadastro').style.display = 'block';
+        }
+        function mostrarLogin() {
+            document.getElementById('form-cadastro').style.display = 'none';
+            document.getElementById('form-login').style.display = 'block';
         }
 
-        function calcular() {
-            const val = parseFloat(document.getElementById('valor').value) || 0;
-            const odds = parseFloat(document.getElementById('total-odd').innerText);
-            document.getElementById('retorno').innerText = "R$ " + (val * odds).toFixed(2);
-        }
-
-        async function enviarAposta() {
-            const cliente = document.getElementById('cliente').value;
-            const valor = document.getElementById('valor').value;
-            const oddTotal = document.getElementById('total-odd').innerText;
-
-            if(!cliente) return alert("Informe o Cliente!");
-
-            const btn = document.getElementById('btn-finalizar');
-            btn.innerText = "AGUARDE..."; btn.disabled = true;
-
-            try {
-                // Envia para o Server V26 (que aceita e grava)
-                const res = await fetch(`${API_URL}/api/finalizar`, {
-                    method: 'POST',
-                    headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify({ usuario_id: 1, valor, apostas: CARRINHO, odd_total: oddTotal })
-                });
-                const data = await res.json();
-
-                if(data.sucesso) {
-                    // MENSAGEM ZAP FORMATO SISTEMA
-                    let msg = `*GURILA BET - COMPROVANTE*\n\n`;
-                    msg += `Cód: *${data.codigo}*\n`;
-                    msg += `Cliente: ${cliente}\n`;
-                    msg += `Data: ${new Date().toLocaleString()}\n`;
-                    msg += `--------------------------------\n`;
-                    CARRINHO.forEach(c => {
-                        msg += `⚽ ${c.nome}\nOpção: ${c.opcao} (${c.odd})\n\n`;
-                    });
-                    msg += `--------------------------------\n`;
-                    msg += `💰 Valor: R$ ${valor}\n`;
-                    msg += `🏆 Retorno: R$ ${data.retorno}\n`;
-                    
-                    window.open(`https://wa.me/${WHATSAPP}?text=${encodeURIComponent(msg)}`, '_blank');
-                    
-                    CARRINHO = []; atualizarFooter(); fecharModal();
-                    // Limpa seleção visual
-                    document.querySelectorAll('.odd-btn.active').forEach(b => b.classList.remove('active'));
-                } else {
-                    alert("Erro: " + data.erro);
-                }
-            } catch(e) {
-                alert("Erro ao conectar no servidor.");
+        function verificarLogin() {
+            if(USUARIO) {
+                document.getElementById('form-login').style.display = 'none';
+                document.getElementById('user-logged').style.display = 'block';
+                document.getElementById('user-name').innerText = USUARIO.nome;
             }
-            btn.innerText = "CONFIRMAR"; btn.disabled = false;
         }
 
-        // --- LOGIN ADMIN ---
-        function toggleLogin() { 
-            const el = document.getElementById('modal-login');
-            el.style.display = (el.style.display === 'flex' ? 'none' : 'flex');
-        }
         async function fazerLogin() {
-            // Lógica simples de login para teste
-            alert("Sistema Protegido. Entre em contato com o suporte.");
+            const email = document.getElementById('email').value;
+            const senha = document.getElementById('senha').value;
+            // Simulação de login rápido ou chame API se quiser
+            if(email && senha) {
+                // Tenta API
+                try {
+                    const res = await fetch(`${API_URL}/api/login`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({email, senha})});
+                    const d = await res.json();
+                    if(d.sucesso) {
+                        USUARIO = d.usuario; localStorage.setItem('sb_user', JSON.stringify(USUARIO));
+                        verificarLogin(); alert("Logado!");
+                    } else alert("Erro login");
+                } catch(e) { alert("Erro conexão"); }
+            }
+        }
+
+        async function fazerCadastro() {
+            const nome = document.getElementById('cad-nome').value;
+            const email = document.getElementById('cad-email').value;
+            const senha = document.getElementById('cad-senha').value;
+            
+            try {
+                const res = await fetch(`${API_URL}/api/cadastro`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({nome, email, senha})});
+                const d = await res.json();
+                if(d.sucesso) {
+                    alert("Conta Criada! Faça Login.");
+                    mostrarLogin();
+                } else alert("Erro criar conta");
+            } catch(e) { alert("Erro conexão"); }
+        }
+
+        function logout() {
+            localStorage.removeItem('sb_user');
+            location.reload();
         }
 
     </script>
