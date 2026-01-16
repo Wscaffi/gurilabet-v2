@@ -8,42 +8,33 @@ const app = express();
 app.use(express.json());
 app.use(cors({ origin: '*' }));
 
-// --- CONFIGURAÇÕES DE NEGÓCIO ---
+// --- CONFIGURAÇÕES GURILA ---
 const CONFIG = {
     LUCRO_CASA: 0.90,       
-    ODD_MAXIMA: 5000.00,    
-    TEMPO_CACHE: 10 * 60 * 1000, 
-    SENHA_ADMIN: "admin_gurila_2026",
-    MIN_VALOR_APOSTA: 1.00,   
+    SENHA_ADMIN: "admin_gurila",
+    MIN_VALOR_APOSTA: 2.00,   
     MAX_VALOR_APOSTA: 1000.00, 
     MAX_PREMIO_PAGO: 10000.00, 
-    MIN_JOGOS_BILHETE: 1, 
-    MAX_JOGOS_BILHETE: 20     
+    MIN_JOGOS_BILHETE: 1 
 };
 
-// Times Gigantes (Para ajustar a odd automaticamente)
-const TIMES_FORTES = ["Flamengo", "Palmeiras", "Atlético-MG", "Real Madrid", "Barcelona", "Man City", "Liverpool", "PSG", "Bayern", "Al Hilal"];
+// Times Fortes (Para gerar odds coerentes)
+const TIMES_FORTES = ["Flamengo", "Palmeiras", "Atlético-MG", "Real Madrid", "Barcelona", "Man City", "Liverpool", "PSG", "Bayern", "Inter", "Milan", "Juventus", "Arsenal", "São Paulo", "Corinthians", "Grêmio", "Internacional"];
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
-let cacheJogos = { dataRef: null, dados: null, ultimaAtualizacao: 0 };
 
-// --- INICIALIZAÇÃO DO BANCO (AUTO-CORREÇÃO) ---
 async function initDb() {
     try {
-        // Cria tabela de usuários
         await pool.query(`CREATE TABLE IF NOT EXISTS usuarios (id SERIAL PRIMARY KEY, nome TEXT, email TEXT UNIQUE, senha TEXT, saldo NUMERIC DEFAULT 0.00)`);
+        await pool.query(`CREATE TABLE IF NOT EXISTS bilhetes (id SERIAL PRIMARY KEY, usuario_id INTEGER, codigo TEXT UNIQUE, valor NUMERIC, retorno NUMERIC, odds_total NUMERIC, status TEXT DEFAULT 'pendente', detalhes JSONB, data TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         
-        // Cria tabela de bilhetes (Se não existir)
-        await pool.query(`CREATE TABLE IF NOT EXISTS bilhetes (
+        // --- TABELA DE CACHE (O SEGREDO DO SB99) ---
+        // Em vez de memória RAM, usamos o disco. Muito mais estável.
+        await pool.query(`CREATE TABLE IF NOT EXISTS jogos_cache (
             id SERIAL PRIMARY KEY, 
-            usuario_id INTEGER, 
-            codigo TEXT UNIQUE, 
-            valor NUMERIC, 
-            retorno NUMERIC, 
-            odds_total NUMERIC, 
-            status TEXT DEFAULT 'pendente', 
-            detalhes JSONB, 
-            data TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            data_ref TEXT, 
+            json_dados JSONB, 
+            atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
         )`);
 
         const u = await pool.query("SELECT id FROM usuarios WHERE id = 1");
@@ -51,125 +42,163 @@ async function initDb() {
             const hash = await bcrypt.hash('123456', 10);
             await pool.query("INSERT INTO usuarios (id, nome, email, senha) VALUES (1, 'Admin', 'admin@gurila.com', $1)", [hash]);
         }
-        console.log("✅ Servidor V24 (Híbrido) Online!");
-    } catch (e) { console.error("❌ ERRO DB:", e.message); }
+        console.log("✅ Servidor V26 (Estrutura SB99) Online!");
+    } catch (e) { console.error("Erro DB:", e.message); }
 }
 initDb();
 
-// --- ROTA DE JOGOS (ESPN + BACKUP) ---
+// --- ROTA INTELIGENTE (Lê do Banco, se não tiver, busca fora) ---
 app.get('/api/jogos', async (req, res) => {
-    const dataFiltro = req.query.data || new Date().toISOString().split('T')[0];
-    const dataESPN = dataFiltro.replace(/-/g, ''); 
-    const agora = Date.now();
-
-    // Cache Inteligente
-    if (cacheJogos.dados && cacheJogos.dataRef === dataFiltro && (agora - cacheJogos.ultimaAtualizacao < CONFIG.TEMPO_CACHE)) {
-        return res.json(cacheJogos.dados);
-    }
+    const dataHoje = req.query.data || new Date().toISOString().split('T')[0];
     
     try {
-        // Tenta API da ESPN (Não precisa de chave, não bloqueia fácil)
-        const url = `http://site.api.espn.com/apis/site/v2/sports/soccer/scoreboards?dates=${dataESPN}`;
-        const resp = await axios.get(url, { timeout: 6000 });
+        // 1. Tenta ler do BANCO LOCAL (Muito rápido, zero bloqueio)
+        const cache = await pool.query("SELECT json_dados FROM jogos_cache WHERE data_ref = $1", [dataHoje]);
         
-        if (!resp.data || !resp.data.events) throw new Error("ESPN Vazia");
-        
-        const jogosReais = formatarESPN(resp.data.events);
-        if(jogosReais.length === 0) throw new Error("Filtro removeu tudo");
+        if (cache.rows.length > 0) {
+            console.log("📦 Entregando jogos do Banco de Dados");
+            return res.json(cache.rows[0].json_dados);
+        }
 
-        cacheJogos = { dataRef: dataFiltro, dados: jogosReais, ultimaAtualizacao: agora };
-        res.json(jogosReais);
+        // 2. Se não tem no banco, vai na ESPN (Semeador)
+        console.log("📡 Buscando na ESPN para salvar no banco...");
+        const dataESPN = dataHoje.replace(/-/g, '');
+        const url = `http://site.api.espn.com/apis/site/v2/sports/soccer/scoreboards?dates=${dataESPN}`;
+        
+        const resp = await axios.get(url, { timeout: 8000 });
+        let jogos = [];
+
+        if (resp.data && resp.data.events) {
+            jogos = formatarESPN(resp.data.events);
+        }
+
+        // 3. Se a ESPN falhar ou vier vazia, usa o Gerador de Emergência
+        if (jogos.length === 0) {
+            console.log("⚠️ ESPN vazia, gerando jogos simulados.");
+            jogos = gerarJogosSimulados(dataHoje);
+        }
+
+        // 4. SALVA NO BANCO (Para as próximas 1000 pessoas lerem de lá)
+        await pool.query("INSERT INTO jogos_cache (data_ref, json_dados) VALUES ($1, $2) ON CONFLICT DO NOTHING", [dataHoje, JSON.stringify(jogos)]);
+        
+        res.json(jogos);
 
     } catch (e) {
-        console.log("⚠️ API Falhou, ativando Backup:", e.message);
-        res.json(gerarJogosFalsos(dataFiltro));
+        console.error("Erro Geral:", e.message);
+        // Último recurso: retorna simulado sem salvar
+        res.json(gerarJogosSimulados(dataHoje));
     }
 });
 
-// --- ROTA DE FINALIZAR (DESTRAVADA) ---
+// --- ROTA DE ATUALIZAR (Botão pro Admin forçar atualização) ---
+app.get('/api/admin/limpar-cache', async (req, res) => {
+    if (req.query.senha !== CONFIG.SENHA_ADMIN) return res.status(403).json({erro: "Senha errada"});
+    await pool.query("DELETE FROM jogos_cache");
+    res.json({sucesso: true, msg: "Cache limpo! A próxima visita vai baixar jogos novos."});
+});
+
+// --- ROTA DE APOSTA ---
 app.post('/api/finalizar', async (req, res) => {
     try {
-        console.log("📩 Processando aposta...");
         let { usuario_id, valor, apostas, odd_total } = req.body;
         
-        // Validações Básicas
-        if (!apostas || !Array.isArray(apostas)) return res.status(400).json({ erro: "Carrinho vazio." });
-        if (apostas.length < CONFIG.MIN_JOGOS_BILHETE) return res.status(400).json({ erro: `Mínimo de ${CONFIG.MIN_JOGOS_BILHETE} jogo(s).` });
+        if (!apostas || !Array.isArray(apostas)) return res.status(400).json({ erro: "Aposta vazia" });
+        if (apostas.length < CONFIG.MIN_JOGOS_BILHETE) return res.status(400).json({ erro: `Mínimo ${CONFIG.MIN_JOGOS_BILHETE} jogo` });
         
         valor = parseFloat(valor);
-        if (isNaN(valor) || valor < CONFIG.MIN_VALOR_APOSTA) return res.status(400).json({ erro: `Valor Mínimo: R$ ${CONFIG.MIN_VALOR_APOSTA}` });
+        if (valor < CONFIG.MIN_VALOR_APOSTA) return res.status(400).json({ erro: `Mínimo R$ ${CONFIG.MIN_VALOR_APOSTA}` });
 
-        // Gera Código e Calcula Retorno
         const codigo = "GB" + Math.floor(100000 + Math.random() * 900000);
         const retorno = (valor * parseFloat(odd_total)).toFixed(2);
         
-        // SALVA NO BANCO (Sem validar odd externa para não travar)
         await pool.query('INSERT INTO bilhetes (usuario_id, codigo, valor, retorno, odds_total, detalhes) VALUES ($1, $2, $3, $4, $5, $6)', 
             [usuario_id || 1, codigo, valor, retorno, odd_total, JSON.stringify(apostas)]);
             
-        console.log(`✅ Bilhete ${codigo} Gerado com Sucesso!`);
         res.json({ sucesso: true, codigo, retorno });
-
     } catch (e) {
-        console.error("❌ ERRO AO SALVAR:", e);
-        res.status(500).json({ erro: "Erro no Banco de Dados. Tente novamente." });
+        res.status(500).json({ erro: "Erro Banco de Dados" });
     }
 });
 
-// --- AUXILIARES ---
+// --- ENGINE DE ODDS (Coração do Sistema) ---
+function calcularOdds(home, away) {
+    const hStrong = TIMES_FORTES.some(t => home.includes(t));
+    const aStrong = TIMES_FORTES.some(t => away.includes(t));
+    
+    let casa, empate, fora;
+
+    if (hStrong && !aStrong) { casa = 1.35; empate = 4.50; fora = 7.50; }
+    else if (aStrong && !hStrong) { casa = 6.00; empate = 4.00; fora = 1.50; }
+    else { casa = 2.30; empate = 3.20; fora = 2.90; }
+
+    // Variação aleatória para não ficar robótico
+    casa += (Math.random() * 0.3);
+    fora += (Math.random() * 0.3);
+
+    return { 
+        casa: (casa * CONFIG.LUCRO_CASA).toFixed(2), 
+        empate: (empate * CONFIG.LUCRO_CASA).toFixed(2), 
+        fora: (fora * CONFIG.LUCRO_CASA).toFixed(2) 
+    };
+}
+
 function formatarESPN(events) {
     return events.map(ev => {
         try {
-            const status = ev.status.type.state; 
-            if (status === 'post') return null; // Remove jogos encerrados
-
             const h = ev.competitions[0].competitors.find(c => c.homeAway === 'home');
             const a = ev.competitions[0].competitors.find(c => c.homeAway === 'away');
-            const odds = calcularOdds(h.team.displayName, a.team.displayName);
+            const status = ev.status.type.state; // pre, in, post
+            
+            // Remove jogos encerrados para limpar a tela
+            if (status === 'post') return null;
 
             return {
                 id: parseInt(ev.id),
-                liga: (ev.season.slug || "Mundo").toUpperCase(),
-                logo_liga: "https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500-dark/default.png&w=40&h=40", 
-                pais: "Mundo",
+                liga: (ev.season.slug || "Mundo").toUpperCase().replace("-", " "),
+                logo_liga: "https://a.espncdn.com/combiner/i?img=/i/leaguelogos/soccer/500-dark/default.png&w=40&h=40",
                 home: { name: h.team.displayName, logo: h.team.logo || "" },
                 away: { name: a.team.displayName, logo: a.team.logo || "" },
                 data: ev.date,
-                status: status === 'pre' ? 'NS' : 'AO VIVO',
-                ativo: true,
-                odds: odds,
-                mercados: { total_gols: { mais_25: "1.80", menos_25: "1.90" }, dupla_chance: { casa_empate: "1.25", casa_fora: "1.25", empate_fora: "1.25" } }
+                status: status === 'in' ? 'AO VIVO' : 'VS',
+                odds: calcularOdds(h.team.displayName, a.team.displayName)
             };
         } catch (e) { return null; }
     }).filter(Boolean);
 }
 
-function calcularOdds(home, away) {
-    const hStrong = TIMES_FORTES.some(t => home.includes(t));
-    const aStrong = TIMES_FORTES.some(t => away.includes(t));
-    let oH = 2.10, oD = 3.20, oA = 3.00;
-
-    if(hStrong && !aStrong) { oH = 1.35; oD = 4.50; oA = 7.00; }
-    else if(aStrong && !hStrong) { oH = 6.50; oD = 4.00; oA = 1.45; }
-    
-    oH = (parseFloat(oH) + (Math.random() * 0.2)).toFixed(2);
-    oA = (parseFloat(oA) + (Math.random() * 0.2)).toFixed(2);
-    return { casa: aplicarMargem(oH), empate: aplicarMargem(oD), fora: aplicarMargem(oA) };
-}
-
-function aplicarMargem(v) { return (parseFloat(v) * CONFIG.LUCRO_CASA).toFixed(2); }
-
-function gerarJogosFalsos(d) {
-    const t = new Date(); t.setHours(t.getHours()+2);
-    return [
-        { id: 901, liga: "BACKUP - CLIQUE PARA APOSTAR", logo_liga: "", pais: "BR", home: {name:"Flamengo",logo:"https://upload.wikimedia.org/wikipedia/commons/2/2e/Flamengo_braz_logo.svg"}, away: {name:"Vasco",logo:"https://upload.wikimedia.org/wikipedia/commons/6/67/Vasco_da_Gama_2017.svg"}, data: t.toISOString(), status: "NS", ativo: true, odds: {casa:"1.90",empate:"3.20",fora:"3.50"}, mercados: { total_gols: { mais_25: "1.80", menos_25: "1.90" }, dupla_chance: { casa_empate: "1.20", casa_fora: "1.20", empate_fora: "1.20" } } }
+function gerarJogosSimulados(data) {
+    // Lista de segurança para nunca ficar vazio
+    const lista = [];
+    const times = [
+        ["Flamengo", "Vasco"], ["Palmeiras", "São Paulo"], ["Liverpool", "Arsenal"],
+        ["Real Madrid", "Barcelona"], ["Boca Juniors", "River Plate"], ["Milan", "Inter"]
     ];
+    
+    let baseTime = new Date(data);
+    baseTime.setHours(14, 0, 0); // Começa às 14h
+
+    times.forEach((par, i) => {
+        const horario = new Date(baseTime);
+        horario.setHours(baseTime.getHours() + i);
+        
+        lista.push({
+            id: 9000 + i,
+            liga: "JOGOS EM DESTAQUE",
+            logo_liga: "https://cdn-icons-png.flaticon.com/512/1165/1165187.png",
+            home: { name: par[0], logo: "https://cdn-icons-png.flaticon.com/512/183/183345.png" },
+            away: { name: par[1], logo: "https://cdn-icons-png.flaticon.com/512/183/183345.png" },
+            data: horario.toISOString(),
+            status: "VS",
+            odds: calcularOdds(par[0], par[1])
+        });
+    });
+    return lista;
 }
 
-// Rotas Extras
+// Rotas Padrão
 app.get('/api/admin/resumo', async (req, res) => { try { const f = await pool.query(`SELECT COUNT(*) as t, SUM(valor) as e, SUM(retorno) as r FROM bilhetes`); const u = await pool.query(`SELECT codigo, valor, retorno, data FROM bilhetes ORDER BY data DESC LIMIT 10`); res.json({ caixa: { total: f.rows[0].t, entrada: `R$ ${parseFloat(f.rows[0].e||0).toFixed(2)}`, risco: `R$ ${parseFloat(f.rows[0].r||0).toFixed(2)}` }, ultimos: u.rows }); } catch (e) { res.status(500).json({ erro: "Erro" }); } });
 app.post('/api/cadastro', async (req, res) => { try { const { nome, email, senha } = req.body; const hash = await bcrypt.hash(senha, 10); const result = await pool.query('INSERT INTO usuarios (nome, email, senha) VALUES ($1, $2, $3) RETURNING id, nome, saldo', [nome, email, hash]); res.json({ sucesso: true, usuario: result.rows[0] }); } catch (e) { res.status(500).json({ erro: "Erro" }); } });
 app.post('/api/login', async (req, res) => { try { const { email, senha } = req.body; const r = await pool.query('SELECT * FROM usuarios WHERE email = $1', [email]); if(r.rows.length && await bcrypt.compare(senha, r.rows[0].senha)) { const u = r.rows[0]; delete u.senha; res.json({sucesso:true, usuario:u}); } else res.status(400).json({erro:"Erro"}); } catch(e){ res.status(500).json({erro:"Erro"}); } });
 app.get('/api/bilhete/:codigo', async (req, res) => { try { const r = await pool.query(`SELECT b.*, u.nome as cliente FROM bilhetes b LEFT JOIN usuarios u ON b.usuario_id = u.id WHERE b.codigo = $1`, [req.params.codigo]); res.json({sucesso: r.rows.length>0, bilhete: r.rows[0]}); } catch(e){ res.status(500).json({erro:"Erro"}); } });
 
-app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V24 (Híbrido) On!"));
+app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V26 (Espelho) On!"));
