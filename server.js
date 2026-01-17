@@ -10,17 +10,20 @@ app.use(cors({ origin: '*' }));
 // --- CONFIGURAÇÕES ---
 const CONFIG = {
     API_KEY: process.env.API_FOOTBALL_KEY || "SUA_CHAVE_AQUI", 
-    LUCRO_CASA: 0.90, // Margem de segurança sobre a Bet365
-    TEMPO_CACHE_MINUTOS: 45, // Economia de requisições
+    LUCRO_CASA: 0.90, // Margem sobre a Bet365 (ex: 3.60 vira 3.24)
+    
+    // ATENÇÃO: Aumentei o cache para 50 min para compensar o uso extra de API
+    // 3 chamadas x 28 vezes ao dia = 84 chamadas (Dentro do limite de 100)
+    TEMPO_CACHE_MINUTOS: 50, 
+    
     MIN_VALOR: 2.00,
     MAX_VALOR: 1000.00,
     MAX_PREMIO: 10000.00,
     LIGAS_VIP: ["Premier League", "La Liga", "Serie A", "Bundesliga", "Ligue 1", "Brasileirão", "Paulista", "Carioca", "Champions League", "Libertadores"]
 };
 
-// REMOVI "Flamengo" DA LISTA DE FORÇA PARA EVITAR ODD 1.40 SE A API FALHAR
+// Times para fallback (Flamengo fora pra evitar erro de odd baixa)
 const TIMES_FORTES = ["Palmeiras", "Real Madrid", "Barcelona", "Man City", "Liverpool", "PSG", "Bayern", "Milan", "Inter", "Arsenal"];
-
 const TRADUCOES = { "World": "Mundo", "Brazil": "Brasil", "England": "Inglaterra", "Spain": "Espanha", "Italy": "Itália", "Germany": "Alemanha", "France": "França", "Portugal": "Portugal", "Premier League": "Premier League", "Serie A": "Série A", "La Liga": "La Liga", "Carioca - 1": "Carioca", "Paulista - A1": "Paulista A1", "Copa Libertadores": "Libertadores", "UEFA Champions League": "Champions League" };
 function traduzir(txt) { return TRADUCOES[txt] || txt; }
 
@@ -31,12 +34,9 @@ async function initDb() {
         await pool.query(`CREATE TABLE IF NOT EXISTS bilhetes (id SERIAL PRIMARY KEY, usuario_id INTEGER, codigo TEXT UNIQUE, valor NUMERIC, retorno NUMERIC, odds_total NUMERIC, status TEXT DEFAULT 'pendente', detalhes JSONB, data TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         await pool.query(`CREATE TABLE IF NOT EXISTS jogos_cache (id SERIAL PRIMARY KEY, data_ref TEXT UNIQUE, json_dados JSONB, atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         
-        // --- LIMPEZA DE EMERGÊNCIA ---
-        // Apaga o cache antigo assim que o servidor reinicia para garantir odds novas
-        console.log("🧹 Limpando memória antiga para pegar Odds Reais...");
+        // Limpa cache ao iniciar para pegar o Flamengo certo agora
         await pool.query("DELETE FROM jogos_cache");
-        
-        console.log("✅ Servidor V53 (Flamengo Fix + Odds Reais) Online!");
+        console.log("✅ Servidor V54 (Sniper de Odds) Online!");
     } catch (e) { console.error(e); }
 }
 initDb();
@@ -54,34 +54,59 @@ app.get('/api/jogos', async (req, res) => {
             }
         }
         
-        // 2. BUSCA API (SE CACHE EXPIROU OU FOI APAGADO)
-        console.log("🌍 Buscando Odds Reais na API...");
+        console.log("🌍 Buscando Dados Reais (Modo Sniper)...");
         const headers = { 'x-apisports-key': CONFIG.API_KEY };
 
-        // Chamada 1: Jogos
+        // 1. Pega TODOS os jogos (TimeZone BRT para achar Flamengo dia 17)
         const respJogos = await axios.get(`https://v3.football.api-sports.io/fixtures?date=${dataHoje}&timezone=America/Sao_Paulo`, { headers });
-        
-        // Chamada 2: Odds Reais
+        const listaBruta = respJogos.data.response || [];
+
+        // 2. IDENTIFICA LIGAS PRIROITÁRIAS (Carioca, Paulista) PARA BUSCAR ODDS
+        // Procura IDs de ligas que tenham "Carioca", "Guanabara" ou "Paulista" no nome
+        let ligasAlvo = new Set();
+        listaBruta.forEach(j => {
+            const nomeLiga = j.league.name.toLowerCase();
+            if(nomeLiga.includes('carioca') || nomeLiga.includes('guanabara') || nomeLiga.includes('paulista') || nomeLiga.includes('brasileiro')) {
+                ligasAlvo.add({id: j.league.id, season: j.league.season});
+            }
+        });
+
+        // 3. BUSCA ODDS ESPECÍFICAS (BURLA A PAGINAÇÃO)
         let mapaOdds = {};
-        if (respJogos.data.response && respJogos.data.response.length > 0) {
+        
+        // Loop pelas ligas importantes (Limitado a 3 para não estourar a conta)
+        const ligasArray = Array.from(ligasAlvo).slice(0, 3);
+        
+        for (let liga of ligasArray) {
             try {
-                const respOdds = await axios.get(`https://v3.football.api-sports.io/odds?date=${dataHoje}&bookmaker=6&timezone=America/Sao_Paulo`, { headers });
+                console.log(`🎯 Buscando odds da Liga ${liga.id}...`);
+                // Pede odds só dessa liga. Isso retorna poucas linhas, garantindo que o Flamengo venha.
+                const respOdds = await axios.get(`https://v3.football.api-sports.io/odds?league=${liga.id}&season=${liga.season}&date=${dataHoje}&bookmaker=6&timezone=America/Sao_Paulo`, { headers });
+                
                 if(respOdds.data.response) {
                     respOdds.data.response.forEach(o => { mapaOdds[o.fixture.id] = o.bookmakers[0].bets; });
                 }
-            } catch (erroOdds) { console.log("⚠️ Erro ao pegar Odds Reais."); }
+            } catch (e) { console.log(`Erro ao buscar liga ${liga.id}`); }
         }
 
-        let jogosFinais = [];
-        if (respJogos.data.response) {
-            jogosFinais = formatarHibrido(respJogos.data.response, mapaOdds);
-            if (jogosFinais.length > 0) {
-                await pool.query(`INSERT INTO jogos_cache (data_ref, json_dados, atualizado_em) VALUES ($1, $2, NOW()) ON CONFLICT (data_ref) DO UPDATE SET json_dados = $2, atualizado_em = NOW()`, [dataHoje, JSON.stringify(jogosFinais)]);
-            }
+        // 4. SE SOBRAR ESPAÇO, TENTA PEGAR A PÁGINA 1 GERAL TAMBÉM (EUROPA)
+        if (Object.keys(mapaOdds).length < 5) {
+             try {
+                const respGeral = await axios.get(`https://v3.football.api-sports.io/odds?date=${dataHoje}&bookmaker=6&timezone=America/Sao_Paulo`, { headers });
+                if(respGeral.data.response) {
+                    respGeral.data.response.forEach(o => { if(!mapaOdds[o.fixture.id]) mapaOdds[o.fixture.id] = o.bookmakers[0].bets; });
+                }
+            } catch(e) {}
+        }
+
+        let jogosFinais = formatarHibrido(listaBruta, mapaOdds);
+        
+        if (jogosFinais.length > 0) {
+            await pool.query(`INSERT INTO jogos_cache (data_ref, json_dados, atualizado_em) VALUES ($1, $2, NOW()) ON CONFLICT (data_ref) DO UPDATE SET json_dados = $2, atualizado_em = NOW()`, [dataHoje, JSON.stringify(jogosFinais)]);
         }
         res.json(jogosFinais);
     } catch (e) { 
-        console.error("Erro:", e.message);
+        console.error("Erro Geral:", e.message);
         res.json([]); 
     }
 });
@@ -90,13 +115,14 @@ function formatarHibrido(listaJogos, mapaOdds) {
     return listaJogos.map(j => {
         try {
             const st = j.fixture.status.short;
+            // Filtra terminados/live
             if (['FT', 'AET', 'PEN', '1H', '2H', 'HT'].includes(st)) return null;
 
             const oddsReais = mapaOdds[j.fixture.id]; 
             let oddsBase, mercadosExtras;
 
             if (oddsReais) {
-                // TENTA USAR ODD REAL
+                // --- ODD REAL ENCONTRADA (AQUI VAI ENTRAR O FLAMENGO 3.60) ---
                 const winner = oddsReais.find(b => b.id === 1);
                 if (winner) {
                     oddsBase = {
@@ -110,7 +136,7 @@ function formatarHibrido(listaJogos, mapaOdds) {
                     mercadosExtras = gerarMercadosProporcionais(oddsBase, false);
                 }
             } else {
-                // FALLBACK SIMULADO (Sem Flamengo na lista forte)
+                // FALLBACK (Sem Flamengo na lista de força)
                 oddsBase = calcularOddsSimuladas(j.teams.home.name, j.teams.away.name);
                 mercadosExtras = gerarMercadosProporcionais(oddsBase, false);
             }
@@ -136,11 +162,8 @@ function calcularOddsSimuladas(home, away) {
     const hStrong = TIMES_FORTES.some(t => home.includes(t));
     const aStrong = TIMES_FORTES.some(t => away.includes(t));
     let c = 2.45, e = 3.20, f = 2.80;
-    
-    // Lógica de força (Flamengo removido daqui pra evitar erro)
     if (hStrong && !aStrong) { c = 1.45; e = 4.20; f = 6.50; } 
     else if (aStrong && !hStrong) { c = 5.50; e = 3.90; f = 1.55; }
-    
     return { casa: aplicarMargem(c), empate: aplicarMargem(e), fora: aplicarMargem(f) };
 }
 
@@ -150,7 +173,6 @@ function gerarMercadosProporcionais(base, ehReal) {
     const C = parseFloat(base.casa); const E = parseFloat(base.empate); const F = parseFloat(base.fora);
     const k = 0.90; const fx = (v) => (v * k).toFixed(2);
     
-    // Lista completa V53
     return [
         {
             grupo: "Total de Gols",
@@ -193,4 +215,4 @@ app.post('/api/finalizar', async (req, res) => {
 });
 app.get('/api/admin/resumo', async (req, res) => { try { const f = await pool.query(`SELECT COUNT(*) as t, SUM(valor) as e, SUM(retorno) as r FROM bilhetes`); const u = await pool.query(`SELECT codigo, valor, retorno, data FROM bilhetes ORDER BY data DESC LIMIT 10`); res.json({ caixa: { total: f.rows[0].t, entrada: `R$ ${parseFloat(f.rows[0].e||0).toFixed(2)}`, risco: `R$ ${parseFloat(f.rows[0].r||0).toFixed(2)}` }, ultimos: u.rows }); } catch (e) { res.status(500).json({ erro: "Erro" }); } });
 app.post('/api/login', async (req, res) => { res.json({sucesso:false}); });
-app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V53 On!"));
+app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V54 On!"));
