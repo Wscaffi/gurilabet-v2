@@ -10,16 +10,16 @@ app.use(cors({ origin: '*' }));
 const CONFIG = {
     API_KEY: process.env.API_FOOTBALL_KEY || "SUA_CHAVE_AQUI", 
     LUCRO_CASA: 0.85, 
-    TEMPO_CACHE_MINUTOS: 5, // Cache curto pra atualizar logo
+    TEMPO_CACHE_MINUTOS: 2, 
     MIN_VALOR: 2.00,
     MAX_VALOR: 1000.00,
     MAX_PREMIO: 10000.00,
     
-    // LISTA VIP (Mantida igual)
+    // LISTA VIP
     LIGAS_VIP: [
-        "Premier League", "La Liga", "Serie A", "Bundesliga", "Ligue 1", 
-        "Brasileirão", "Paulista", "Carioca", "Mineiro", "Gaucho", "Baiano", "Pernambucano", "Cearense",
-        "Champions League", "Libertadores", "Sudamericana", "Copa do Nordeste"
+        "PREMIER LEAGUE", "LA LIGA", "SERIE A", "BUNDESLIGA", "LIGUE 1", 
+        "BRASILEIRÃO", "PAULISTA", "CARIOCA", "GUANABARA", "MINEIRO", "GAUCHO", "BAIANO", "PERNAMBUCANO", "CEARENSE",
+        "CHAMPIONS LEAGUE", "LIBERTADORES", "SUDAMERICANA", "COPA DO NORDESTE", "VERDE CAPIXABA"
     ]
 };
 
@@ -41,7 +41,7 @@ async function initDb() {
     try {
         await pool.query(`CREATE TABLE IF NOT EXISTS bilhetes (id SERIAL PRIMARY KEY, usuario_id INTEGER, codigo TEXT UNIQUE, valor NUMERIC, retorno NUMERIC, odds_total NUMERIC, status TEXT DEFAULT 'pendente', detalhes JSONB, data TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         await pool.query(`CREATE TABLE IF NOT EXISTS jogos_cache (id SERIAL PRIMARY KEY, data_ref TEXT UNIQUE, json_dados JSONB, atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
-        console.log("✅ Servidor V48 (Fuso Horário BR) Online!");
+        console.log("✅ Servidor V49 (Fuso BR + Filtro Futuro) Online!");
     } catch (e) { console.error(e); }
 }
 initDb();
@@ -56,14 +56,13 @@ app.get('/api/jogos', async (req, res) => {
             if (diff < CONFIG.TEMPO_CACHE_MINUTOS) return res.json(cache.rows[0].json_dados);
         }
         
-        // --- AQUI ESTÁ A CORREÇÃO: timezone=America/Sao_Paulo ---
-        // Só isso mudou. O resto continua igual.
+        // Mantém o timezone para achar o Flamengo no dia certo
         const url = `https://v3.football.api-sports.io/fixtures?date=${dataHoje}&timezone=America/Sao_Paulo`; 
         
         const resp = await axios.get(url, { headers: { 'x-apisports-key': CONFIG.API_KEY } });
         
         let jogos = [];
-        if (resp.data.response) jogos = formatarV48(resp.data.response);
+        if (resp.data.response) jogos = formatarV49(resp.data.response);
         
         if (jogos.length > 0) {
             await pool.query(`INSERT INTO jogos_cache (data_ref, json_dados, atualizado_em) VALUES ($1, $2, NOW()) ON CONFLICT (data_ref) DO UPDATE SET json_dados = $2, atualizado_em = NOW()`, [dataHoje, JSON.stringify(jogos)]);
@@ -90,13 +89,14 @@ app.post('/api/finalizar', async (req, res) => {
     } catch (e) { res.status(500).json({erro: "Erro"}); }
 });
 
-function formatarV48(lista) {
+function formatarV49(lista) {
     return lista.map(j => {
         try {
-            // Filtro leve: Só tira o que já acabou (FT) ou foi adiado.
-            // Mantém NS (Não Iniciado) e TBD (A definir).
+            // --- FILTRO DE FERRO ---
+            // Só aceita: NS (Not Started) e TBD (To Be Defined)
+            // Rejeita TUDO que indique jogo rolando ou acabado: 1H, 2H, HT, FT, ET, P...
             const st = j.fixture.status.short;
-            if (['FT', 'AET', 'PEN', 'SUSP', 'INT', 'PST'].includes(st)) return null;
+            if (!['NS', 'TBD'].includes(st)) return null;
 
             const ligaOrig = j.league.name;
             const paisOrig = j.league.country;
@@ -114,7 +114,6 @@ function formatarV48(lista) {
                 data: j.fixture.date,
                 status: "VS",
                 odds: oddsBase,
-                // Mantém seus mercados como estavam
                 mercados: ehVIP ? gerarListaMercadosExpandida(oddsBase) : [] 
             };
         } catch (e) { return null; }
@@ -131,7 +130,7 @@ function calcularOddsSeguras(home, away) {
     return { casa: (c*CONFIG.LUCRO_CASA).toFixed(2), empate: (e*CONFIG.LUCRO_CASA).toFixed(2), fora: (f*CONFIG.LUCRO_CASA).toFixed(2) };
 }
 
-// --- LISTA DE MERCADOS (A QUE VOCÊ APROVOU) ---
+// --- LISTA DE MERCADOS MANTIDA ---
 function gerarListaMercadosExpandida(base) {
     const C = parseFloat(base.casa); const E = parseFloat(base.empate); const F = parseFloat(base.fora);
     const k = 0.90; 
@@ -170,8 +169,7 @@ function gerarListaMercadosExpandida(base) {
             itens: [ 
                 { nome: "Mais 8.5", odd: fx(1.60) }, { nome: "Menos 8.5", odd: fx(2.10) },
                 { nome: "Mais 9.5", odd: fx(1.85) }, { nome: "Menos 9.5", odd: fx(1.80) },
-                { nome: "Mais 10.5", odd: fx(2.30) }, { nome: "Menos 10.5", odd: fx(1.50) },
-                { nome: "Casa Mais Cantos", odd: fx(1.60) }, { nome: "Fora Mais Cantos", odd: fx(2.20) } 
+                { nome: "Casa Mais", odd: fx(1.60) }, { nome: "Fora Mais", odd: fx(2.20) } 
             ]
         },
         {
@@ -194,4 +192,4 @@ function gerarListaMercadosExpandida(base) {
 }
 
 app.post('/api/login', async (req, res) => { res.json({sucesso:false}); });
-app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V48 On!"));
+app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V49 On!"));
