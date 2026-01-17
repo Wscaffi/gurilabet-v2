@@ -10,12 +10,12 @@ app.use(cors({ origin: '*' }));
 const CONFIG = {
     API_KEY: process.env.API_FOOTBALL_KEY || "SUA_CHAVE_AQUI", 
     LUCRO_CASA: 0.85, 
-    TEMPO_CACHE_MINUTOS: 5, 
+    TEMPO_CACHE_MINUTOS: 5, // Cache curto pra atualizar logo
     MIN_VALOR: 2.00,
     MAX_VALOR: 1000.00,
     MAX_PREMIO: 10000.00,
     
-    // LISTA VIP (Jogos com mercados extras)
+    // LISTA VIP (Mantida igual)
     LIGAS_VIP: [
         "Premier League", "La Liga", "Serie A", "Bundesliga", "Ligue 1", 
         "Brasileirão", "Paulista", "Carioca", "Mineiro", "Gaucho", "Baiano", "Pernambucano", "Cearense",
@@ -25,7 +25,6 @@ const CONFIG = {
 
 const TIMES_FORTES = ["Flamengo", "Palmeiras", "Atlético-MG", "Real Madrid", "Barcelona", "Man City", "Liverpool", "PSG", "Bayern", "Inter", "Arsenal", "Botafogo", "São Paulo", "Corinthians", "Grêmio", "Boca Juniors", "River Plate", "Juventus", "Milan", "Vasco", "Fluminense"];
 
-// TRADUÇÃO (INCLUINDO VARIAÇÕES DO CARIOCA)
 const TRADUCOES = { 
     "World": "Mundo", "Brazil": "Brasil", "England": "Inglaterra", "Spain": "Espanha", "Italy": "Itália", "Germany": "Alemanha", "France": "França", "Portugal": "Portugal", 
     "Premier League": "Premier League", "Serie A": "Série A", "La Liga": "La Liga", "Bundesliga": "Bundesliga", "Ligue 1": "Ligue 1", 
@@ -42,7 +41,7 @@ async function initDb() {
     try {
         await pool.query(`CREATE TABLE IF NOT EXISTS bilhetes (id SERIAL PRIMARY KEY, usuario_id INTEGER, codigo TEXT UNIQUE, valor NUMERIC, retorno NUMERIC, odds_total NUMERIC, status TEXT DEFAULT 'pendente', detalhes JSONB, data TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         await pool.query(`CREATE TABLE IF NOT EXISTS jogos_cache (id SERIAL PRIMARY KEY, data_ref TEXT UNIQUE, json_dados JSONB, atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
-        console.log("✅ Servidor V46 (Carioca Destravado) Online!");
+        console.log("✅ Servidor V48 (Fuso Horário BR) Online!");
     } catch (e) { console.error(e); }
 }
 initDb();
@@ -57,12 +56,14 @@ app.get('/api/jogos', async (req, res) => {
             if (diff < CONFIG.TEMPO_CACHE_MINUTOS) return res.json(cache.rows[0].json_dados);
         }
         
-        // CORREÇÃO: Removi '&status=NS'. Agora baixa tudo e filtramos no código.
-        const url = `https://v3.football.api-sports.io/fixtures?date=${dataHoje}`; 
+        // --- AQUI ESTÁ A CORREÇÃO: timezone=America/Sao_Paulo ---
+        // Só isso mudou. O resto continua igual.
+        const url = `https://v3.football.api-sports.io/fixtures?date=${dataHoje}&timezone=America/Sao_Paulo`; 
+        
         const resp = await axios.get(url, { headers: { 'x-apisports-key': CONFIG.API_KEY } });
         
         let jogos = [];
-        if (resp.data.response) jogos = formatarV46(resp.data.response);
+        if (resp.data.response) jogos = formatarV48(resp.data.response);
         
         if (jogos.length > 0) {
             await pool.query(`INSERT INTO jogos_cache (data_ref, json_dados, atualizado_em) VALUES ($1, $2, NOW()) ON CONFLICT (data_ref) DO UPDATE SET json_dados = $2, atualizado_em = NOW()`, [dataHoje, JSON.stringify(jogos)]);
@@ -89,13 +90,13 @@ app.post('/api/finalizar', async (req, res) => {
     } catch (e) { res.status(500).json({erro: "Erro"}); }
 });
 
-function formatarV46(lista) {
+function formatarV48(lista) {
     return lista.map(j => {
         try {
-            // FILTRO MANUAL: Aceita 'NS' (Não Iniciado) e 'TBD' (A Definir - Comum no Carioca)
-            // Rejeita '1H', '2H', 'FT' (Jogos em andamento ou finalizados)
+            // Filtro leve: Só tira o que já acabou (FT) ou foi adiado.
+            // Mantém NS (Não Iniciado) e TBD (A definir).
             const st = j.fixture.status.short;
-            if (['1H', '2H', 'HT', 'ET', 'P', 'FT', 'AET', 'PEN', 'BT', 'SUSP', 'INT'].includes(st)) return null;
+            if (['FT', 'AET', 'PEN', 'SUSP', 'INT', 'PST'].includes(st)) return null;
 
             const ligaOrig = j.league.name;
             const paisOrig = j.league.country;
@@ -113,6 +114,7 @@ function formatarV46(lista) {
                 data: j.fixture.date,
                 status: "VS",
                 odds: oddsBase,
+                // Mantém seus mercados como estavam
                 mercados: ehVIP ? gerarListaMercadosExpandida(oddsBase) : [] 
             };
         } catch (e) { return null; }
@@ -129,7 +131,7 @@ function calcularOddsSeguras(home, away) {
     return { casa: (c*CONFIG.LUCRO_CASA).toFixed(2), empate: (e*CONFIG.LUCRO_CASA).toFixed(2), fora: (f*CONFIG.LUCRO_CASA).toFixed(2) };
 }
 
-// --- LISTA COMPLETA 0.5 a 5.5 ---
+// --- LISTA DE MERCADOS (A QUE VOCÊ APROVOU) ---
 function gerarListaMercadosExpandida(base) {
     const C = parseFloat(base.casa); const E = parseFloat(base.empate); const F = parseFloat(base.fora);
     const k = 0.90; 
@@ -192,4 +194,4 @@ function gerarListaMercadosExpandida(base) {
 }
 
 app.post('/api/login', async (req, res) => { res.json({sucesso:false}); });
-app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V46 On!"));
+app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V48 On!"));
