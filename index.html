@@ -101,24 +101,28 @@
             lista.forEach(j => { if(!grupos[j.liga]) grupos[j.liga]=[]; grupos[j.liga].push(j); });
 
             let html = '';
-            for(let liga in grupos) {
+            // ORDEM ALFABÉTICA PURA (A-Z)
+            const chaves = Object.keys(grupos).sort(); 
+            
+            chaves.forEach(liga => {
                 html += `<div class="league-btn" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'"><span><img src="${grupos[liga][0].flag}" onerror="this.style.display='none'"> ${liga}</span> <i class="fas fa-chevron-down"></i></div><div class="league-games" style="display:none;">`;
                 grupos[liga].forEach(j => {
                     let h = new Date(j.data).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-                    // Botão + só aparece se tiver mercados (lista não vazia)
+                    // Botão +
                     const btnMais = (j.mercados && j.mercados.length > 0) ? `<div class="btn-more" style="background:#21262d; width:40px; display:flex; align-items:center; justify-content:center; border-radius:4px; font-weight:bold; cursor:pointer;" onclick="abrirExtras(${j.id}, '${j.home.name} x ${j.away.name}')">+${j.mercados.length}</div>` : '';
                     
+                    // CORREÇÃO: Passar nome do palpite ("Casa", "Empate", "Fora")
                     html += `<div class="game-row"><div class="game-info"><span>${h}</span><span>ID: ${j.id}</span></div>
                     <div class="teams-names"><div><img src="${j.home.logo}" onerror="this.style.display='none'"> ${j.home.name}</div><div><img src="${j.away.logo}" onerror="this.style.display='none'"> ${j.away.name}</div></div>
                     <div style="display:flex; gap:4px;">
-                        <div class="odd-sq" onclick="add(this,${j.id},'1',${j.odds.casa},'${j.home.name}')"><span>1</span><b>${j.odds.casa}</b></div>
-                        <div class="odd-sq" onclick="add(this,${j.id},'X',${j.odds.empate},'Empate')"><span>X</span><b>${j.odds.empate}</b></div>
-                        <div class="odd-sq" onclick="add(this,${j.id},'2',${j.odds.fora},'${j.away.name}')"><span>2</span><b>${j.odds.fora}</b></div>
+                        <div class="odd-sq" onclick="add(this,${j.id},'Casa',${j.odds.casa},'${j.home.name} x ${j.away.name}')"><span>1</span><b>${j.odds.casa}</b></div>
+                        <div class="odd-sq" onclick="add(this,${j.id},'Empate',${j.odds.empate},'${j.home.name} x ${j.away.name}')"><span>X</span><b>${j.odds.empate}</b></div>
+                        <div class="odd-sq" onclick="add(this,${j.id},'Fora',${j.odds.fora},'${j.home.name} x ${j.away.name}')"><span>2</span><b>${j.odds.fora}</b></div>
                         ${btnMais}
                     </div></div>`;
                 });
                 html += `</div>`;
-            }
+            });
             document.getElementById('container-ligas').innerHTML = html;
         }
 
@@ -131,13 +135,10 @@
             const jogo = JOGOS_TODOS.find(j => j.id == idJogo);
             if(jogo && jogo.mercados && jogo.mercados.length > 0) {
                 let html = "";
-                // Loop seguro para criar a lista
                 jogo.mercados.forEach(grupo => {
                     html += `<div class="market-group"><div class="market-header">${grupo.grupo}</div><div class="market-grid">`;
                     grupo.itens.forEach(item => {
-                        // Verifica se está selecionado
                         const sel = CARRINHO.some(c => c.id == idJogo && c.opcao == `${grupo.grupo}: ${item.nome}`) ? 'active' : '';
-                        // Renderiza o item (Sem object object)
                         html += `<div class="m-item ${sel}" onclick="addExtra(this, ${idJogo}, '${grupo.grupo}: ${item.nome}', ${item.odd}, '${nomes}')">
                             <span>${item.nome}</span><b>${item.odd}</b>
                         </div>`;
@@ -150,15 +151,20 @@
 
         function add(el, id, op, odd, nm) {
             const idx = CARRINHO.findIndex(i => i.id === id);
-            if(idx !== -1) { CARRINHO.splice(idx, 1); if(el && el.parentElement) el.parentElement.querySelectorAll('.active').forEach(b=>b.classList.remove('active')); }
+            if(idx !== -1) { 
+                CARRINHO.splice(idx, 1); 
+                if(el && el.parentElement && el.parentElement.parentElement) {
+                    el.parentElement.parentElement.querySelectorAll('.active').forEach(b=>b.classList.remove('active'));
+                }
+            }
             CARRINHO.push({id, opcao:op, odd, nome:nm});
             if(el) el.classList.add('active');
             topo();
         }
 
         function addExtra(el, id, op, odd, nm) {
-            const pai = el.parentElement; // Remove seleção dos irmãos
-            pai.querySelectorAll('.active').forEach(b=>b.classList.remove('active'));
+            const pai = el.parentElement;
+            if(pai) pai.querySelectorAll('.active').forEach(b => b.classList.remove('active'));
             add(null, id, op, odd, nm);
             el.classList.add('active');
         }
@@ -174,8 +180,7 @@
             let html=''; CARRINHO.forEach(i=>html+=`<div style="color:#fff; border-bottom:1px solid #333; padding:5px;">${i.nome}<br><b style="color:var(--neon)">${i.opcao}</b> (${i.odd})</div>`);
             document.getElementById('lista-cupom').innerHTML=html;
         }
-        function fecharExtras() { document.getElementById('modal-mercados').style.display='none'; }
-        function fecharModal() { document.getElementById('modal-cupom').style.display='none'; }
+        
         async function enviarAposta() {
             const cli = document.getElementById('cliente').value; const val = document.getElementById('valor-topo').value;
             if(!cli) return alert("Nome?");
@@ -183,10 +188,21 @@
                 const res = await fetch(`${API_URL}/api/finalizar`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({usuario_id:1, valor:val, apostas:CARRINHO, odd_total:1})});
                 const d = await res.json();
                 if(d.sucesso) {
-                    let msg = `🦍 *GURILA*\n🎫 ${d.codigo}\n👤 ${cli}\n💰 R$ ${val}\n🏆 R$ ${d.retorno}\n\n`;
-                    CARRINHO.forEach(c => msg += `⚽ ${c.nome} (${c.opcao})\n`);
+                    // --- MENSAGEM NOTA FISCAL ---
+                    let msg = `🦍 *GURILA BET*\n` +
+                              `🎫 *Bilhete:* ${d.codigo}\n` +
+                              `👤 *Cliente:* ${cli}\n` +
+                              `💰 *Valor:* R$ ${val}\n` +
+                              `🏆 *Retorno:* R$ ${d.retorno}\n` +
+                              `⚠️ *Status:* Aguardando PIX\n\n` +
+                              `📋 *APOSTAS REALIZADAS:*\n`;
+                    
+                    CARRINHO.forEach(c => {
+                        msg += `⚽ *${c.nome}*\n   ↳ ${c.opcao} @ ${c.odd}\n`;
+                    });
+                    
                     window.open(`https://wa.me/${ZAP_NUMERO}?text=${encodeURIComponent(msg)}`, '_blank');
-                    CARRINHO=[]; topo(); fecharModal();
+                    CARRINHO=[]; topo(); document.getElementById('modal-cupom').style.display='none'; document.querySelectorAll('.active').forEach(b=>b.classList.remove('active'));
                 } else alert(d.erro);
             } catch(e) { alert("Erro"); }
         }
