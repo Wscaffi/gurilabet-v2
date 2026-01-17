@@ -11,7 +11,7 @@ app.use(cors({ origin: '*' }));
 const CONFIG = {
     API_KEY: process.env.API_FOOTBALL_KEY || "SUA_CHAVE_AQUI", 
     LUCRO_CASA: 0.85, // Margem mais alta (0.85) para baixar as odds e proteger você
-    TEMPO_CACHE_MINUTOS: 30,
+    TEMPO_CACHE_MINUTOS: 70,
     
     // LIMITES FINANCEIROS
     MIN_VALOR: 2.00,
@@ -211,3 +211,4 @@ function gerarMercadosCompletos(base) {
 app.get('/api/admin/resumo', async (req, res) => { try { const f = await pool.query(`SELECT COUNT(*) as t, SUM(valor) as e, SUM(retorno) as r FROM bilhetes`); const u = await pool.query(`SELECT codigo, valor, retorno, data FROM bilhetes ORDER BY data DESC LIMIT 10`); res.json({ caixa: { total: f.rows[0].t, entrada: `R$ ${parseFloat(f.rows[0].e||0).toFixed(2)}`, risco: `R$ ${parseFloat(f.rows[0].r||0).toFixed(2)}` }, ultimos: u.rows }); } catch (e) { res.status(500).json({ erro: "Erro" }); } });
 app.post('/api/login', async (req, res) => { res.json({sucesso:false}); });
 app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V39 On!"));
+
