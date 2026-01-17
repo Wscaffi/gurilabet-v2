@@ -11,12 +11,12 @@ app.use(cors({ origin: '*' }));
 const CONFIG = {
     API_KEY: process.env.API_FOOTBALL_KEY || "SUA_CHAVE_AQUI", 
     LUCRO_CASA: 0.85, 
-    TEMPO_CACHE_MINUTOS: 10, // Cache curto (10 min) para remover jogos iniciados rápido
+    TEMPO_CACHE_MINUTOS: 10,
     MIN_VALOR: 2.00,
     MAX_VALOR: 1000.00,
     MAX_PREMIO: 10000.00,
     
-    // LISTA VIP (Jogos grandes com mercados extras)
+    // LIGAS VIP (Jogos grandes com mercados extras)
     LIGAS_VIP: [
         "Premier League", "La Liga", "Serie A", "Bundesliga", "Ligue 1", 
         "Brasileirão", "Paulista", "Carioca", "Mineiro", "Gaucho",
@@ -35,7 +35,7 @@ async function initDb() {
     try {
         await pool.query(`CREATE TABLE IF NOT EXISTS bilhetes (id SERIAL PRIMARY KEY, usuario_id INTEGER, codigo TEXT UNIQUE, valor NUMERIC, retorno NUMERIC, odds_total NUMERIC, status TEXT DEFAULT 'pendente', detalhes JSONB, data TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         await pool.query(`CREATE TABLE IF NOT EXISTS jogos_cache (id SERIAL PRIMARY KEY, data_ref TEXT UNIQUE, json_dados JSONB, atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
-        console.log("✅ Servidor V42 (Filtro Rigoroso NS) Online!");
+        console.log("✅ Servidor V43 (Lista Gols Expandida) Online!");
     } catch (e) { console.error(e); }
 }
 initDb();
@@ -49,12 +49,11 @@ app.get('/api/jogos', async (req, res) => {
             if (diff < CONFIG.TEMPO_CACHE_MINUTOS) return res.json(cache.rows[0].json_dados);
         }
         
-        // Pede para API apenas jogos NS (Not Started)
         const url = `https://v3.football.api-sports.io/fixtures?date=${dataHoje}&status=NS`; 
         const resp = await axios.get(url, { headers: { 'x-apisports-key': CONFIG.API_KEY } });
         
         let jogos = [];
-        if (resp.data.response) jogos = formatarV42(resp.data.response);
+        if (resp.data.response) jogos = formatarV43(resp.data.response);
         
         if (jogos.length > 0) {
             await pool.query(`INSERT INTO jogos_cache (data_ref, json_dados, atualizado_em) VALUES ($1, $2, NOW()) ON CONFLICT (data_ref) DO UPDATE SET json_dados = $2, atualizado_em = NOW()`, [dataHoje, JSON.stringify(jogos)]);
@@ -81,10 +80,9 @@ app.post('/api/finalizar', async (req, res) => {
     } catch (e) { res.status(500).json({erro: "Erro"}); }
 });
 
-function formatarV42(lista) {
+function formatarV43(lista) {
     return lista.map(j => {
         try {
-            // DUPLA CONFERÊNCIA: Se não for NS (Não Iniciado), remove.
             if (j.fixture.status.short !== 'NS') return null;
 
             const ligaOrig = j.league.name;
@@ -101,10 +99,9 @@ function formatarV42(lista) {
                 home: { name: j.teams.home.name, logo: j.teams.home.logo },
                 away: { name: j.teams.away.name, logo: j.teams.away.logo },
                 data: j.fixture.date,
-                status: "VS", // Força status VS pois filtramos só futuros
+                status: "VS",
                 odds: oddsBase,
-                // Aqui mandamos a lista de mercados no formato correto
-                mercados: ehVIP ? gerarListaMercados(oddsBase) : [] 
+                mercados: ehVIP ? gerarListaMercadosExpandida(oddsBase) : [] 
             };
         } catch (e) { return null; }
     }).filter(Boolean);
@@ -120,18 +117,22 @@ function calcularOddsSeguras(home, away) {
     return { casa: (c*CONFIG.LUCRO_CASA).toFixed(2), empate: (e*CONFIG.LUCRO_CASA).toFixed(2), fora: (f*CONFIG.LUCRO_CASA).toFixed(2) };
 }
 
-function gerarListaMercados(base) {
+// --- LISTA EXPANDIDA V43 (IGUAL PRINT SB99) ---
+function gerarListaMercadosExpandida(base) {
     const C = parseFloat(base.casa); const E = parseFloat(base.empate); const F = parseFloat(base.fora);
     const k = 0.90; 
     const fx = (v) => (v * k).toFixed(2);
 
-    // Retorna ARRAY de Objetos (Para não dar erro [object Object])
     return [
         {
             grupo: "Total de Gols",
             itens: [
+                { nome: "Mais 0.5", odd: fx(1.05) }, { nome: "Menos 0.5", odd: fx(8.50) },
                 { nome: "Mais 1.5", odd: fx(1.28) }, { nome: "Menos 1.5", odd: fx(3.30) },
-                { nome: "Mais 2.5", odd: fx(1.90) }, { nome: "Menos 2.5", odd: fx(1.85) }
+                { nome: "Mais 2.5", odd: fx(1.90) }, { nome: "Menos 2.5", odd: fx(1.85) },
+                { nome: "Mais 3.5", odd: fx(3.20) }, { nome: "Menos 3.5", odd: fx(1.25) },
+                { nome: "Mais 4.5", odd: fx(5.80) }, { nome: "Menos 4.5", odd: fx(1.10) },
+                { nome: "Mais 5.5", odd: fx(9.50) }, { nome: "Menos 5.5", odd: fx(1.03) }
             ]
         },
         {
@@ -143,23 +144,40 @@ function gerarListaMercados(base) {
             itens: [ { nome: "Casa/Empate", odd: fx(1.15) }, { nome: "Casa/Fora", odd: fx(1.25) }, { nome: "Empate/Fora", odd: fx(1.15) } ]
         },
         {
-            grupo: "1º Tempo",
-            itens: [ { nome: "Casa Vence 1T", odd: fx(C+1) }, { nome: "Empate 1T", odd: fx(2.10) }, { nome: "Fora Vence 1T", odd: fx(F+1) } ]
+            grupo: "Empate não tem aposta",
+            itens: [ { nome: "Casa", odd: fx(C*0.7) }, { nome: "Fora", odd: fx(F*0.7) } ]
+        },
+        {
+            grupo: "Vencedor 1º Tempo",
+            itens: [ { nome: "Casa", odd: fx(C+1) }, { nome: "Empate", odd: fx(2.10) }, { nome: "Fora", odd: fx(F+1) } ]
         },
         {
             grupo: "Escanteios",
-            itens: [ { nome: "+8.5 Cantos", odd: fx(1.70) }, { nome: "-8.5 Cantos", odd: fx(2.00) }, { nome: "Casa tem mais", odd: fx(1.60) } ]
+            itens: [ 
+                { nome: "Mais 8.5", odd: fx(1.60) }, { nome: "Menos 8.5", odd: fx(2.10) },
+                { nome: "Mais 9.5", odd: fx(1.85) }, { nome: "Menos 9.5", odd: fx(1.80) },
+                { nome: "Mais 10.5", odd: fx(2.30) }, { nome: "Menos 10.5", odd: fx(1.50) },
+                { nome: "Casa Mais Cantos", odd: fx(1.60) }, { nome: "Fora Mais Cantos", odd: fx(2.20) } 
+            ]
         },
         {
             grupo: "Placar Exato",
             itens: [
                 { nome: "1-0", odd: fx(C*3) }, { nome: "2-0", odd: fx(C*4) }, { nome: "2-1", odd: fx(C*5) },
                 { nome: "0-1", odd: fx(F*3) }, { nome: "0-2", odd: fx(F*4) }, { nome: "1-2", odd: fx(F*5) },
-                { nome: "0-0", odd: "8.50" }, { nome: "1-1", odd: "6.00" }
+                { nome: "0-0", odd: "8.50" }, { nome: "1-1", odd: "6.00" }, { nome: "2-2", odd: "12.00" },
+                { nome: "3-0", odd: fx(C*8) }, { nome: "0-3", odd: fx(F*8) }
+            ]
+        },
+        {
+            grupo: "Handicap Europeu",
+            itens: [
+                { nome: "Casa -1", odd: fx(C*2.5) }, { nome: "Fora +1", odd: fx(1.30) },
+                { nome: "Casa +1", odd: fx(1.15) }, { nome: "Fora -1", odd: fx(F*2.5) }
             ]
         }
     ];
 }
 
 app.post('/api/login', async (req, res) => { res.json({sucesso:false}); });
-app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V42 On!"));
+app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V43 On!"));
