@@ -39,6 +39,11 @@
         .m-item { background: #0d1117; padding: 12px; display: flex; justify-content: space-between; color: #fff; font-size: 12px; cursor: pointer; }
         .m-item b { color: var(--neon); }
         .m-item.active { background: var(--neon); color: #000; } .m-item.active b { color: #000; }
+        
+        /* RESUMO NO MODAL */
+        .summary-box { background: #161b22; border: 1px solid #333; padding: 15px; border-radius: 8px; margin-top: 15px; font-size: 13px; color: #ccc; }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 5px; }
+        .summary-total { font-size: 18px; color: var(--neon); font-weight: bold; border-top: 1px solid #333; padding-top: 10px; margin-top: 10px; text-align: right; }
     </style>
 </head>
 <body>
@@ -68,6 +73,8 @@
         <div class="modal-box" style="height:auto;"><div class="modal-header"><span>CONFIRMAR</span><span onclick="document.getElementById('modal-cupom').style.display='none'" style="cursor:pointer;">X</span></div>
             <div style="padding:15px;">
                 <div id="lista-cupom"></div>
+                <div id="resumo-financeiro" class="summary-box"></div>
+
                 <input type="text" id="cliente" style="width:100%; padding:10px; margin-top:10px; background:#161b22; border:1px solid #333; color:#fff;" placeholder="Nome Cliente">
                 <button onclick="enviarAposta()" style="width:100%; padding:15px; background:var(--neon); font-weight:bold; margin-top:10px; border:none;">GERAR BILHETE</button>
             </div>
@@ -101,17 +108,15 @@
             lista.forEach(j => { if(!grupos[j.liga]) grupos[j.liga]=[]; grupos[j.liga].push(j); });
 
             let html = '';
-            // ORDEM ALFABÉTICA PURA (A-Z)
             const chaves = Object.keys(grupos).sort(); 
             
             chaves.forEach(liga => {
                 html += `<div class="league-btn" onclick="this.nextElementSibling.style.display = this.nextElementSibling.style.display==='block'?'none':'block'"><span><img src="${grupos[liga][0].flag}" onerror="this.style.display='none'"> ${liga}</span> <i class="fas fa-chevron-down"></i></div><div class="league-games" style="display:none;">`;
                 grupos[liga].forEach(j => {
                     let h = new Date(j.data).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-                    // Botão +
-                    const btnMais = (j.mercados && j.mercados.length > 0) ? `<div class="btn-more" style="background:#21262d; width:40px; display:flex; align-items:center; justify-content:center; border-radius:4px; font-weight:bold; cursor:pointer;" onclick="abrirExtras(${j.id}, '${j.home.name} x ${j.away.name}')">+${j.mercados.length}</div>` : '';
+                    const qtd = (j.mercados && Array.isArray(j.mercados)) ? j.mercados.length : 0;
+                    const btnMais = qtd > 0 ? `<div class="btn-more" style="background:#21262d; width:40px; display:flex; align-items:center; justify-content:center; border-radius:4px; font-weight:bold; cursor:pointer;" onclick="abrirExtras(${j.id}, '${j.home.name} x ${j.away.name}')">+${qtd}</div>` : '';
                     
-                    // CORREÇÃO: Passar nome do palpite ("Casa", "Empate", "Fora")
                     html += `<div class="game-row"><div class="game-info"><span>${h}</span><span>ID: ${j.id}</span></div>
                     <div class="teams-names"><div><img src="${j.home.logo}" onerror="this.style.display='none'"> ${j.home.name}</div><div><img src="${j.away.logo}" onerror="this.style.display='none'"> ${j.away.name}</div></div>
                     <div style="display:flex; gap:4px;">
@@ -126,26 +131,29 @@
             document.getElementById('container-ligas').innerHTML = html;
         }
 
-        // --- SISTEMA UNIVERSAL DE MERCADOS ---
         function abrirExtras(idJogo, nomes) {
             document.getElementById('extra-title').innerText = nomes;
             document.getElementById('modal-mercados').style.display = 'flex';
             const container = document.getElementById('mercados-content');
             
             const jogo = JOGOS_TODOS.find(j => j.id == idJogo);
-            if(jogo && jogo.mercados && jogo.mercados.length > 0) {
+            if(jogo && jogo.mercados && Array.isArray(jogo.mercados)) {
                 let html = "";
                 jogo.mercados.forEach(grupo => {
                     html += `<div class="market-group"><div class="market-header">${grupo.grupo}</div><div class="market-grid">`;
-                    grupo.itens.forEach(item => {
-                        const sel = CARRINHO.some(c => c.id == idJogo && c.opcao == `${grupo.grupo}: ${item.nome}`) ? 'active' : '';
-                        html += `<div class="m-item ${sel}" onclick="addExtra(this, ${idJogo}, '${grupo.grupo}: ${item.nome}', ${item.odd}, '${nomes}')">
-                            <span>${item.nome}</span><b>${item.odd}</b>
-                        </div>`;
-                    });
+                    if(grupo.itens && Array.isArray(grupo.itens)) {
+                        grupo.itens.forEach(item => {
+                            const sel = CARRINHO.some(c => c.id == idJogo && c.opcao == `${grupo.grupo}: ${item.nome}`) ? 'active' : '';
+                            html += `<div class="m-item ${sel}" onclick="addExtra(this, ${idJogo}, '${grupo.grupo}: ${item.nome}', ${item.odd}, '${nomes}')">
+                                <span>${item.nome}</span><b>${item.odd}</b>
+                            </div>`;
+                        });
+                    }
                     html += `</div></div>`;
                 });
                 container.innerHTML = html;
+            } else {
+                container.innerHTML = '<div style="padding:20px; text-align:center">Sem mercados.</div>';
             }
         }
 
@@ -176,9 +184,25 @@
             document.getElementById('retorno-topo').innerText = `R$ ${(val*(CARRINHO.length?tot:0)).toFixed(2)}`;
         }
         function atualizarCalculo() { topo(); }
-        function finalizarZap() { if(CARRINHO.length===0) return alert("Escolha jogos"); document.getElementById('modal-cupom').style.display='flex'; 
-            let html=''; CARRINHO.forEach(i=>html+=`<div style="color:#fff; border-bottom:1px solid #333; padding:5px;">${i.nome}<br><b style="color:var(--neon)">${i.opcao}</b> (${i.odd})</div>`);
+        
+        function finalizarZap() { 
+            if(CARRINHO.length===0) return alert("Escolha jogos"); 
+            document.getElementById('modal-cupom').style.display='flex'; 
+            
+            let html=''; 
+            CARRINHO.forEach(i=>html+=`<div style="color:#fff; border-bottom:1px solid #333; padding:5px;">${i.nome}<br><b style="color:var(--neon)">${i.opcao}</b> (${i.odd})</div>`);
             document.getElementById('lista-cupom').innerHTML=html;
+
+            // --- CÁLCULO DO RESUMO (AQUI ESTÁ A CORREÇÃO VISUAL) ---
+            const val = parseFloat(document.getElementById('valor-topo').value)||0;
+            const oddTotal = CARRINHO.reduce((a,i)=>a*parseFloat(i.odd),1);
+            const ret = val * oddTotal;
+
+            document.getElementById('resumo-financeiro').innerHTML = `
+                <div class="summary-row"><span>Valor Aposta:</span> <b>R$ ${val.toFixed(2)}</b></div>
+                <div class="summary-row"><span>Odd Total:</span> <b>${oddTotal.toFixed(2)}</b></div>
+                <div class="summary-total">RETORNO: R$ ${ret.toFixed(2)}</div>
+            `;
         }
         
         async function enviarAposta() {
@@ -188,7 +212,6 @@
                 const res = await fetch(`${API_URL}/api/finalizar`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({usuario_id:1, valor:val, apostas:CARRINHO, odd_total:1})});
                 const d = await res.json();
                 if(d.sucesso) {
-                    // --- MENSAGEM NOTA FISCAL ---
                     let msg = `🦍 *GURILA BET*\n` +
                               `🎫 *Bilhete:* ${d.codigo}\n` +
                               `👤 *Cliente:* ${cli}\n` +
@@ -196,11 +219,7 @@
                               `🏆 *Retorno:* R$ ${d.retorno}\n` +
                               `⚠️ *Status:* Aguardando PIX\n\n` +
                               `📋 *APOSTAS REALIZADAS:*\n`;
-                    
-                    CARRINHO.forEach(c => {
-                        msg += `⚽ *${c.nome}*\n   ↳ ${c.opcao} @ ${c.odd}\n`;
-                    });
-                    
+                    CARRINHO.forEach(c => { msg += `⚽ *${c.nome}*\n   ↳ ${c.opcao} @ ${c.odd}\n`; });
                     window.open(`https://wa.me/${ZAP_NUMERO}?text=${encodeURIComponent(msg)}`, '_blank');
                     CARRINHO=[]; topo(); document.getElementById('modal-cupom').style.display='none'; document.querySelectorAll('.active').forEach(b=>b.classList.remove('active'));
                 } else alert(d.erro);
