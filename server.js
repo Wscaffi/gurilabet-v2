@@ -7,21 +7,32 @@ const app = express();
 app.use(express.json());
 app.use(cors({ origin: '*' }));
 
+// --- CONFIGURAÇÕES DE RISCO (AJUSTE FINO) ---
 const CONFIG = {
     API_KEY: process.env.API_FOOTBALL_KEY || "SUA_CHAVE_AQUI", 
-    LUCRO_CASA: 0.88,
+    LUCRO_CASA: 0.85, // Margem mais alta (0.85) para baixar as odds e proteger você
     TEMPO_CACHE_MINUTOS: 30,
-    MIN_VALOR_APOSTA: 2.00,
-    MAX_VALOR_APOSTA: 500.00,
-    MAX_PREMIO_PAGO: 5000.00,
-    MAX_JOGOS_BILHETE: 20,
-    MAX_ODD_POR_JOGO: 50.00
+    
+    // LIMITES FINANCEIROS
+    MIN_VALOR: 2.00,
+    MAX_VALOR: 500.00,
+    MAX_PREMIO: 3000.00, // Teto máximo de prêmio por bilhete
+    MAX_ODD_ZEBRA: 8.50, // TRAVA: Nenhuma odd de time passa de 8.50 (Evita pagar 20x)
+    
+    // LISTA VIP (SÓ ESSAS LIGAS TERÃO MERCADOS EXTRAS - IGUAL SB99)
+    LIGAS_VIP: [
+        "Premier League", "La Liga", "Serie A", "Bundesliga", "Ligue 1", 
+        "Brasileirão Série A", "Paulista A1", "Carioca", "Mineiro", 
+        "UEFA Champions League", "Copa Libertadores", "Copa Sudamericana"
+    ]
 };
 
 const TIMES_FORTES = ["Flamengo", "Palmeiras", "Atlético-MG", "Real Madrid", "Barcelona", "Man City", "Liverpool", "PSG", "Bayern", "Inter", "Arsenal", "Botafogo", "São Paulo", "Corinthians", "Grêmio", "Boca Juniors", "River Plate", "Juventus", "Milan"];
-const TRADUCOES = { "World": "Mundo", "Brazil": "Brasil", "England": "Inglaterra", "Spain": "Espanha", "Italy": "Itália", "Germany": "Alemanha", "France": "França", "Portugal": "Portugal", "Netherlands": "Holanda", "Belgium": "Bélgica", "Argentina": "Argentina", "Premier League": "Premier League", "Serie A": "Série A", "La Liga": "La Liga", "Bundesliga": "Bundesliga", "Ligue 1": "Ligue 1", "Primeira Liga": "Primeira Liga", "Brasileiro Série A": "Brasileirão Série A", "Brasileiro Série B": "Brasileirão Série B", "Copa Libertadores": "Libertadores", "UEFA Champions League": "Champions League", "Friendly": "Amistoso" };
 
-function traduzir(texto) { return TRADUCOES[texto] || texto; }
+// TRADUTOR
+const TRADUCOES = { "World": "Mundo", "Brazil": "Brasil", "England": "Inglaterra", "Spain": "Espanha", "Italy": "Itália", "Germany": "Alemanha", "France": "França", "Portugal": "Portugal", "Netherlands": "Holanda", "Belgium": "Bélgica", "Argentina": "Argentina", "Premier League": "Premier League", "Serie A": "Série A", "La Liga": "La Liga", "Bundesliga": "Bundesliga", "Ligue 1": "Ligue 1", "Brasileiro Série A": "Brasileirão Série A", "Brasileiro Série B": "Brasileirão Série B", "Paulista - A1": "Paulista A1", "Carioca - 1": "Carioca", "Copa Libertadores": "Libertadores", "UEFA Champions League": "Champions League", "Friendly": "Amistoso", "Copa São Paulo de Futebol Júnior": "Copinha" };
+
+function traduzir(txt) { return TRADUCOES[txt] || txt; }
 
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 
@@ -29,8 +40,8 @@ async function initDb() {
     try {
         await pool.query(`CREATE TABLE IF NOT EXISTS bilhetes (id SERIAL PRIMARY KEY, usuario_id INTEGER, codigo TEXT UNIQUE, valor NUMERIC, retorno NUMERIC, odds_total NUMERIC, status TEXT DEFAULT 'pendente', detalhes JSONB, data TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         await pool.query(`CREATE TABLE IF NOT EXISTS jogos_cache (id SERIAL PRIMARY KEY, data_ref TEXT UNIQUE, json_dados JSONB, atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
-        console.log("✅ Servidor V38 (FULL MARKETS) Online!");
-    } catch (e) { console.error("Erro DB:", e.message); }
+        console.log("✅ Server V39 (Risk Manager) On!");
+    } catch (e) { console.error(e); }
 }
 initDb();
 
@@ -44,115 +55,159 @@ app.get('/api/jogos', async (req, res) => {
         }
         const url = `https://v3.football.api-sports.io/fixtures?date=${dataHoje}&status=NS-1H-2H-HT-FT`;
         const resp = await axios.get(url, { headers: { 'x-apisports-key': CONFIG.API_KEY } });
+        
         let jogos = [];
-        if (resp.data.response) jogos = formatarAPIOficial(resp.data.response);
+        if (resp.data.response) jogos = formatarComGestaoRisco(resp.data.response);
+        
         if (jogos.length > 0) {
             await pool.query(`INSERT INTO jogos_cache (data_ref, json_dados, atualizado_em) VALUES ($1, $2, NOW()) ON CONFLICT (data_ref) DO UPDATE SET json_dados = $2, atualizado_em = NOW()`, [dataHoje, JSON.stringify(jogos)]);
         }
         res.json(jogos);
-    } catch (e) { console.error("Erro:", e.message); res.json([]); }
+    } catch (e) { res.json([]); }
 });
 
 app.post('/api/finalizar', async (req, res) => {
     try {
         let { usuario_id, valor, apostas } = req.body;
-        if (!apostas || apostas.length === 0) return res.status(400).json({ erro: "Cupom vazio." });
-        if (apostas.length > CONFIG.MAX_JOGOS_BILHETE) return res.status(400).json({ erro: `Máximo de ${CONFIG.MAX_JOGOS_BILHETE} jogos.` });
+        if(!apostas || !apostas.length) return res.status(400).json({erro: "Vazio"});
         
         valor = parseFloat(valor);
-        if (valor < CONFIG.MIN_VALOR_APOSTA) return res.status(400).json({ erro: `Mínimo: R$ ${CONFIG.MIN_VALOR_APOSTA}` });
-        if (valor > CONFIG.MAX_VALOR_APOSTA) return res.status(400).json({ erro: `Máximo: R$ ${CONFIG.MAX_VALOR_APOSTA}` });
+        if(valor < CONFIG.MIN_VALOR) return res.status(400).json({erro: `Mínimo R$ ${CONFIG.MIN_VALOR}`});
+        if(valor > CONFIG.MAX_VALOR) return res.status(400).json({erro: `Máximo R$ ${CONFIG.MAX_VALOR}`});
 
         let oddTotal = 1.0;
-        apostas.forEach(a => {
-            let odd = parseFloat(a.odd);
-            if(odd > CONFIG.MAX_ODD_POR_JOGO) odd = 1.0; 
-            oddTotal *= odd;
-        });
-
+        apostas.forEach(a => oddTotal *= parseFloat(a.odd));
+        
         let retorno = valor * oddTotal;
-        if (retorno > CONFIG.MAX_PREMIO_PAGO) retorno = CONFIG.MAX_PREMIO_PAGO;
+        // TRAVA DE PAGAMENTO MÁXIMO
+        if(retorno > CONFIG.MAX_PREMIO) retorno = CONFIG.MAX_PREMIO;
 
         const codigo = "GB" + Math.floor(100000 + Math.random() * 900000);
-        await pool.query('INSERT INTO bilhetes (usuario_id, codigo, valor, retorno, odds_total, detalhes) VALUES ($1, $2, $3, $4, $5, $6)', [usuario_id || 1, codigo, valor, retorno.toFixed(2), oddTotal.toFixed(2), JSON.stringify(apostas)]);
-        res.json({ sucesso: true, codigo, retorno: retorno.toFixed(2) });
-    } catch (e) { res.status(500).json({ erro: "Erro ao processar." }); }
+        await pool.query('INSERT INTO bilhetes (usuario_id, codigo, valor, retorno, odds_total, detalhes) VALUES ($1, $2, $3, $4, $5, $6)', 
+            [usuario_id||1, codigo, valor, retorno.toFixed(2), oddTotal.toFixed(2), JSON.stringify(apostas)]);
+        
+        res.json({sucesso: true, codigo, retorno: retorno.toFixed(2)});
+    } catch (e) { res.status(500).json({erro: "Erro interno"}); }
 });
 
-function formatarAPIOficial(lista) {
+// --- INTELIGÊNCIA DE RISCO ---
+function formatarComGestaoRisco(lista) {
     return lista.map(j => {
         try {
             const paisOrig = j.league.country;
             const ligaOrig = j.league.name;
-            const ligaNomeFinal = (paisOrig === "World" ? traduzir(ligaOrig) : `${traduzir(paisOrig)} - ${traduzir(ligaOrig)}`).toUpperCase();
-            const flag = j.league.flag || "https://cdn-icons-png.flaticon.com/512/53/53280.png";
-            const oddsBase = calcularOddsBase(j.teams.home.name, j.teams.away.name);
+            const ligaTrad = traduzir(ligaOrig);
+            const paisTrad = traduzir(paisOrig);
+            const ligaNomeFinal = (paisOrig === "World" ? ligaTrad : `${paisTrad} - ${ligaTrad}`).toUpperCase();
+            
+            // FILTRO DE ELITE: A liga é VIP?
+            // Se for "Copinha", "Youth", "Amador", "2ª Divisão estranha" -> NÃO É VIP.
+            const ehLigaVIP = CONFIG.LIGAS_VIP.some(vip => ligaNomeFinal.includes(vip.toUpperCase()));
+
+            const oddsBase = calcularOddsSeguras(j.teams.home.name, j.teams.away.name);
+
             return {
                 id: j.fixture.id,
                 liga: ligaNomeFinal,
-                flag: flag,
+                flag: j.league.flag || "https://cdn-icons-png.flaticon.com/512/53/53280.png",
                 home: { name: j.teams.home.name, logo: j.teams.home.logo },
                 away: { name: j.teams.away.name, logo: j.teams.away.logo },
                 data: j.fixture.date,
-                status: traduzirStatus(j.fixture.status.short),
+                status: statusCurto(j.fixture.status.short),
                 odds: oddsBase,
-                mercados: gerarMercadosExtras(oddsBase)
+                // SE NÃO FOR VIP, MANDA NULL (BLOQUEIA MERCADOS EXTRAS)
+                mercados: ehLigaVIP ? gerarMercadosCompletos(oddsBase) : null 
             };
         } catch (e) { return null; }
     }).filter(Boolean);
 }
 
-function traduzirStatus(st) { if(st === 'NS') return 'VS'; if(['1H','2H','HT'].includes(st)) return 'AO VIVO'; if(st === 'FT') return 'ENC'; return st; }
+function statusCurto(st) { if(st==='NS')return 'VS'; if(['1H','2H','HT'].includes(st))return 'VIVO'; return 'FIM'; }
 
-function calcularOddsBase(home, away) {
-    const hStrong = TIMES_FORTES.some(t => home.includes(t)); const aStrong = TIMES_FORTES.some(t => away.includes(t));
-    let c = 2.40, e = 3.20, f = 2.80;
-    if (hStrong && !aStrong) { c = 1.50; e = 4.00; f = 6.00; } else if (aStrong && !hStrong) { c = 5.50; e = 3.80; f = 1.55; }
-    c += (Math.random() * 0.2); f += (Math.random() * 0.2);
-    return { casa: aplicarMargem(c), empate: aplicarMargem(e), fora: aplicarMargem(f) };
-}
-function aplicarMargem(v) { return (parseFloat(v) * CONFIG.LUCRO_CASA).toFixed(2); }
-
-function gerarMercadosExtras(base) {
-    const C = parseFloat(base.casa); const E = parseFloat(base.empate); const F = parseFloat(base.fora);
-    const m = CONFIG.LUCRO_CASA;
-    const calc = (v) => (v * m).toFixed(2);
+// --- ODDS CALIBRADAS (BET365 STYLE) ---
+function calcularOddsSeguras(home, away) {
+    const hStrong = TIMES_FORTES.some(t => home.includes(t));
+    const aStrong = TIMES_FORTES.some(t => away.includes(t));
     
-    return {
-        // --- PRINCIPAIS ---
-        dupla_chance: { "1X": calc(1.0 + (1/C)), "12": calc(1.30), "X2": calc(1.0 + (1/F)) },
-        empate_anula: { "1": calc(C * 0.7), "2": calc(F * 0.7) },
-        ambas_marcam: { "Sim": calc(1.90), "Não": calc(1.80) },
-        par_impar: { "Ímpar": "1.90", "Par": "1.90" },
-        
-        // --- GOLS ---
-        total_gols: { "Mais 1.5": calc(1.30), "Menos 1.5": calc(3.20), "Mais 2.5": calc(1.95), "Menos 2.5": calc(1.85), "Mais 3.5": calc(3.50), "Menos 3.5": calc(1.25) },
-        
-        // --- TEMPOS ---
-        ht_vencedor: { "1": calc(C + 1.2), "X": calc(2.10), "2": calc(F + 1.2) },
-        ft_vencedor_2tempo: { "1": calc(C + 0.6), "X": calc(2.40), "2": calc(F + 0.6) },
-        primeiro_gol: { "Casa": calc(C * 0.9), "Fora": calc(F * 0.9), "Nenhum": calc(10.0) },
+    // Padrão: Jogo Equilibrado
+    let c = 2.50, e = 3.10, f = 2.80; 
 
-        // --- PLACAR EXATO (LISTA DO VÍDEO) ---
-        placar_exato: {
-            "1-0": calc(C * 3.5), "2-0": calc(C * 4.5), "2-1": calc(C * 5.5), "3-0": calc(C * 8.0), "3-1": calc(C * 9.0),
-            "0-1": calc(F * 3.5), "0-2": calc(F * 4.5), "1-2": calc(F * 5.5), "0-3": calc(F * 8.0), "1-3": calc(F * 9.0),
-            "0-0": calc(8.00), "1-1": calc(6.00), "2-2": calc(12.00)
-        },
+    if (hStrong && !aStrong) { 
+        c = 1.40; e = 4.20; f = 7.50; // Favorito Casa (Zebra limitada a 7.50)
+    } else if (aStrong && !hStrong) { 
+        c = 6.80; e = 3.90; f = 1.45; // Favorito Fora (Zebra limitada a 6.80)
+    }
 
-        // --- ESCANTEIOS (SIMULADO BASEADO NA FORÇA DO TIME) ---
-        escanteios: {
-            "Mais 8.5": calc(1.80), "Menos 8.5": calc(1.90),
-            "Mais 9.5": calc(2.10), "Menos 9.5": calc(1.65),
-            "Mais 10.5": calc(2.50), "Menos 10.5": calc(1.45),
-            "Casa Mais Escanteios": calc(C * 0.8), 
-            "Fora Mais Escanteios": calc(F * 0.8)
-        },
-        
-        handicap: { "Casa -1": calc(C * 2.8), "Fora +1": calc(1.45) }
+    // Variação Aleatória Mínima (0.05 a 0.30)
+    c += Math.random() * 0.3;
+    f += Math.random() * 0.3;
+
+    // TRAVA FINAL DE ZEBRA (Segurança Máxima)
+    if(c > CONFIG.MAX_ODD_ZEBRA) c = CONFIG.MAX_ODD_ZEBRA;
+    if(f > CONFIG.MAX_ODD_ZEBRA) f = CONFIG.MAX_ODD_ZEBRA;
+
+    return { 
+        casa: (c * CONFIG.LUCRO_CASA).toFixed(2), 
+        empate: (e * CONFIG.LUCRO_CASA).toFixed(2), 
+        fora: (f * CONFIG.LUCRO_CASA).toFixed(2) 
     };
 }
 
-// ROTAS LOGIN
+// --- GERADOR DE MERCADOS COMPLETOS (SÓ PRA LIGAS VIP) ---
+function gerarMercadosCompletos(base) {
+    const C = parseFloat(base.casa); const E = parseFloat(base.empate); const F = parseFloat(base.fora);
+    const calc = (v) => (v * 0.90).toFixed(2); // Margem extra nos especiais
+
+    return {
+        dupla_chance: { "1X": calc(1.15), "12": calc(1.25), "X2": calc(1.15) },
+        empate_anula: { "1": calc(C*0.7), "2": calc(F*0.7) },
+        ambas_marcam: { "Sim": "1.85", "Não": "1.85" },
+        par_impar: { "Ímpar": "1.90", "Par": "1.90" },
+        
+        total_gols: { 
+            "Mais 0.5": "1.05", "Menos 0.5": "8.00",
+            "Mais 1.5": "1.30", "Menos 1.5": "3.20",
+            "Mais 2.5": "1.90", "Menos 2.5": "1.80",
+            "Mais 3.5": "3.10", "Menos 3.5": "1.30"
+        },
+        
+        gols_times: {
+            "Casa +0.5": calc(1.2), "Casa +1.5": calc(C*1.5),
+            "Fora +0.5": calc(1.2), "Fora +1.5": calc(F*1.5),
+            "Casa Vence Zero": calc(C*2.5), "Fora Vence Zero": calc(F*2.5)
+        },
+
+        tempos: {
+            "Vencedor 1ºT": { "1": calc(C+1), "X": "2.10", "2": calc(F+1) },
+            "Vencedor 2ºT": { "1": calc(C+0.5), "X": "2.40", "2": calc(F+0.5) },
+            "Ambos Marcam 1ºT": { "Sim": "4.50", "Não": "1.15" },
+            "Ambos Marcam 2ºT": { "Sim": "3.50", "Não": "1.25" },
+            "Gol nos 2 Tempos": { "Casa": calc(C*2), "Fora": calc(F*2) }
+        },
+
+        intervalos: {
+            "Gol 0-10 min": "4.50", "Gol 11-20 min": "4.80", 
+            "Gol 81-90 min": "2.50", "Sem Gols": "9.00"
+        },
+
+        placar_exato: {
+            "1-0": calc(C*3), "2-0": calc(C*4), "2-1": calc(C*5), "3-0": calc(C*8),
+            "0-1": calc(F*3), "0-2": calc(F*4), "1-2": calc(F*5), "0-3": calc(F*8),
+            "0-0": "8.00", "1-1": "6.00", "2-2": "14.00"
+        },
+
+        escanteios: {
+            "Mais 8.5": "1.70", "Menos 8.5": "2.00",
+            "Mais 9.5": "1.95", "Menos 9.5": "1.75",
+            "Mais 10.5": "2.40", "Menos 10.5": "1.50",
+            "1x2 Escanteios": { "1": "1.60", "X": "8.00", "2": "2.30" }
+        },
+        
+        handicap: { "Casa -1": calc(C*2.5), "Fora +1": calc(1.40) }
+    };
+}
+
+// ROTAS DE LOGIN/ADMIN PADRÃO (MANTIDAS)
+app.get('/api/admin/resumo', async (req, res) => { try { const f = await pool.query(`SELECT COUNT(*) as t, SUM(valor) as e, SUM(retorno) as r FROM bilhetes`); const u = await pool.query(`SELECT codigo, valor, retorno, data FROM bilhetes ORDER BY data DESC LIMIT 10`); res.json({ caixa: { total: f.rows[0].t, entrada: `R$ ${parseFloat(f.rows[0].e||0).toFixed(2)}`, risco: `R$ ${parseFloat(f.rows[0].r||0).toFixed(2)}` }, ultimos: u.rows }); } catch (e) { res.status(500).json({ erro: "Erro" }); } });
 app.post('/api/login', async (req, res) => { res.json({sucesso:false}); });
-app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V38 On!"));
+app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V39 On!"));
