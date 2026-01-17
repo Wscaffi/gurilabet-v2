@@ -2,336 +2,151 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GURILA BET | SYSTEM</title>
+    <title>GURILA BET | V31</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* RESET E CORES GURILA (DARK) */
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Arial', sans-serif; outline: none; }
-        body { background-color: #0d1117; color: #e6edf3; padding-bottom: 60px; }
+        /* ... COPIAR TODO O CSS DO V30 AQUI, MAS ADICIONE ISSO NO FINAL: ... */
         
-        :root { --neon: #00ff88; --bg-dark: #0d1117; --bg-card: #161b22; --border: #30363d; --text-gray: #8b949e; }
-
-        /* 1. HEADER */
-        .header { background-color: var(--bg-card); padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--neon); }
-        .brand { font-size: 20px; font-weight: 900; color: #fff; font-style: italic; letter-spacing: -1px; }
-        .brand span { color: var(--neon); }
-        .menu-icon { font-size: 20px; color: var(--neon); cursor: pointer; }
-
-        /* 2. BARRA DE APOSTA (FIXA) */
-        .bet-bar { background: #000; padding: 10px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 90; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
-        .input-money { background: var(--bg-card); border: 1px solid var(--border); padding: 8px; width: 100px; border-radius: 4px; font-size: 16px; color: var(--neon); font-weight: bold; }
-        .return-info { text-align: center; font-size: 10px; color: var(--text-gray); line-height: 1.3; }
-        .return-info b { display: block; font-size: 14px; color: #fff; }
-        .btn-cupom { background: var(--neon); color: #000; font-weight: 900; padding: 8px 15px; border-radius: 4px; border: none; font-size: 12px; cursor: pointer; text-transform: uppercase; }
-        .badge { background: #000; color: var(--neon); padding: 1px 6px; border-radius: 10px; font-size: 10px; margin-left: 5px; }
-
-        /* 3. NAVEGAÇÃO E BUSCA */
-        .nav-dates { display: flex; background: var(--bg-dark); border-bottom: 1px solid var(--border); overflow-x: auto; }
-        .nav-item { flex: 1; padding: 12px; text-align: center; font-size: 11px; font-weight: bold; color: var(--text-gray); cursor: pointer; border-bottom: 2px solid transparent; min-width: 80px; }
-        .nav-item.active { color: var(--neon); border-bottom-color: var(--neon); background: var(--bg-card); }
-
-        .search-area { padding: 10px; background: var(--bg-card); border-bottom: 1px solid var(--border); }
-        .search-input { width: 100%; background: #0d1117; border: 1px solid var(--border); padding: 10px 35px 10px 10px; border-radius: 4px; color: #fff; font-size: 13px; }
-        .search-icon { position: absolute; right: 25px; top: 135px; color: var(--text-gray); }
-
-        .country-filter { display: flex; gap: 10px; overflow-x: auto; padding: 10px; background: #0d1117; border-bottom: 1px solid var(--border); }
-        .country-btn { background: var(--bg-card); border: 1px solid var(--border); padding: 6px 12px; border-radius: 20px; font-size: 11px; color: #fff; white-space: nowrap; cursor: pointer; display: flex; align-items: center; gap: 5px; }
-        .country-btn.active { border-color: var(--neon); color: var(--neon); }
-
-        /* 4. LISTA DE JOGOS */
-        .league-container { padding: 5px; min-height: 400px; }
-        .league-btn { background: linear-gradient(90deg, #161b22, #0d1117); color: #fff; padding: 12px; margin-bottom: 5px; border: 1px solid var(--border); border-left: 4px solid var(--neon); border-radius: 4px; font-weight: bold; font-size: 12px; text-transform: uppercase; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
-        .league-btn i { color: var(--neon); margin-right: 8px; }
-        .league-games { display: none; margin-bottom: 5px; }
-        .league-games.show { display: block; }
-
-        .game-row { background: var(--bg-card); border: 1px solid var(--border); margin-bottom: -1px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
-        .game-info { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-gray); font-weight: bold; }
-        .teams-names { font-size: 13px; font-weight: bold; color: #e6edf3; margin-bottom: 5px; }
+        /* CSS DO NOVO MODAL DE MERCADOS (ABAS) */
+        .modal-tabs { display: flex; overflow-x: auto; background: #000; border-bottom: 1px solid #333; }
+        .tab-btn { padding: 12px 15px; color: #888; font-size: 11px; font-weight: bold; cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent; text-transform: uppercase; }
+        .tab-btn.active { color: #00ff88; border-bottom-color: #00ff88; background: #161b22; }
         
-        .odds-row { display: flex; gap: 4px; }
-        .odd-sq { flex: 1; background: #0d1117; border: 1px solid var(--border); padding: 10px 5px; text-align: center; border-radius: 4px; cursor: pointer; transition: 0.2s; }
-        .odd-sq span { display: block; font-size: 9px; color: var(--text-gray); font-weight: bold; margin-bottom: 2px; }
-        .odd-sq b { display: block; font-size: 13px; color: var(--neon); }
-        .odd-sq.active { background: var(--neon); border-color: var(--neon); } 
-        .odd-sq.active span, .odd-sq.active b { color: #000; }
+        .market-group { padding: 10px; display: none; }
+        .market-group.active { display: block; }
         
-        .btn-more { width: 40px; background: #21262d; color: var(--text-gray); display: flex; align-items: center; justify-content: center; border-radius: 4px; font-size: 10px; font-weight: bold; border: 1px solid var(--border); cursor: pointer; }
-        .btn-more:hover { color: var(--neon); border-color: var(--neon); }
-
-        /* 5. MENU LATERAL */
-        .sidebar { position: fixed; top: 0; right: -260px; width: 260px; height: 100%; background: var(--bg-card); z-index: 200; transition: 0.3s; box-shadow: -5px 0 15px rgba(0,0,0,0.8); padding: 20px; border-left: 1px solid var(--border); }
-        .sidebar.open { right: 0; }
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 150; display: none; }
-        .overlay.open { display: block; }
-        .form-control { width: 100%; padding: 12px; background: #0d1117; border: 1px solid var(--border); color: #fff; border-radius: 4px; margin-bottom: 10px; font-size: 14px; outline: none; }
-        .btn-action { width: 100%; padding: 12px; background: var(--neon); color: #000; border: none; border-radius: 4px; font-weight: 900; cursor: pointer; text-transform: uppercase; margin-top: 5px; }
-        .btn-outline { background: transparent; border: 1px solid var(--neon); color: var(--neon); margin-top: 10px; }
-
-        /* 6. MODAIS */
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 300; display: none; justify-content: center; align-items: center; }
-        .modal-box { background: var(--bg-card); width: 90%; max-width: 400px; border-radius: 8px; border: 1px solid var(--border); overflow: hidden; max-height: 80vh; display: flex; flex-direction: column; }
-        .modal-header { background: #0d1117; padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; color: #fff; font-weight: bold; }
-        .modal-body { padding: 15px; overflow-y: auto; }
+        .m-block { background: #0d1117; border: 1px solid #333; border-radius: 6px; margin-bottom: 10px; overflow: hidden; }
+        .m-head { background: #161b22; padding: 8px 10px; font-size: 11px; font-weight: bold; color: #fff; border-bottom: 1px solid #333; display: flex; justify-content: space-between; }
+        .m-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #333; }
+        .m-btn { background: #0d1117; padding: 12px; text-align: center; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
+        .m-btn span { font-size: 11px; color: #ccc; }
+        .m-btn b { font-size: 12px; color: #00ff88; }
+        .m-grid-3 { grid-template-columns: 1fr 1fr 1fr; }
         
-        .cupom-item { background: #0d1117; border: 1px solid var(--border); padding: 10px; margin-bottom: 8px; border-left: 3px solid var(--neon); display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #fff; }
-        .cupom-del { color: #ff4d4d; padding: 5px; cursor: pointer; }
-
-        /* MODAL EXTRAS (+ MERCADOS) */
-        .market-title { font-size: 11px; font-weight: bold; color: var(--text-gray); margin: 10px 0 5px 0; text-transform: uppercase; }
-        .market-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; }
-        .market-btn { background: #0d1117; border: 1px solid var(--border); padding: 10px; text-align: center; border-radius: 4px; font-size: 12px; color: #fff; cursor: pointer; }
-        .market-btn span { color: var(--neon); font-weight: bold; margin-left: 5px; }
-
-        /* PAINEL ADMIN SIMPLES */
-        .admin-card { background: #000; padding: 15px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; text-align: center; }
-        .admin-val { font-size: 20px; font-weight: 900; color: var(--neon); }
-        .admin-lbl { font-size: 10px; color: var(--text-gray); uppercase; }
-
+        /* Scrollbar hide */
+        .modal-tabs::-webkit-scrollbar { display: none; }
     </style>
-</head>
+    </head>
 <body>
-
-    <div class="header">
-        <div class="brand">GURILA<span>BET</span> 🦍</div>
-        <i class="fas fa-bars menu-icon" onclick="toggleMenu()"></i>
-    </div>
-
-    <div class="bet-bar">
-        <div><label style="font-size:9px; color:#888;">APOSTA</label><input type="number" id="valor-topo" class="input-money" placeholder="0,00" oninput="atualizarCalculo()"></div>
-        <div class="return-info">RETORNO<br><b id="retorno-topo">R$ 0,00</b></div>
-        <button class="btn-cupom" onclick="finalizarZap()">BILHETE <span class="badge" id="qtd-cupom">0</span></button>
-    </div>
-
-    <div class="nav-dates">
-        <div class="nav-item active" onclick="loadJogos('hoje', this)">HOJE</div>
-        <div class="nav-item" onclick="loadJogos('amanha', this)">AMANHÃ</div>
-        <div class="nav-item" onclick="loadJogos('depois', this)">SÁBADO</div>
-    </div>
-
-    <div class="search-area">
-        <i class="fas fa-search search-icon"></i>
-        <input type="text" class="search-input" placeholder="Buscar Time (Ex: Flamengo)..." onkeyup="filtrarBusca(this.value)">
-    </div>
-    <div class="country-filter">
-        <div class="country-btn active" onclick="filtrarPais('todos', this)">🌍 Todos</div>
-        <div class="country-btn" onclick="filtrarPais('Brasil', this)">🇧🇷 Brasil</div>
-        <div class="country-btn" onclick="filtrarPais('Inglaterra', this)">🏴󠁧󠁢󠁥󠁮󠁧󠁿 Inglaterra</div>
-        <div class="country-btn" onclick="filtrarPais('Espanha', this)">🇪🇸 Espanha</div>
-        <div class="country-btn" onclick="filtrarPais('Itália', this)">🇮🇹 Itália</div>
-    </div>
-
-    <div id="container-ligas" class="league-container">
-        <div style="text-align:center; padding:40px; color:#555; font-size:12px;"><i class="fas fa-circle-notch fa-spin"></i> CARREGANDO...</div>
-    </div>
-
-    <div id="modal-mercados" class="modal">
-        <div class="modal-box">
-            <div class="modal-header"><span id="extra-title">JOGO</span><span onclick="fecharExtras()" style="cursor:pointer">X</span></div>
-            <div class="modal-body" id="extra-body"></div>
-        </div>
-    </div>
-
-    <div id="modal-admin" class="modal">
-        <div class="modal-box">
-            <div class="modal-header"><span>PAINEL ADMIN</span><span onclick="document.getElementById('modal-admin').style.display='none'" style="cursor:pointer">X</span></div>
-            <div class="modal-body">
-                <div class="admin-card"><div class="admin-lbl">VENDAS HOJE</div><div class="admin-val" id="adm-entrada">R$ 0,00</div></div>
-                <div class="admin-card"><div class="admin-lbl">BILHETES</div><div class="admin-val" id="adm-bilhetes">0</div></div>
-                <div class="admin-card"><div class="admin-lbl">RISCO (PRÊMIOS)</div><div class="admin-val" id="adm-risco" style="color:#ff4d4d">R$ 0,00</div></div>
-                <button class="btn-action btn-outline" onclick="window.open('https://wa.me/5561995478204')">SUPORTE</button>
+    <div id="modal-mercados" class="modal" style="display:none; align-items: flex-end;">
+        <div class="modal-box" style="height: 85vh; width: 100%; max-width: 100%; border-radius: 15px 15px 0 0;">
+            <div class="modal-header">
+                <span id="extra-title" style="font-size:12px; text-transform:uppercase;">FLAMENGO X VASCO</span>
+                <span onclick="fecharExtras()" style="cursor:pointer; padding:5px;">&times;</span>
             </div>
-        </div>
-    </div>
+            
+            <div class="modal-tabs">
+                <div class="tab-btn active" onclick="mudarAba('tab-princ', this)">PRINCIPAIS</div>
+                <div class="tab-btn" onclick="mudarAba('tab-gols', this)">GOLS</div>
+                <div class="tab-btn" onclick="mudarAba('tab-1t', this)">1º TEMPO</div>
+                <div class="tab-btn" onclick="mudarAba('tab-2t', this)">2º TEMPO</div>
+                <div class="tab-btn" onclick="mudarAba('tab-comb', this)">COMBINADOS</div>
+            </div>
 
-    <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
-    <div class="sidebar" id="sidebar">
-        <h3 style="margin-bottom:20px; color:#fff; border-bottom:1px solid #333; padding-bottom:10px;">MENU</h3>
-        <div id="form-login">
-            <input type="email" id="email" class="form-control" placeholder="Email">
-            <input type="password" id="senha" class="form-control" placeholder="Senha">
-            <button class="btn-action" onclick="fazerLogin()">ENTRAR</button>
-            <button class="btn-action btn-outline" onclick="mostrarCadastro()">CRIAR CONTA</button>
-        </div>
-        <div id="form-cadastro" style="display:none;">
-            <input type="text" id="cad-nome" class="form-control" placeholder="Nome">
-            <input type="email" id="cad-email" class="form-control" placeholder="Email">
-            <input type="password" id="cad-senha" class="form-control" placeholder="Senha">
-            <button class="btn-action" onclick="fazerCadastro()">CADASTRAR</button>
-            <button class="btn-action btn-outline" onclick="mostrarLogin()">VOLTAR</button>
-        </div>
-        <div id="user-logged" style="display:none;">
-            <p style="color:#fff;">Olá, <b id="user-name" style="color:var(--neon);">Admin</b></p>
-            <button class="btn-action" onclick="abrirAdmin()">PAINEL ADMIN</button>
-            <button class="btn-action btn-outline" style="border-color:#ff4d4d; color:#ff4d4d;" onclick="logout()">SAIR</button>
-        </div>
-    </div>
-
-    <div id="modal-cupom" class="modal">
-        <div class="modal-box">
-            <div class="modal-header"><span>CONFIRMAR</span><span onclick="fecharModal()" style="cursor:pointer">X</span></div>
-            <div class="modal-body">
-                <div id="lista-cupom"></div>
-                <div style="margin-top:15px;">
-                    <label style="font-size:10px; color:#888;">CLIENTE</label>
-                    <input type="text" id="cliente" class="form-control" placeholder="Nome do Apostador">
-                </div>
-                <div style="background:#000; padding:15px; border:1px solid #333; text-align:center; margin-top:10px;">
-                    <small style="color:#888;">RETORNO</small><br><b id="retorno-final" style="font-size:20px; color:var(--neon);">R$ 0,00</b>
-                </div>
-                <button onclick="enviarAposta()" id="btn-finalizar" class="btn-action" style="margin-top:15px;">GERAR BILHETE</button>
+            <div class="modal-body" style="background: #000; padding: 0;">
+                <div id="mercados-content">Carregando...</div>
             </div>
         </div>
     </div>
 
     <script>
-        const API_URL = 'https://gurilabet-v2-production.up.railway.app'; 
-        const ZAP_NUMERO = "5561995478204"; 
+        // ... MANTENHA TODAS AS VARIÁVEIS E FUNÇÕES (carregarJogos, renderizarLigas, etc) ...
         
-        let CARRINHO = [], JOGOS_TODOS = [], USUARIO = JSON.parse(localStorage.getItem('gb_user'));
+        // ... SUBSTITUA APENAS A FUNÇÃO 'abrirExtras' POR ESTA NOVA LÓGICA: ...
 
-        window.onload = () => { carregarJogos(); verificarLogin(); };
+        let JOGO_ATUAL_MERCADOS = null;
 
-        async function carregarJogos() {
-            try {
-                const res = await fetch(`${API_URL}/api/jogos`);
-                JOGOS_TODOS = await res.json();
-                renderizarLigas(JOGOS_TODOS);
-            } catch (e) { document.getElementById('container-ligas').innerHTML = `<div style="text-align:center; padding:40px; color:red;">ERRO CONEXÃO</div>`; }
-        }
-
-        function renderizarLigas(lista) {
-            const grupos = {};
-            lista.forEach(j => {
-                if(!grupos[j.liga]) grupos[j.liga] = [];
-                grupos[j.liga].push(j);
-            });
-
-            let html = '';
-            for(let liga in grupos) {
-                html += `<div class="league-btn" onclick="toggleLiga('lg-${liga.replace(/[^a-zA-Z0-9]/g,'')}')"><span><i class="fas fa-trophy"></i> ${liga}</span><i class="fas fa-chevron-down arrow"></i></div>
-                <div id="lg-${liga.replace(/[^a-zA-Z0-9]/g,'')}" class="league-games">`;
-                grupos[liga].forEach(j => {
-                    let h = new Date(j.data).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-                    html += `<div class="game-row">
-                        <div class="game-info"><span>${h} | <span style="color:var(--neon)">${j.status}</span></span><span>ID: ${j.id}</span></div>
-                        <div class="teams-names">${j.home.name} x ${j.away.name}</div>
-                        <div class="odds-row">
-                            <div class="odd-sq" onclick="add(this,${j.id},'1',${j.odds.casa},'${j.home.name} x ${j.away.name}')"><span>1</span><b>${j.odds.casa}</b></div>
-                            <div class="odd-sq" onclick="add(this,${j.id},'X',${j.odds.empate},'${j.home.name} x ${j.away.name}')"><span>X</span><b>${j.odds.empate}</b></div>
-                            <div class="odd-sq" onclick="add(this,${j.id},'2',${j.odds.fora},'${j.home.name} x ${j.away.name}')"><span>2</span><b>${j.odds.fora}</b></div>
-                            <div class="btn-more" onclick="abrirExtras('${j.home.name} x ${j.away.name}')"><i class="fas fa-plus"></i></div>
-                        </div>
-                    </div>`;
-                });
-                html += `</div>`;
-            }
-            document.getElementById('container-ligas').innerHTML = html || "<div style='padding:20px;text-align:center'>Nenhum jogo encontrado.</div>";
-        }
-
-        function toggleLiga(id) { const el = document.getElementById(id); el.classList.toggle('show'); }
-        
-        function filtrarBusca(txt) {
-            if(!txt) return renderizarLigas(JOGOS_TODOS);
-            const filtrados = JOGOS_TODOS.filter(j => j.home.name.toLowerCase().includes(txt.toLowerCase()) || j.away.name.toLowerCase().includes(txt.toLowerCase()));
-            renderizarLigas(filtrados);
-        }
-
-        function filtrarPais(pais, el) {
-            document.querySelectorAll('.country-btn').forEach(b => b.classList.remove('active'));
-            el.classList.add('active');
-            if(pais === 'todos') return renderizarLigas(JOGOS_TODOS);
-            // Simulação de filtro por string da liga
-            const filtrados = JOGOS_TODOS.filter(j => j.liga.includes(pais.toUpperCase()) || (pais === 'Brasil' && j.liga.includes('BRASIL')));
-            renderizarLigas(filtrados);
-        }
-
-        function add(el, id, op, odd, nm) {
-            el.parentElement.querySelectorAll('.odd-sq').forEach(b => b.classList.remove('active'));
-            const idx = CARRINHO.findIndex(i => i.id === id);
-            if(idx !== -1) { if(CARRINHO[idx].opcao === op) { CARRINHO.splice(idx,1); topo(); return; } CARRINHO.splice(idx,1); }
-            CARRINHO.push({id, opcao:op, odd, nome:nm}); el.classList.add('active'); topo();
-        }
-
-        function topo() {
-            document.getElementById('qtd-cupom').innerText = CARRINHO.length;
-            let tot = CARRINHO.reduce((a,i) => a * parseFloat(i.odd), 1); if(CARRINHO.length===0) tot=0;
-            const val = parseFloat(document.getElementById('valor-topo').value)||0;
-            document.getElementById('retorno-topo').innerText = `R$ ${(val*tot).toFixed(2)}`;
-            document.getElementById('retorno-final').innerText = `R$ ${(val*tot).toFixed(2)}`;
-        }
-        function atualizarCalculo() { topo(); }
-
-        function abrirExtras(titulo) {
-            document.getElementById('extra-title').innerText = titulo;
-            // Simulação de mercados (Já que é espelho)
-            const html = `<div class="market-title">Ambas Marcam</div><div class="market-grid"><div class="market-btn">Sim <span>1.85</span></div><div class="market-btn">Não <span>1.90</span></div></div>
-            <div class="market-title">Total de Gols</div><div class="market-grid"><div class="market-btn">+2.5 <span>1.75</span></div><div class="market-btn">-2.5 <span>2.05</span></div></div>
-            <div class="market-title">Dupla Chance</div><div class="market-grid"><div class="market-btn">Casa/Empate <span>1.25</span></div><div class="market-btn">Fora/Empate <span>1.40</span></div></div>`;
-            document.getElementById('extra-body').innerHTML = html;
+        function abrirExtras(idJogo, nomes) {
+            document.getElementById('extra-title').innerText = nomes;
             document.getElementById('modal-mercados').style.display = 'flex';
+            document.getElementById('mercados-content').innerHTML = '<div style="padding:20px; text-align:center; color:#888;">Carregando Odds...</div>';
+
+            // Busca o jogo específico no array carregado
+            // (Na V31, o endpoint /jogos já traz tudo, então buscamos no JOGOS_TODOS local)
+            const jogo = JOGOS_TODOS.find(j => j.id == idJogo);
+            
+            if(jogo && jogo.mercados) {
+                renderizarMercados(jogo.mercados, idJogo, nomes);
+            } else {
+                document.getElementById('mercados-content').innerHTML = '<div style="padding:20px; text-align:center; color:red;">Mercados fechados.</div>';
+            }
         }
+
+        function renderizarMercados(m, id, nomeJogo) {
+            const btn = (sel, odd) => `<div class="m-btn" onclick="addApostaExtra(${id}, '${sel}', ${odd}, '${nomeJogo}')"><span>${sel}</span> <b>${odd}</b></div>`;
+            const bloco = (titulo, grid, btns) => `<div class="m-block"><div class="m-head">${titulo}</div><div class="m-grid ${grid}">${btns}</div></div>`;
+
+            let htmlPrinc = '', htmlGols = '', html1T = '', html2T = '', htmlComb = '';
+
+            // ABA PRINCIPAIS
+            if(m.dupla_chance) htmlPrinc += bloco("DUPLA CHANCE", "m-grid-3", btn("1X", m.dupla_chance["1X"]) + btn("12", m.dupla_chance["12"]) + btn("X2", m.dupla_chance["X2"]));
+            if(m.empate_anula) htmlPrinc += bloco("EMPATE ANULA", "m-grid", btn("Casa", m.empate_anula["1"]) + btn("Fora", m.empate_anula["2"]));
+            if(m.ambas_marcam) htmlPrinc += bloco("AMBAS MARCAM", "m-grid", btn("Sim", m.ambas_marcam.Sim) + btn("Não", m.ambas_marcam.Não));
+            if(m.handicap) htmlPrinc += bloco("HANDICAP (RESULTADO)", "m-grid", 
+                btn("Casa -1", m.handicap["Casa -1"]) + btn("Fora +1", m.handicap["Fora +1"]) +
+                btn("Casa +1", m.handicap["Casa +1"]) + btn("Fora -1", m.handicap["Fora -1"])
+            );
+
+            // ABA GOLS
+            if(m.total_gols) {
+                let g = m.total_gols;
+                htmlGols += bloco("TOTAL DE GOLS", "m-grid", 
+                    btn("+1.5", g["Mais 1.5"]) + btn("-1.5", g["Menos 1.5"]) +
+                    btn("+2.5", g["Mais 2.5"]) + btn("-2.5", g["Menos 2.5"]) +
+                    btn("+3.5", g["Mais 3.5"]) + btn("-3.5", g["Menos 3.5"])
+                );
+            }
+            if(m.total_gols_casa) htmlGols += bloco("GOLS DO CASA", "m-grid", btn("+0.5", m.total_gols_casa["Mais 0.5"]) + btn("+1.5", m.total_gols_casa["Mais 1.5"]));
+            if(m.total_gols_fora) htmlGols += bloco("GOLS DO FORA", "m-grid", btn("+0.5", m.total_gols_fora["Mais 0.5"]) + btn("+1.5", m.total_gols_fora["Mais 1.5"]));
+
+            // ABA 1º TEMPO
+            if(m.ht_vencedor) html1T += bloco("VENCEDOR 1º TEMPO", "m-grid-3", btn("1", m.ht_vencedor["1"]) + btn("X", m.ht_vencedor["X"]) + btn("2", m.ht_vencedor["2"]));
+            if(m.ht_gols) html1T += bloco("GOLS 1º TEMPO", "m-grid", btn("+0.5", m.ht_gols["Mais 0.5"]) + btn("-0.5", m.ht_gols["Menos 0.5"]));
+            if(m.ht_ambas) html1T += bloco("AMBAS MARCAM HT", "m-grid", btn("Sim", m.ht_ambas.Sim) + btn("Não", m.ht_ambas.Não));
+
+            // ABA 2º TEMPO
+            if(m.ft_vencedor_2tempo) html2T += bloco("VENCEDOR 2º TEMPO", "m-grid-3", btn("1", m.ft_vencedor_2tempo["1"]) + btn("X", m.ft_vencedor_2tempo["X"]) + btn("2", m.ft_vencedor_2tempo["2"]));
+
+            // ABA COMBINADOS/EXTRAS
+            if(m.resultado_ambas) htmlComb += bloco("VENCEDOR + AMBAS MARCAM", "m-grid", 
+                btn("1 & Sim", m.resultado_ambas["Casa e Sim"]) + btn("2 & Sim", m.resultado_ambas["Fora e Sim"]) +
+                btn("1 & Não", m.resultado_ambas["Casa e Não"]) + btn("2 & Não", m.resultado_ambas["Fora e Não"])
+            );
+            if(m.placar_exato) htmlComb += bloco("PLACAR EXATO (PREVISÃO)", "m-grid-3", 
+                btn("1-0", m.placar_exato["1-0"]) + btn("0-1", m.placar_exato["0-1"]) + btn("1-1", m.placar_exato["1-1"]) +
+                btn("2-0", m.placar_exato["2-0"]) + btn("0-2", m.placar_exato["0-2"]) + btn("2-1", m.placar_exato["2-1"])
+            );
+            if(m.escanteios) htmlComb += bloco("ESCANTEIOS (TOTAL)", "m-grid", btn("+8.5", m.escanteios["Mais 8.5"]) + btn("-8.5", m.escanteios["Menos 8.5"]));
+
+            // MONTA O HTML FINAL COM DIVS OCULTAS
+            document.getElementById('mercados-content').innerHTML = `
+                <div id="tab-princ" class="market-group active">${htmlPrinc || '<p style="padding:10px">Sem mercados.</p>'}</div>
+                <div id="tab-gols" class="market-group">${htmlGols}</div>
+                <div id="tab-1t" class="market-group">${html1T}</div>
+                <div id="tab-2t" class="market-group">${html2T}</div>
+                <div id="tab-comb" class="market-group">${htmlComb}</div>
+            `;
+        }
+
+        function mudarAba(idTab, el) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            el.classList.add('active');
+            document.querySelectorAll('.market-group').forEach(d => d.classList.remove('active'));
+            document.getElementById(idTab).classList.add('active');
+        }
+
+        function addApostaExtra(id, sel, odd, nome) {
+            add({parentElement: {querySelectorAll: ()=>{return []}}, classList: {add:()=>{}}}, id, sel, odd, nome);
+            fecharExtras();
+            // Efeito visual de sucesso
+            alert(`✅ Adicionado: ${sel} (${odd})`);
+        }
+
         function fecharExtras() { document.getElementById('modal-mercados').style.display = 'none'; }
-
-        function finalizarZap() {
-            const v = document.getElementById('valor-topo').value;
-            if(!v || v<=0) return alert("Valor inválido");
-            if(CARRINHO.length===0) return alert("Escolha jogos");
-            document.getElementById('modal-cupom').style.display = 'flex';
-            let html = ''; CARRINHO.forEach((i,k) => html += `<div class="cupom-item"><div><b>${i.nome}</b><br>${i.opcao} (${i.odd})</div><div class="cupom-del" onclick="rm(${k})">X</div></div>`);
-            document.getElementById('lista-cupom').innerHTML = html;
-        }
-        function rm(k) { CARRINHO.splice(k,1); finalizarZap(); topo(); if(CARRINHO.length===0) fecharModal(); }
-        function fecharModal() { document.getElementById('modal-cupom').style.display = 'none'; }
-
-        async function enviarAposta() {
-            const cli = document.getElementById('cliente').value; const val = document.getElementById('valor-topo').value;
-            if(!cli) return alert("Nome cliente?");
-            const btn = document.getElementById('btn-finalizar'); btn.innerText = "..."; btn.disabled = true;
-            let ot = CARRINHO.reduce((a,i)=>a*parseFloat(i.odd),1);
-            try {
-                const res = await fetch(`${API_URL}/api/finalizar`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({usuario_id:1, valor:val, apostas:CARRINHO, odd_total:ot})});
-                const d = await res.json();
-                if(d.sucesso) {
-                    let msg = `🦍 *GURILA BET*\n🎫 ${d.codigo}\n👤 ${cli}\n💰 R$ ${val}\n🏆 R$ ${d.retorno}\n\n`;
-                    CARRINHO.forEach(c => msg += `⚽ ${c.nome} (${c.opcao})\n`);
-                    window.open(`https://wa.me/${ZAP_NUMERO}?text=${encodeURIComponent(msg)}`, '_blank');
-                    CARRINHO=[]; topo(); fecharModal(); document.querySelectorAll('.odd-sq.active').forEach(b=>b.classList.remove('active'));
-                } else alert(d.erro);
-            } catch(e) { alert("Erro"); }
-            btn.innerText = "GERAR BILHETE"; btn.disabled = false;
-        }
-
-        // --- AUTH & ADMIN ---
-        function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('open'); }
-        function mostrarCadastro() { document.getElementById('form-login').style.display='none'; document.getElementById('form-cadastro').style.display='block'; }
-        function mostrarLogin() { document.getElementById('form-cadastro').style.display='none'; document.getElementById('form-login').style.display='block'; }
-        function verificarLogin() { if(USUARIO) { document.getElementById('form-login').style.display='none'; document.getElementById('user-logged').style.display='block'; document.getElementById('user-name').innerText = USUARIO.nome; } }
-        async function fazerLogin() { 
-            const e = document.getElementById('email').value, s = document.getElementById('senha').value;
-            try { const r = await fetch(`${API_URL}/api/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:e,senha:s})}); const d=await r.json();
-            if(d.sucesso){ USUARIO=d.usuario; localStorage.setItem('gb_user',JSON.stringify(USUARIO)); verificarLogin(); } else alert("Erro"); } catch(e){alert("Erro");}
-        }
-        async function fazerCadastro() {
-            const n=document.getElementById('cad-nome').value, e=document.getElementById('cad-email').value, s=document.getElementById('cad-senha').value;
-            try { const r = await fetch(`${API_URL}/api/cadastro`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:n,email:e,senha:s})}); const d=await r.json();
-            if(d.sucesso){ alert("Criado!"); mostrarLogin(); } } catch(e){alert("Erro");}
-        }
-        function logout() { localStorage.removeItem('gb_user'); location.reload(); }
         
-        async function abrirAdmin() {
-            // Busca dados reais do backend
-            try {
-                const res = await fetch(`${API_URL}/api/admin/resumo`); // Adicione autenticação se precisar
-                const d = await res.json();
-                if(d.caixa) {
-                    document.getElementById('adm-entrada').innerText = d.caixa.entrada;
-                    document.getElementById('adm-bilhetes').innerText = d.caixa.total;
-                    document.getElementById('adm-risco').innerText = d.caixa.risco;
-                }
-            } catch(e) {}
-            document.getElementById('modal-admin').style.display = 'flex';
-        }
+        // ... (OBS: Atualize a chamada do botão "+" na lista principal para passar os parametros certos) ...
+        // No renderizarLigas, onde tem o btn-more, mude para:
+        // onclick="abrirExtras(${j.id}, '${j.home.name} x ${j.away.name}')"
 
     </script>
 </body>
