@@ -2,91 +2,53 @@
 <html lang="pt-br">
 <head>
     <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>GURILA BET | SYSTEM</title>
+    <title>GURILA BET</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* --- ESTILO GURILA DARK (BASE) --- */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Arial', sans-serif; outline: none; }
         body { background-color: #0d1117; color: #e6edf3; padding-bottom: 60px; }
-        
         :root { --neon: #00ff88; --bg-dark: #0d1117; --bg-card: #161b22; --border: #30363d; --text-gray: #8b949e; }
-
-        /* HEADER */
         .header { background-color: var(--bg-card); padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--neon); }
         .brand { font-size: 20px; font-weight: 900; color: #fff; font-style: italic; letter-spacing: -1px; }
         .brand span { color: var(--neon); }
-        .menu-icon { font-size: 20px; color: var(--neon); cursor: pointer; }
-
-        /* BARRA DE APOSTA (FIXA NO TOPO) */
         .bet-bar { background: #000; padding: 10px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 90; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
         .input-money { background: var(--bg-card); border: 1px solid var(--border); padding: 8px; width: 100px; border-radius: 4px; font-size: 16px; color: var(--neon); font-weight: bold; }
         .return-info { text-align: center; font-size: 10px; color: var(--text-gray); line-height: 1.3; }
         .return-info b { display: block; font-size: 14px; color: #fff; }
         .btn-cupom { background: var(--neon); color: #000; font-weight: 900; padding: 8px 15px; border-radius: 4px; border: none; font-size: 12px; cursor: pointer; text-transform: uppercase; }
         .badge { background: #000; color: var(--neon); padding: 1px 6px; border-radius: 10px; font-size: 10px; margin-left: 5px; }
-
-        /* NAVEGAÇÃO */
         .nav-dates { display: flex; background: var(--bg-dark); border-bottom: 1px solid var(--border); overflow-x: auto; }
         .nav-item { flex: 1; padding: 12px; text-align: center; font-size: 11px; font-weight: bold; color: var(--text-gray); cursor: pointer; border-bottom: 2px solid transparent; min-width: 80px; }
         .nav-item.active { color: var(--neon); border-bottom-color: var(--neon); background: var(--bg-card); }
-
-        .search-area { padding: 10px; background: var(--bg-card); border-bottom: 1px solid var(--border); position: relative; }
-        .search-input { width: 100%; background: #0d1117; border: 1px solid var(--border); padding: 10px 35px 10px 10px; border-radius: 4px; color: #fff; font-size: 13px; }
-        .search-icon { position: absolute; right: 20px; top: 20px; color: var(--text-gray); }
-
-        /* LISTA DE JOGOS (SANFONA) */
+        .search-area { padding: 10px; background: var(--bg-card); border-bottom: 1px solid var(--border); }
+        .search-input { width: 100%; background: #0d1117; border: 1px solid var(--border); padding: 10px; border-radius: 4px; color: #fff; }
         .league-container { padding: 5px; min-height: 400px; }
-        
-        .league-btn { 
-            background: linear-gradient(90deg, #161b22, #0d1117); color: #fff; 
-            padding: 12px; margin-bottom: 5px; border: 1px solid var(--border); border-left: 4px solid var(--neon); 
-            border-radius: 4px; font-weight: bold; font-size: 12px; text-transform: uppercase; 
-            display: flex; align-items: center; justify-content: space-between; cursor: pointer; 
-        }
-        .league-btn img { width: 22px; height: 16px; margin-right: 8px; vertical-align: middle; border-radius: 2px; object-fit: cover; background: #000; }
-        .league-btn i { color: var(--neon); }
-        
+        .league-btn { background: linear-gradient(90deg, #161b22, #0d1117); color: #fff; padding: 12px; margin-bottom: 5px; border: 1px solid var(--border); border-left: 4px solid var(--neon); border-radius: 4px; font-weight: bold; font-size: 12px; text-transform: uppercase; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
+        .league-btn img { width: 22px; height: 16px; margin-right: 8px; vertical-align: middle; border-radius: 2px; }
         .league-games { display: none; margin-bottom: 5px; }
         .league-games.show { display: block; }
-
         .game-row { background: var(--bg-card); border: 1px solid var(--border); margin-bottom: -1px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
         .game-info { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-gray); font-weight: bold; }
-        
         .teams-names { font-size: 13px; font-weight: bold; color: #e6edf3; margin-bottom: 5px; }
         .team-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
-        .team-row img { width: 20px; height: 20px; object-fit: contain; background: rgba(255,255,255,0.05); border-radius: 50%; padding: 2px; }
-
+        .team-row img { width: 20px; height: 20px; object-fit: contain; }
         .odds-row { display: flex; gap: 4px; }
         .odd-sq { flex: 1; background: #0d1117; border: 1px solid var(--border); padding: 10px 5px; text-align: center; border-radius: 4px; cursor: pointer; transition: 0.2s; }
         .odd-sq span { display: block; font-size: 9px; color: var(--text-gray); font-weight: bold; margin-bottom: 2px; }
         .odd-sq b { display: block; font-size: 13px; color: var(--neon); }
-        .odd-sq.active { background: var(--neon); border-color: var(--neon); } 
+        .odd-sq.active { background: var(--neon); border-color: var(--neon); }
         .odd-sq.active span, .odd-sq.active b { color: #000; }
-        
         .btn-more { width: 40px; background: #21262d; color: var(--text-gray); display: flex; align-items: center; justify-content: center; border-radius: 4px; font-size: 10px; font-weight: bold; border: 1px solid var(--border); cursor: pointer; }
-
-        /* MENU LATERAL */
-        .sidebar { position: fixed; top: 0; right: -260px; width: 260px; height: 100%; background: var(--bg-card); z-index: 200; transition: 0.3s; box-shadow: -5px 0 15px rgba(0,0,0,0.8); padding: 20px; border-left: 1px solid var(--border); }
-        .sidebar.open { right: 0; }
-        .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 150; display: none; }
-        .overlay.open { display: block; }
-        .form-control { width: 100%; padding: 12px; background: #0d1117; border: 1px solid var(--border); color: #fff; border-radius: 4px; margin-bottom: 10px; font-size: 14px; outline: none; }
-        .btn-action { width: 100%; padding: 12px; background: var(--neon); color: #000; border: none; border-radius: 4px; font-weight: 900; cursor: pointer; text-transform: uppercase; margin-top: 5px; }
-        .btn-outline { background: transparent; border: 1px solid var(--neon); color: var(--neon); margin-top: 10px; }
-
-        /* MODAIS */
-        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 300; display: none; justify-content: center; align-items: center; }
-        .modal-box { background: var(--bg-card); width: 90%; max-width: 400px; border-radius: 8px; border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; }
-        .modal-header { background: #0d1117; padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; color: #fff; font-weight: bold; }
-        .modal-body { padding: 15px; overflow-y: auto; max-height: 70vh; }
         
-        /* ABAS DO MODAL EXTRA */
+        /* MODAIS */
+        .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 300; display: none; justify-content: center; align-items: flex-end; }
+        .modal-box { background: var(--bg-card); width: 100%; border-radius: 15px 15px 0 0; border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; height: 85vh; }
+        .modal-header { background: #0d1117; padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; color: #fff; font-weight: bold; }
         .modal-tabs { display: flex; overflow-x: auto; background: #000; border-bottom: 1px solid #333; }
         .tab-btn { padding: 12px 15px; color: #888; font-size: 11px; font-weight: bold; cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent; text-transform: uppercase; }
         .tab-btn.active { color: #00ff88; border-bottom-color: #00ff88; background: #161b22; }
-        .market-group { padding: 10px; display: none; }
+        .market-group { padding: 10px; display: none; overflow-y: auto; height: 100%; }
         .market-group.active { display: block; }
-        
         .m-block { background: #0d1117; border: 1px solid #333; border-radius: 6px; margin-bottom: 10px; overflow: hidden; }
         .m-head { background: #161b22; padding: 8px 10px; font-size: 11px; font-weight: bold; color: #fff; border-bottom: 1px solid #333; }
         .m-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #333; }
@@ -97,17 +59,12 @@
         
         .cupom-item { background: #0d1117; border: 1px solid var(--border); padding: 10px; margin-bottom: 8px; border-left: 3px solid var(--neon); display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #fff; }
         .cupom-del { color: #ff4d4d; padding: 5px; cursor: pointer; }
-        .admin-card { background: #000; padding: 15px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; text-align: center; }
-        .admin-val { font-size: 20px; font-weight: 900; color: var(--neon); }
-        .admin-lbl { font-size: 10px; color: var(--text-gray); uppercase; }
-        .modal-tabs::-webkit-scrollbar { display: none; }
     </style>
 </head>
 <body>
 
     <div class="header">
         <div class="brand">GURILA<span>BET</span> 🦍</div>
-        <i class="fas fa-bars menu-icon" onclick="toggleMenu()"></i>
     </div>
 
     <div class="bet-bar">
@@ -122,17 +79,12 @@
         <div class="nav-item" onclick="loadJogos('depois', this)">SÁBADO</div>
     </div>
 
-    <div class="search-area">
-        <i class="fas fa-search search-icon"></i>
-        <input type="text" class="search-input" placeholder="Buscar Time (Ex: Flamengo)..." onkeyup="filtrarBusca(this.value)">
-    </div>
-
     <div id="container-ligas" class="league-container">
         <div style="text-align:center; padding:40px; color:#555; font-size:12px;"><i class="fas fa-circle-notch fa-spin"></i> CARREGANDO SISTEMA...</div>
     </div>
 
-    <div id="modal-mercados" class="modal" style="align-items: flex-end;">
-        <div class="modal-box" style="height: 85vh; width: 100%; max-width: 100%; border-radius: 15px 15px 0 0;">
+    <div id="modal-mercados" class="modal" style="display:none;">
+        <div class="modal-box">
             <div class="modal-header">
                 <span id="extra-title" style="font-size:12px; text-transform:uppercase;">JOGO</span>
                 <span onclick="fecharExtras()" style="cursor:pointer; padding:5px;">&times;</span>
@@ -141,140 +93,108 @@
                 <div class="tab-btn active" onclick="mudarAba('tab-princ', this)">PRINCIPAIS</div>
                 <div class="tab-btn" onclick="mudarAba('tab-gols', this)">GOLS</div>
                 <div class="tab-btn" onclick="mudarAba('tab-1t', this)">1º TEMPO</div>
-                <div class="tab-btn" onclick="mudarAba('tab-2t', this)">2º TEMPO</div>
-                <div class="tab-btn" onclick="mudarAba('tab-comb', this)">COMBINADOS</div>
+                <div class="tab-btn" onclick="mudarAba('tab-comb', this)">OUTROS</div>
             </div>
-            <div class="modal-body" style="background: #000; padding: 0;">
-                <div id="mercados-content">Carregando...</div>
+            <div id="mercados-content" style="background: #000; flex:1; overflow-y:auto;">Carregando...</div>
+        </div>
+    </div>
+
+    <div id="modal-cupom" class="modal" style="display:none; align-items:center;">
+        <div class="modal-box" style="height:auto; max-height:80vh; border-radius:8px;">
+            <div class="modal-header"><span>CONFIRMAR</span><span onclick="fecharModal()" style="cursor:pointer">X</span></div>
+            <div style="padding:15px; overflow-y:auto;">
+                <div id="lista-cupom"></div>
+                <div style="margin-top:15px;">
+                    <label style="font-size:10px; color:#888;">CLIENTE</label>
+                    <input type="text" id="cliente" class="form-control" style="width:100%; padding:10px; background:#0d1117; border:1px solid #333; color:#fff;" placeholder="Nome do Apostador">
+                </div>
+                <div style="background:#000; padding:15px; border:1px solid #333; text-align:center; margin-top:10px;">
+                    <small style="color:#888;">RETORNO</small><br><b id="retorno-final" style="font-size:20px; color:var(--neon);">R$ 0,00</b>
+                </div>
+                <button onclick="enviarAposta()" id="btn-finalizar" class="btn-action" style="width:100%; padding:15px; background:var(--neon); border:none; font-weight:bold; margin-top:10px;">GERAR BILHETE</button>
             </div>
         </div>
     </div>
 
-    <div id="modal-admin" class="modal"><div class="modal-box"><div class="modal-header"><span>PAINEL ADMIN</span><span onclick="document.getElementById('modal-admin').style.display='none'" style="cursor:pointer">X</span></div><div class="modal-body"><div class="admin-card"><div class="admin-lbl">VENDAS HOJE</div><div class="admin-val" id="adm-entrada">R$ 0,00</div></div><div class="admin-card"><div class="admin-lbl">BILHETES</div><div class="admin-val" id="adm-bilhetes">0</div></div><div class="admin-card"><div class="admin-lbl">RISCO (PRÊMIOS)</div><div class="admin-val" id="adm-risco" style="color:#ff4d4d">R$ 0,00</div></div></div></div></div>
-    <div class="overlay" id="overlay" onclick="toggleMenu()"></div>
-    <div class="sidebar" id="sidebar">
-        <h3 style="margin-bottom:20px; color:#fff; border-bottom:1px solid #333; padding-bottom:10px;">MENU</h3>
-        <div id="form-login"><input type="email" id="email" class="form-control" placeholder="Email"><input type="password" id="senha" class="form-control" placeholder="Senha"><button class="btn-action" onclick="fazerLogin()">ENTRAR</button><button class="btn-action btn-outline" onclick="mostrarCadastro()">CRIAR CONTA</button></div>
-        <div id="form-cadastro" style="display:none;"><input type="text" id="cad-nome" class="form-control" placeholder="Nome"><input type="email" id="cad-email" class="form-control" placeholder="Email"><input type="password" id="cad-senha" class="form-control" placeholder="Senha"><button class="btn-action" onclick="fazerCadastro()">CADASTRAR</button><button class="btn-action btn-outline" onclick="mostrarLogin()">VOLTAR</button></div>
-        <div id="user-logged" style="display:none;"><p style="color:#fff;">Olá, <b id="user-name" style="color:var(--neon);">Admin</b></p><button class="btn-action" onclick="abrirAdmin()">PAINEL ADMIN</button><button class="btn-action btn-outline" style="border-color:#ff4d4d; color:#ff4d4d;" onclick="logout()">SAIR</button></div>
-    </div>
-    <div id="modal-cupom" class="modal"><div class="modal-box"><div class="modal-header"><span>CONFIRMAR</span><span onclick="fecharModal()" style="cursor:pointer">X</span></div><div class="modal-body"><div id="lista-cupom"></div><div style="margin-top:15px;"><label style="font-size:10px; color:#888;">CLIENTE</label><input type="text" id="cliente" class="form-control" placeholder="Nome do Apostador"></div><div style="background:#000; padding:15px; border:1px solid #333; text-align:center; margin-top:10px;"><small style="color:#888;">RETORNO</small><br><b id="retorno-final" style="font-size:20px; color:var(--neon);">R$ 0,00</b></div><button onclick="enviarAposta()" id="btn-finalizar" class="btn-action" style="margin-top:15px;">GERAR BILHETE</button></div></div></div>
-
     <script>
         const API_URL = 'https://gurilabet-v2-production.up.railway.app'; 
         const ZAP_NUMERO = "5561995478204"; 
-        
-        // IMAGENS DE FALLBACK (SE FALHAR A OFICIAL)
         const IMG_ERRO = "https://cdn-icons-png.flaticon.com/512/861/861512.png"; 
         const BAND_ERRO = "https://cdn-icons-png.flaticon.com/512/53/53280.png";
 
-        let CARRINHO = [], JOGOS_TODOS = [], USUARIO = JSON.parse(localStorage.getItem('gb_user'));
+        let CARRINHO = [], JOGOS_TODOS = [];
 
-        // --- DICIONÁRIO DE TRADUÇÃO (FRONTEND) ---
-        const TRADUCOES = {
-            "England": "Inglaterra", "Spain": "Espanha", "Italy": "Itália", "Germany": "Alemanha",
-            "France": "França", "Portugal": "Portugal", "Brazil": "Brasil", "World": "Mundo",
-            "Netherlands": "Holanda", "Belgium": "Bélgica", "Argentina": "Argentina",
-            "Premier League": "Premier League", "Serie A": "Série A", "La Liga": "La Liga",
-            "Bundesliga": "Bundesliga", "Ligue 1": "Ligue 1", "Primeira Liga": "Primeira Liga",
-            "Brasileiro Série A": "Brasileirão Série A", "Brasileiro Série B": "Brasileirão Série B",
-            "Copa Libertadores": "Libertadores", "UEFA Champions League": "Champions League",
-            "Non League": "Amador", "Cup": "Copa", "League": "Liga", "Friendly": "Amistoso",
-            "Women": "Feminino", "Youth": "Sub-20"
-        };
+        window.onload = () => { carregarJogos(); };
 
-        function traduzirNome(texto) {
-            let novoTexto = texto;
-            for (let [eng, pt] of Object.entries(TRADUCOES)) {
-                if (novoTexto.includes(eng)) novoTexto = novoTexto.replace(eng, pt);
-            }
-            return novoTexto.toUpperCase();
+        // TRADUTOR FRONTEND
+        const TRADUCOES = { "England":"Inglaterra", "Spain":"Espanha", "Italy":"Itália", "Germany":"Alemanha", "France":"França", "Brazil":"Brasil", "Portugal":"Portugal", "Premier League":"Premier League", "Serie A":"Série A", "La Liga":"La Liga" };
+        function traduzirNome(txt) { 
+            let n = txt; 
+            for(let [k,v] of Object.entries(TRADUCOES)) { if(n.includes(k)) n=n.replace(k,v); }
+            return n.toUpperCase(); 
         }
-
-        window.onload = () => { carregarJogos(); verificarLogin(); };
 
         async function carregarJogos(modo, el) {
             if(el) { document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active')); el.classList.add('active'); }
-            let dataStr = new Date().toISOString().split('T')[0];
-            if(modo === 'amanha') { let d = new Date(); d.setDate(d.getDate()+1); dataStr = d.toISOString().split('T')[0]; }
-            if(modo === 'depois') { let d = new Date(); d.setDate(d.getDate()+2); dataStr = d.toISOString().split('T')[0]; }
-
-            document.getElementById('container-ligas').innerHTML = `<div style="text-align:center; padding:40px; color:#555; font-size:12px;"><i class="fas fa-circle-notch fa-spin"></i> CARREGANDO SISTEMA...</div>`;
+            let d = new Date();
+            if(modo==='amanha') d.setDate(d.getDate()+1);
+            if(modo==='depois') d.setDate(d.getDate()+2);
+            let dataStr = d.toISOString().split('T')[0];
 
             try {
                 const res = await fetch(`${API_URL}/api/jogos?data=${dataStr}`);
                 JOGOS_TODOS = await res.json();
                 renderizarLigas(JOGOS_TODOS);
-            } catch (e) { document.getElementById('container-ligas').innerHTML = `<div style="text-align:center; padding:40px; color:red;">ERRO CONEXÃO</div>`; }
+            } catch(e) { document.getElementById('container-ligas').innerHTML = "Erro conexão"; }
         }
 
         function renderizarLigas(lista) {
             const grupos = {};
             lista.forEach(j => {
                 j.liga = traduzirNome(j.liga);
-                const key = `${j.liga}|${j.flag}`;
-                if(!grupos[key]) grupos[key] = [];
-                grupos[key].push(j);
+                const k = `${j.liga}|${j.flag}`;
+                if(!grupos[k]) grupos[k] = [];
+                grupos[k].push(j);
             });
 
             let html = '';
-            const chavesOrdenadas = Object.keys(grupos).sort((a,b) => {
-                if(a.includes("BRASIL")) return -1;
-                if(b.includes("BRASIL")) return 1;
-                return a.localeCompare(b);
-            });
-
-            for(let key of chavesOrdenadas) {
-                const [ligaNome, ligaFlag] = key.split('|');
-                
-                html += `<div class="league-btn" onclick="toggleLiga('lg-${ligaNome.replace(/[^a-zA-Z0-9]/g,'')}')">
-                    <span><img src="${ligaFlag}" onerror="this.src='${BAND_ERRO}'"> ${ligaNome}</span><i class="fas fa-chevron-down arrow"></i>
-                </div>
-                <div id="lg-${ligaNome.replace(/[^a-zA-Z0-9]/g,'')}" class="league-games">`;
-                
+            Object.keys(grupos).sort().forEach(key => {
+                const [nome, flag] = key.split('|');
+                html += `<div class="league-btn" onclick="toggleLiga(this)"><span><img src="${flag}" onerror="this.src='${BAND_ERRO}'"> ${nome}</span><i class="fas fa-chevron-down"></i></div><div class="league-games">`;
                 grupos[key].forEach(j => {
                     let h = new Date(j.data).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-                    html += `<div class="game-row">
-                        <div class="game-info"><span>${h} | <span style="color:var(--neon)">${j.status}</span></span><span>ID: ${j.id}</span></div>
-                        <div class="teams-names">
-                            <div class="team-row"><img src="${j.home.logo}" onerror="this.src='${IMG_ERRO}'"> ${j.home.name}</div>
-                            <div class="team-row"><img src="${j.away.logo}" onerror="this.src='${IMG_ERRO}'"> ${j.away.name}</div>
-                        </div>
-                        <div class="odds-row">
-                            <div class="odd-sq" onclick="add(this,${j.id},'1',${j.odds.casa},'${j.home.name} x ${j.away.name}')"><span>1</span><b>${j.odds.casa}</b></div>
-                            <div class="odd-sq" onclick="add(this,${j.id},'X',${j.odds.empate},'${j.home.name} x ${j.away.name}')"><span>X</span><b>${j.odds.empate}</b></div>
-                            <div class="odd-sq" onclick="add(this,${j.id},'2',${j.odds.fora},'${j.home.name} x ${j.away.name}')"><span>2</span><b>${j.odds.fora}</b></div>
-                            <div class="btn-more" onclick="abrirExtras(${j.id}, '${j.home.name} x ${j.away.name}')"><i class="fas fa-plus"></i></div>
-                        </div>
-                    </div>`;
+                    // SE O JOGO TIVER MERCADOS, MOSTRA O BOTÃO '+'. SE FOR COPINHA (NULL), ESCONDE.
+                    const btnMais = j.mercados ? `<div class="btn-more" onclick="abrirExtras(${j.id}, '${j.home.name} x ${j.away.name}')"><i class="fas fa-plus"></i></div>` : '';
+                    
+                    html += `<div class="game-row"><div class="game-info"><span>${h}</span><span>ID: ${j.id}</span></div>
+                    <div class="teams-names"><div class="team-row"><img src="${j.home.logo}" onerror="this.src='${IMG_ERRO}'"> ${j.home.name}</div><div class="team-row"><img src="${j.away.logo}" onerror="this.src='${IMG_ERRO}'"> ${j.away.name}</div></div>
+                    <div class="odds-row">
+                        <div class="odd-sq" onclick="add(this,${j.id},'1',${j.odds.casa},'${j.home.name}')"><span>1</span><b>${j.odds.casa}</b></div>
+                        <div class="odd-sq" onclick="add(this,${j.id},'X',${j.odds.empate},'Empate')"><span>X</span><b>${j.odds.empate}</b></div>
+                        <div class="odd-sq" onclick="add(this,${j.id},'2',${j.odds.fora},'${j.away.name}')"><span>2</span><b>${j.odds.fora}</b></div>
+                        ${btnMais}
+                    </div></div>`;
                 });
                 html += `</div>`;
-            }
-            document.getElementById('container-ligas').innerHTML = html || "<div style='padding:20px;text-align:center'>Nenhum jogo encontrado.</div>";
+            });
+            document.getElementById('container-ligas').innerHTML = html || "Nada encontrado.";
         }
 
-        function toggleLiga(id) { const el = document.getElementById(id); el.classList.toggle('show'); }
-        function filtrarBusca(txt) {
-            if(!txt) return renderizarLigas(JOGOS_TODOS);
-            const filtrados = JOGOS_TODOS.filter(j => j.home.name.toLowerCase().includes(txt.toLowerCase()) || j.away.name.toLowerCase().includes(txt.toLowerCase()));
-            renderizarLigas(filtrados);
+        function toggleLiga(btn) { 
+            btn.nextElementSibling.classList.toggle('show'); 
         }
 
-        // --- FUNÇÃO ADD COM PROTEÇÃO (V38) ---
         function add(el, id, op, odd, nm) {
-            const idxJogo = CARRINHO.findIndex(i => i.id === id);
-            
-            if (idxJogo !== -1) {
-                CARRINHO.splice(idxJogo, 1);
-                // Limpa visualmente se estiver na lista principal
+            const idx = CARRINHO.findIndex(i => i.id === id);
+            if(idx !== -1) {
+                CARRINHO.splice(idx, 1);
+                // Limpa visual
                 if(el && el.parentElement && el.parentElement.parentElement) {
-                    const pai = el.parentElement.parentElement;
-                    pai.querySelectorAll('.active').forEach(b => b.classList.remove('active'));
+                    el.parentElement.parentElement.querySelectorAll('.active').forEach(b => b.classList.remove('active'));
                 }
             }
-            
             CARRINHO.push({id, opcao:op, odd, nome:nm});
-            if (el) el.classList.add('active');
+            if(el) el.classList.add('active');
             topo();
         }
 
@@ -287,15 +207,18 @@
         }
         function atualizarCalculo() { topo(); }
 
-        // --- RENDERIZAR MERCADOS (V38 COMPLETO) ---
+        // --- MERCADOS EXTRAS ---
         function abrirExtras(idJogo, nomes) {
             document.getElementById('extra-title').innerText = nomes;
             document.getElementById('modal-mercados').style.display = 'flex';
-            document.getElementById('mercados-content').innerHTML = '<div style="padding:20px; text-align:center; color:#888;">Carregando Odds...</div>';
+            document.getElementById('mercados-content').innerHTML = 'Carregando...';
             
             const jogo = JOGOS_TODOS.find(j => j.id == idJogo);
-            if(jogo && jogo.mercados) { renderizarMercados(jogo.mercados, idJogo, nomes); } 
-            else { document.getElementById('mercados-content').innerHTML = '<div style="padding:20px; text-align:center; color:red;">Mercados fechados.</div>'; }
+            if(jogo && jogo.mercados) { 
+                renderizarMercados(jogo.mercados, idJogo, nomes); 
+            } else {
+                document.getElementById('mercados-content').innerHTML = '<div style="padding:20px; text-align:center; color:red;">Mercados Fechados para este evento.</div>';
+            }
         }
 
         function renderizarMercados(m, id, nomeJogo) {
@@ -303,39 +226,29 @@
             const btn = (sel, odd) => `<div class="m-btn" style="${isSelected(sel)}" onclick="addApostaExtra(this, ${id}, '${sel}', ${odd}, '${nomeJogo}')"><span>${sel}</span> <b>${odd}</b></div>`;
             const bloco = (titulo, grid, btns) => `<div class="m-block"><div class="m-head">${titulo}</div><div class="m-grid ${grid}">${btns}</div></div>`;
 
-            let htmlPrinc = '', htmlGols = '', html1T = '', html2T = '', htmlComb = '';
+            let htmlPrinc = '', htmlGols = '', html1T = '', htmlComb = '';
 
-            // ABA PRINCIPAIS
             if(m.dupla_chance) htmlPrinc += bloco("DUPLA CHANCE", "m-grid-3", btn("1X", m.dupla_chance["1X"]) + btn("12", m.dupla_chance["12"]) + btn("X2", m.dupla_chance["X2"]));
             if(m.empate_anula) htmlPrinc += bloco("EMPATE ANULA", "m-grid", btn("Casa", m.empate_anula["1"]) + btn("Fora", m.empate_anula["2"]));
             if(m.ambas_marcam) htmlPrinc += bloco("AMBAS MARCAM", "m-grid", btn("Sim", m.ambas_marcam.Sim) + btn("Não", m.ambas_marcam.Não));
-            if(m.par_impar) htmlPrinc += bloco("PAR OU ÍMPAR", "m-grid", btn("Ímpar", m.par_impar["Ímpar"]) + btn("Par", m.par_impar["Par"]));
-            if(m.handicap) htmlPrinc += bloco("HANDICAP", "m-grid", btn("Casa -1", m.handicap["Casa -1"]) + btn("Fora +1", m.handicap["Fora +1"]));
+            if(m.par_impar) htmlPrinc += bloco("PAR/ÍMPAR", "m-grid", btn("Ímpar", m.par_impar["Ímpar"]) + btn("Par", m.par_impar["Par"]));
 
-            // ABA GOLS & ESCANTEIOS
-            if(m.total_gols) htmlGols += bloco("TOTAL GOLS", "m-grid", btn("+1.5", m.total_gols["Mais 1.5"]) + btn("-1.5", m.total_gols["Menos 1.5"]) + btn("+2.5", m.total_gols["Mais 2.5"]) + btn("-2.5", m.total_gols["Menos 2.5"]) + btn("+3.5", m.total_gols["Mais 3.5"]) + btn("-3.5", m.total_gols["Menos 3.5"]));
-            if(m.escanteios) htmlGols += bloco("ESCANTEIOS", "m-grid", btn("+8.5", m.escanteios["Mais 8.5"]) + btn("-8.5", m.escanteios["Menos 8.5"]) + btn("+9.5", m.escanteios["Mais 9.5"]) + btn("-9.5", m.escanteios["Menos 9.5"]));
-            if(m.escanteios) htmlGols += bloco("QUEM TEM MAIS ESCANTEIOS?", "m-grid", btn("Casa", m.escanteios["Casa Mais Escanteios"]) + btn("Fora", m.escanteios["Fora Mais Escanteios"]));
+            if(m.total_gols) htmlGols += bloco("TOTAL GOLS", "m-grid", btn("+1.5", m.total_gols["Mais 1.5"]) + btn("-1.5", m.total_gols["Menos 1.5"]) + btn("+2.5", m.total_gols["Mais 2.5"]) + btn("-2.5", m.total_gols["Menos 2.5"]) + btn("+3.5", m.total_gols["Mais 3.5"]));
+            if(m.gols_times) htmlGols += bloco("GOLS POR TIME", "m-grid", btn("Casa +1.5", m.gols_times["Casa +1.5"]) + btn("Fora +1.5", m.gols_times["Fora +1.5"]) + btn("Casa a Zero", m.gols_times["Casa Vence Zero"]));
 
-            // ABA 1º TEMPO
-            if(m.ht_vencedor) html1T += bloco("1º TEMPO (1X2)", "m-grid-3", btn("1", m.ht_vencedor["1"]) + btn("X", m.ht_vencedor["X"]) + btn("2", m.ht_vencedor["2"]));
-            if(m.primeiro_gol) html1T += bloco("PRIMEIRO GOL", "m-grid-3", btn("Casa", m.primeiro_gol["Casa"]) + btn("Nenhum", m.primeiro_gol["Nenhum"]) + btn("Fora", m.primeiro_gol["Fora"]));
+            if(m.tempos) html1T += bloco("1º TEMPO", "m-grid-3", btn("1", m.tempos["Vencedor 1ºT"]["1"]) + btn("X", m.tempos["Vencedor 1ºT"]["X"]) + btn("2", m.tempos["Vencedor 1ºT"]["2"]));
+            if(m.intervalos) html1T += bloco("GOL NO INTERVALO", "m-grid", btn("0-10 min", m.intervalos["Gol 0-10 min"]) + btn("81-90 min", m.intervalos["Gol 81-90 min"]));
 
-            // ABA 2º TEMPO
-            if(m.ft_vencedor_2tempo) html2T += bloco("2º TEMPO (1X2)", "m-grid-3", btn("1", m.ft_vencedor_2tempo["1"]) + btn("X", m.ft_vencedor_2tempo["X"]) + btn("2", m.ft_vencedor_2tempo["2"]));
-
-            // ABA COMBINADOS / PLACAR
+            if(m.escanteios) htmlComb += bloco("ESCANTEIOS", "m-grid", btn("+8.5", m.escanteios["Mais 8.5"]) + btn("-8.5", m.escanteios["Menos 8.5"]) + btn("+9.5", m.escanteios["Mais 9.5"]));
             if(m.placar_exato) {
-                let placares = "";
-                for(let p in m.placar_exato) placares += btn(p, m.placar_exato[p]);
-                htmlComb += bloco("PLACAR EXATO", "m-grid-3", placares);
+                let p = ""; for(let k in m.placar_exato) p += btn(k, m.placar_exato[k]);
+                htmlComb += bloco("PLACAR EXATO", "m-grid-3", p);
             }
 
             document.getElementById('mercados-content').innerHTML = `
                 <div id="tab-princ" class="market-group active">${htmlPrinc}</div>
                 <div id="tab-gols" class="market-group">${htmlGols}</div>
                 <div id="tab-1t" class="market-group">${html1T}</div>
-                <div id="tab-2t" class="market-group">${html2T}</div>
                 <div id="tab-comb" class="market-group">${htmlComb}</div>
             `;
         }
@@ -347,11 +260,9 @@
 
         function addApostaExtra(el, id, sel, odd, nome) {
             add(null, id, sel, odd, nome);
-            // Remove destaque de outros botões do mesmo grupo (simulação visual simples)
-            if(el.parentElement) el.parentElement.querySelectorAll('.m-btn').forEach(b => {
-                b.style.border = 'none'; b.style.color = '';
-            });
-            el.style.border = '1px solid var(--neon)'; el.style.color = 'var(--neon)';
+            // Visual simples
+            el.parentElement.querySelectorAll('.m-btn').forEach(b=>{b.style.border='none';b.style.color='';});
+            el.style.border='1px solid var(--neon)'; el.style.color='var(--neon)';
         }
         function fecharExtras() { document.getElementById('modal-mercados').style.display = 'none'; }
 
@@ -378,31 +289,10 @@
                     let msg = `🦍 *GURILA BET*\n🎫 ${d.codigo}\n👤 ${cli}\n💰 R$ ${val}\n🏆 R$ ${d.retorno}\n\n`;
                     CARRINHO.forEach(c => msg += `⚽ ${c.nome} (${c.opcao})\n`);
                     window.open(`https://wa.me/${ZAP_NUMERO}?text=${encodeURIComponent(msg)}`, '_blank');
-                    CARRINHO=[]; topo(); fecharModal(); document.querySelectorAll('.odd-sq.active').forEach(b=>b.classList.remove('active'));
+                    CARRINHO=[]; topo(); fecharModal(); document.querySelectorAll('.active').forEach(b=>b.classList.remove('active'));
                 } else alert(d.erro);
             } catch(e) { alert("Erro"); }
             btn.innerText = "GERAR BILHETE"; btn.disabled = false;
-        }
-
-        function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('open'); }
-        function mostrarCadastro() { document.getElementById('form-login').style.display='none'; document.getElementById('form-cadastro').style.display='block'; }
-        function mostrarLogin() { document.getElementById('form-cadastro').style.display='none'; document.getElementById('form-login').style.display='block'; }
-        function verificarLogin() { if(USUARIO) { document.getElementById('form-login').style.display='none'; document.getElementById('user-logged').style.display='block'; document.getElementById('user-name').innerText = USUARIO.nome; } }
-        async function fazerLogin() { 
-            const e = document.getElementById('email').value, s = document.getElementById('senha').value;
-            try { const r = await fetch(`${API_URL}/api/login`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({email:e,senha:s})}); const d=await r.json();
-            if(d.sucesso){ USUARIO=d.usuario; localStorage.setItem('gb_user',JSON.stringify(USUARIO)); verificarLogin(); } else alert("Erro"); } catch(e){alert("Erro");}
-        }
-        async function fazerCadastro() {
-            const n=document.getElementById('cad-nome').value, e=document.getElementById('cad-email').value, s=document.getElementById('cad-senha').value;
-            try { const r = await fetch(`${API_URL}/api/cadastro`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({nome:n,email:e,senha:s})}); const d=await r.json();
-            if(d.sucesso){ alert("Criado!"); mostrarLogin(); } } catch(e){alert("Erro");}
-        }
-        function logout() { localStorage.removeItem('gb_user'); location.reload(); }
-        async function abrirAdmin() {
-            try { const res = await fetch(`${API_URL}/api/admin/resumo`); const d = await res.json();
-            if(d.caixa) { document.getElementById('adm-entrada').innerText = d.caixa.entrada; document.getElementById('adm-bilhetes').innerText = d.caixa.total; document.getElementById('adm-risco').innerText = d.caixa.risco; } } catch(e) {}
-            document.getElementById('modal-admin').style.display = 'flex';
         }
     </script>
 </body>
