@@ -5,113 +5,119 @@
     <title>GURILA BET</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
+        /* VISUAL GURILA DARK */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Arial', sans-serif; outline: none; }
         body { background-color: #0d1117; color: #e6edf3; padding-bottom: 60px; }
-        :root { --neon: #00ff88; --bg-dark: #0d1117; --bg-card: #161b22; --border: #30363d; --text-gray: #8b949e; }
-        .header { background-color: var(--bg-card); padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--neon); }
-        .brand { font-size: 20px; font-weight: 900; color: #fff; font-style: italic; letter-spacing: -1px; }
+        :root { --neon: #00ff88; --bg-dark: #0d1117; --bg-card: #161b22; --border: #30363d; }
+
+        .header { background-color: var(--bg-card); padding: 12px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--neon); }
+        .brand { font-size: 20px; font-weight: 900; color: #fff; font-style: italic; }
         .brand span { color: var(--neon); }
-        .bet-bar { background: #000; padding: 10px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 90; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
+        
+        .bet-bar { background: #000; padding: 10px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 90; }
         .input-money { background: var(--bg-card); border: 1px solid var(--border); padding: 8px; width: 100px; border-radius: 4px; font-size: 16px; color: var(--neon); font-weight: bold; }
-        .return-info { text-align: center; font-size: 10px; color: var(--text-gray); line-height: 1.3; }
+        .return-info { text-align: center; font-size: 10px; color: #888; }
         .return-info b { display: block; font-size: 14px; color: #fff; }
-        .btn-cupom { background: var(--neon); color: #000; font-weight: 900; padding: 8px 15px; border-radius: 4px; border: none; font-size: 12px; cursor: pointer; text-transform: uppercase; }
+        .btn-cupom { background: var(--neon); color: #000; font-weight: 900; padding: 8px 15px; border-radius: 4px; border: none; font-size: 12px; cursor: pointer; }
         .badge { background: #000; color: var(--neon); padding: 1px 6px; border-radius: 10px; font-size: 10px; margin-left: 5px; }
+
         .nav-dates { display: flex; background: var(--bg-dark); border-bottom: 1px solid var(--border); overflow-x: auto; }
-        .nav-item { flex: 1; padding: 12px; text-align: center; font-size: 11px; font-weight: bold; color: var(--text-gray); cursor: pointer; border-bottom: 2px solid transparent; min-width: 80px; }
+        .nav-item { flex: 1; padding: 12px; text-align: center; font-size: 11px; font-weight: bold; color: #888; cursor: pointer; border-bottom: 2px solid transparent; min-width: 80px; }
         .nav-item.active { color: var(--neon); border-bottom-color: var(--neon); background: var(--bg-card); }
-        .search-area { padding: 10px; background: var(--bg-card); border-bottom: 1px solid var(--border); }
-        .search-input { width: 100%; background: #0d1117; border: 1px solid var(--border); padding: 10px; border-radius: 4px; color: #fff; }
+
         .league-container { padding: 5px; min-height: 400px; }
-        .league-btn { background: linear-gradient(90deg, #161b22, #0d1117); color: #fff; padding: 12px; margin-bottom: 5px; border: 1px solid var(--border); border-left: 4px solid var(--neon); border-radius: 4px; font-weight: bold; font-size: 12px; text-transform: uppercase; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
-        .league-btn img { width: 22px; height: 16px; margin-right: 8px; vertical-align: middle; border-radius: 2px; }
+        .league-btn { background: linear-gradient(90deg, #161b22, #0d1117); color: #fff; padding: 12px; margin-bottom: 5px; border: 1px solid var(--border); border-left: 4px solid var(--neon); border-radius: 4px; font-weight: bold; font-size: 12px; display: flex; align-items: center; justify-content: space-between; cursor: pointer; text-transform: uppercase; }
+        .league-btn img { width: 22px; height: 16px; margin-right: 8px; border-radius: 2px; }
         .league-games { display: none; margin-bottom: 5px; }
         .league-games.show { display: block; }
-        .game-row { background: var(--bg-card); border: 1px solid var(--border); margin-bottom: -1px; padding: 10px; display: flex; flex-direction: column; gap: 8px; }
-        .game-info { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-gray); font-weight: bold; }
-        .teams-names { font-size: 13px; font-weight: bold; color: #e6edf3; margin-bottom: 5px; }
+
+        .game-row { background: var(--bg-card); border: 1px solid var(--border); margin-bottom: -1px; padding: 10px; }
+        .game-info { display: flex; justify-content: space-between; font-size: 10px; color: #888; font-weight: bold; margin-bottom: 5px; }
+        .teams-names { font-size: 13px; font-weight: bold; color: #fff; margin-bottom: 8px; }
         .team-row { display: flex; align-items: center; gap: 8px; margin-bottom: 4px; }
         .team-row img { width: 20px; height: 20px; object-fit: contain; }
+
         .odds-row { display: flex; gap: 4px; }
-        .odd-sq { flex: 1; background: #0d1117; border: 1px solid var(--border); padding: 10px 5px; text-align: center; border-radius: 4px; cursor: pointer; transition: 0.2s; }
-        .odd-sq span { display: block; font-size: 9px; color: var(--text-gray); font-weight: bold; margin-bottom: 2px; }
+        .odd-sq { flex: 1; background: #0d1117; border: 1px solid var(--border); padding: 10px 5px; text-align: center; border-radius: 4px; cursor: pointer; }
+        .odd-sq span { display: block; font-size: 9px; color: #888; font-weight: bold; }
         .odd-sq b { display: block; font-size: 13px; color: var(--neon); }
         .odd-sq.active { background: var(--neon); border-color: var(--neon); }
         .odd-sq.active span, .odd-sq.active b { color: #000; }
-        .btn-more { width: 40px; background: #21262d; color: var(--text-gray); display: flex; align-items: center; justify-content: center; border-radius: 4px; font-size: 10px; font-weight: bold; border: 1px solid var(--border); cursor: pointer; }
-        
-        /* MODAIS */
+        .btn-more { width: 40px; background: #21262d; color: #888; display: flex; align-items: center; justify-content: center; border-radius: 4px; border: 1px solid var(--border); cursor: pointer; font-weight: bold; }
+
+        /* MODAL MERCADOS (ESTILO GURILA - HEADER VERDE/PRETO) */
         .modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); z-index: 300; display: none; justify-content: center; align-items: flex-end; }
-        .modal-box { background: var(--bg-card); width: 100%; border-radius: 15px 15px 0 0; border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; height: 85vh; }
-        .modal-header { background: #0d1117; padding: 15px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; color: #fff; font-weight: bold; }
-        .modal-tabs { display: flex; overflow-x: auto; background: #000; border-bottom: 1px solid #333; }
-        .tab-btn { padding: 12px 15px; color: #888; font-size: 11px; font-weight: bold; cursor: pointer; white-space: nowrap; border-bottom: 2px solid transparent; text-transform: uppercase; }
-        .tab-btn.active { color: #00ff88; border-bottom-color: #00ff88; background: #161b22; }
-        .market-group { padding: 10px; display: none; overflow-y: auto; height: 100%; }
-        .market-group.active { display: block; }
-        .m-block { background: #0d1117; border: 1px solid #333; border-radius: 6px; margin-bottom: 10px; overflow: hidden; }
-        .m-head { background: #161b22; padding: 8px 10px; font-size: 11px; font-weight: bold; color: #fff; border-bottom: 1px solid #333; }
-        .m-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #333; }
-        .m-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 1px; background: #333; }
-        .m-btn { background: #0d1117; padding: 12px; text-align: center; cursor: pointer; display: flex; justify-content: space-between; align-items: center; }
-        .m-btn span { font-size: 11px; color: #ccc; }
-        .m-btn b { font-size: 12px; color: #00ff88; }
-        
+        .modal-box { background: #0d1117; width: 100%; height: 85vh; border-radius: 15px 15px 0 0; border: 1px solid var(--border); overflow: hidden; display: flex; flex-direction: column; }
+        .modal-header { background: #161b22; padding: 15px; border-bottom: 1px solid var(--neon); display: flex; justify-content: space-between; color: #fff; font-weight: bold; }
+        .modal-content { overflow-y: auto; flex: 1; padding: 10px; }
+
+        /* ACORDEÃO DE MERCADOS */
+        .market-group { margin-bottom: 8px; }
+        .market-header { 
+            background: linear-gradient(90deg, #161b22, #0d1117); 
+            color: var(--neon); 
+            padding: 12px; 
+            font-size: 12px; 
+            font-weight: bold; 
+            text-transform: uppercase; 
+            border: 1px solid var(--border); 
+            border-left: 3px solid var(--neon); 
+            border-radius: 4px;
+            cursor: pointer;
+            display: flex; justify-content: space-between;
+        }
+        .market-body { display: none; background: #000; border: 1px solid var(--border); border-top: none; padding: 5px; border-radius: 0 0 4px 4px; }
+        .market-body.open { display: block; }
+
+        .m-item { display: flex; justify-content: space-between; padding: 12px; border-bottom: 1px solid #21262d; cursor: pointer; color: #fff; font-size: 12px; }
+        .m-item:last-child { border-bottom: none; }
+        .m-item b { color: var(--neon); }
+        .m-item.active { background: var(--neon); color: #000; }
+        .m-item.active b { color: #000; }
+
+        /* MODAL CUPOM */
         .cupom-item { background: #0d1117; border: 1px solid var(--border); padding: 10px; margin-bottom: 8px; border-left: 3px solid var(--neon); display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #fff; }
         .cupom-del { color: #ff4d4d; padding: 5px; cursor: pointer; }
     </style>
 </head>
 <body>
 
-    <div class="header">
-        <div class="brand">GURILA<span>BET</span> 🦍</div>
-    </div>
-
+    <div class="header"><div class="brand">GURILA<span>BET</span> 🦍</div></div>
+    
     <div class="bet-bar">
         <div><label style="font-size:9px; color:#888;">APOSTA</label><input type="number" id="valor-topo" class="input-money" placeholder="0,00" oninput="atualizarCalculo()"></div>
         <div class="return-info">RETORNO<br><b id="retorno-topo">R$ 0,00</b></div>
         <button class="btn-cupom" onclick="finalizarZap()">BILHETE <span class="badge" id="qtd-cupom">0</span></button>
     </div>
-
+    
     <div class="nav-dates">
-        <div class="nav-item active" onclick="loadJogos('hoje', this)">HOJE</div>
-        <div class="nav-item" onclick="loadJogos('amanha', this)">AMANHÃ</div>
-        <div class="nav-item" onclick="loadJogos('depois', this)">SÁBADO</div>
+        <div class="nav-item active" onclick="carregarJogos('hoje', this)">HOJE</div>
+        <div class="nav-item" onclick="carregarJogos('amanha', this)">AMANHÃ</div>
+        <div class="nav-item" onclick="carregarJogos('depois', this)">SÁBADO</div>
     </div>
+    
+    <div id="container-ligas" class="league-container"><div style="text-align:center; padding:40px; color:#555;">Carregando...</div></div>
 
-    <div id="container-ligas" class="league-container">
-        <div style="text-align:center; padding:40px; color:#555; font-size:12px;"><i class="fas fa-circle-notch fa-spin"></i> CARREGANDO SISTEMA...</div>
-    </div>
-
-    <div id="modal-mercados" class="modal" style="display:none;">
+    <div id="modal-mercados" class="modal">
         <div class="modal-box">
-            <div class="modal-header">
-                <span id="extra-title" style="font-size:12px; text-transform:uppercase;">JOGO</span>
-                <span onclick="fecharExtras()" style="cursor:pointer; padding:5px;">&times;</span>
-            </div>
-            <div class="modal-tabs">
-                <div class="tab-btn active" onclick="mudarAba('tab-princ', this)">PRINCIPAIS</div>
-                <div class="tab-btn" onclick="mudarAba('tab-gols', this)">GOLS</div>
-                <div class="tab-btn" onclick="mudarAba('tab-1t', this)">1º TEMPO</div>
-                <div class="tab-btn" onclick="mudarAba('tab-comb', this)">OUTROS</div>
-            </div>
-            <div id="mercados-content" style="background: #000; flex:1; overflow-y:auto;">Carregando...</div>
+            <div class="modal-header"><span id="extra-title">JOGO</span><span onclick="fecharExtras()" style="cursor:pointer; color:red; font-size:20px;">&times;</span></div>
+            <div class="modal-content" id="mercados-content"></div>
         </div>
     </div>
 
-    <div id="modal-cupom" class="modal" style="display:none; align-items:center;">
+    <div id="modal-cupom" class="modal" style="align-items:center;">
         <div class="modal-box" style="height:auto; max-height:80vh; border-radius:8px;">
-            <div class="modal-header"><span>CONFIRMAR</span><span onclick="fecharModal()" style="cursor:pointer">X</span></div>
+            <div class="modal-header"><span>CONFIRMAR</span><span onclick="fecharModal()" style="cursor:pointer">&times;</span></div>
             <div style="padding:15px; overflow-y:auto;">
                 <div id="lista-cupom"></div>
                 <div style="margin-top:15px;">
                     <label style="font-size:10px; color:#888;">CLIENTE</label>
-                    <input type="text" id="cliente" class="form-control" style="width:100%; padding:10px; background:#0d1117; border:1px solid #333; color:#fff;" placeholder="Nome do Apostador">
+                    <input type="text" id="cliente" style="width:100%; padding:10px; background:#0d1117; border:1px solid #333; color:#fff; border-radius:4px;" placeholder="Nome do Apostador">
                 </div>
                 <div style="background:#000; padding:15px; border:1px solid #333; text-align:center; margin-top:10px;">
                     <small style="color:#888;">RETORNO</small><br><b id="retorno-final" style="font-size:20px; color:var(--neon);">R$ 0,00</b>
                 </div>
-                <button onclick="enviarAposta()" id="btn-finalizar" class="btn-action" style="width:100%; padding:15px; background:var(--neon); border:none; font-weight:bold; margin-top:10px;">GERAR BILHETE</button>
+                <button onclick="enviarAposta()" id="btn-finalizar" style="width:100%; padding:15px; background:var(--neon); border:none; font-weight:bold; margin-top:10px; cursor:pointer; border-radius:4px;">GERAR BILHETE</button>
             </div>
         </div>
     </div>
@@ -121,18 +127,12 @@
         const ZAP_NUMERO = "5561995478204"; 
         const IMG_ERRO = "https://cdn-icons-png.flaticon.com/512/861/861512.png"; 
         const BAND_ERRO = "https://cdn-icons-png.flaticon.com/512/53/53280.png";
-
         let CARRINHO = [], JOGOS_TODOS = [];
 
         window.onload = () => { carregarJogos(); };
 
-        // TRADUTOR FRONTEND
-        const TRADUCOES = { "England":"Inglaterra", "Spain":"Espanha", "Italy":"Itália", "Germany":"Alemanha", "France":"França", "Brazil":"Brasil", "Portugal":"Portugal", "Premier League":"Premier League", "Serie A":"Série A", "La Liga":"La Liga" };
-        function traduzirNome(txt) { 
-            let n = txt; 
-            for(let [k,v] of Object.entries(TRADUCOES)) { if(n.includes(k)) n=n.replace(k,v); }
-            return n.toUpperCase(); 
-        }
+        const TRADUCOES = { "England":"Inglaterra", "Spain":"Espanha", "Italy":"Itália", "Brazil":"Brasil", "Premier League":"Premier League", "Serie A":"Série A" };
+        function traduzirNome(txt) { let n = txt; for(let [k,v] of Object.entries(TRADUCOES)) { if(n.includes(k)) n=n.replace(k,v); } return n.toUpperCase(); }
 
         async function carregarJogos(modo, el) {
             if(el) { document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active')); el.classList.add('active'); }
@@ -140,7 +140,6 @@
             if(modo==='amanha') d.setDate(d.getDate()+1);
             if(modo==='depois') d.setDate(d.getDate()+2);
             let dataStr = d.toISOString().split('T')[0];
-
             try {
                 const res = await fetch(`${API_URL}/api/jogos?data=${dataStr}`);
                 JOGOS_TODOS = await res.json();
@@ -156,16 +155,14 @@
                 if(!grupos[k]) grupos[k] = [];
                 grupos[k].push(j);
             });
-
             let html = '';
             Object.keys(grupos).sort().forEach(key => {
                 const [nome, flag] = key.split('|');
-                html += `<div class="league-btn" onclick="toggleLiga(this)"><span><img src="${flag}" onerror="this.src='${BAND_ERRO}'"> ${nome}</span><i class="fas fa-chevron-down"></i></div><div class="league-games">`;
+                html += `<div class="league-btn" onclick="this.nextElementSibling.classList.toggle('show')"><span><img src="${flag}" onerror="this.src='${BAND_ERRO}'"> ${nome}</span><i class="fas fa-chevron-down"></i></div><div class="league-games">`;
                 grupos[key].forEach(j => {
                     let h = new Date(j.data).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-                    // SE O JOGO TIVER MERCADOS, MOSTRA O BOTÃO '+'. SE FOR COPINHA (NULL), ESCONDE.
-                    const btnMais = j.mercados ? `<div class="btn-more" onclick="abrirExtras(${j.id}, '${j.home.name} x ${j.away.name}')"><i class="fas fa-plus"></i></div>` : '';
-                    
+                    // Só mostra o botão + se tiver mercados (jogos VIP)
+                    const btnMais = j.mercados ? `<div class="btn-more" onclick="abrirExtras(${j.id}, '${j.home.name} x ${j.away.name}')">+</div>` : '';
                     html += `<div class="game-row"><div class="game-info"><span>${h}</span><span>ID: ${j.id}</span></div>
                     <div class="teams-names"><div class="team-row"><img src="${j.home.logo}" onerror="this.src='${IMG_ERRO}'"> ${j.home.name}</div><div class="team-row"><img src="${j.away.logo}" onerror="this.src='${IMG_ERRO}'"> ${j.away.name}</div></div>
                     <div class="odds-row">
@@ -180,22 +177,59 @@
             document.getElementById('container-ligas').innerHTML = html || "Nada encontrado.";
         }
 
-        function toggleLiga(btn) { 
-            btn.nextElementSibling.classList.toggle('show'); 
+        // --- SISTEMA DE ACORDEÃO PARA OS MERCADOS ---
+        function abrirExtras(idJogo, nomes) {
+            document.getElementById('extra-title').innerText = nomes;
+            document.getElementById('modal-mercados').style.display = 'flex';
+            document.getElementById('mercados-content').innerHTML = 'Carregando...';
+            
+            const jogo = JOGOS_TODOS.find(j => j.id == idJogo);
+            if(jogo && jogo.mercados) {
+                let html = "";
+                jogo.mercados.forEach((grupo, index) => {
+                    // O primeiro grupo vem aberto por padrão
+                    const display = index === 0 ? 'block' : 'none';
+                    html += `<div class="market-group">
+                        <div class="market-header" onclick="toggleMarket(this)">${grupo.grupo} <i class="fas fa-chevron-down"></i></div>
+                        <div class="market-body" style="display:${display}">`;
+                    
+                    grupo.itens.forEach(item => {
+                        const selected = CARRINHO.some(c => c.id == idJogo && c.opcao == `${grupo.grupo}: ${item.nome}`) ? 'active' : '';
+                        html += `<div class="m-item ${selected}" onclick="addApostaExtra(this, ${idJogo}, '${grupo.grupo}: ${item.nome}', ${item.odd}, '${nomes}')">
+                            <span>${item.nome}</span> <b>${item.odd}</b>
+                        </div>`;
+                    });
+                    html += `</div></div>`;
+                });
+                document.getElementById('mercados-content').innerHTML = html;
+            } else {
+                document.getElementById('mercados-content').innerHTML = '<div style="padding:20px; color:red;">Sem mercados extras.</div>';
+            }
+        }
+
+        function toggleMarket(header) {
+            const body = header.nextElementSibling;
+            if (body.style.display === "block") {
+                body.style.display = "none";
+            } else {
+                body.style.display = "block";
+            }
         }
 
         function add(el, id, op, odd, nm) {
             const idx = CARRINHO.findIndex(i => i.id === id);
-            if(idx !== -1) {
-                CARRINHO.splice(idx, 1);
-                // Limpa visual
-                if(el && el.parentElement && el.parentElement.parentElement) {
-                    el.parentElement.parentElement.querySelectorAll('.active').forEach(b => b.classList.remove('active'));
-                }
-            }
+            if(idx !== -1) { CARRINHO.splice(idx, 1); if(el && el.parentElement) el.parentElement.querySelectorAll('.active').forEach(b=>b.classList.remove('active')); }
             CARRINHO.push({id, opcao:op, odd, nome:nm});
             if(el) el.classList.add('active');
             topo();
+        }
+
+        function addApostaExtra(el, id, op, odd, nm) {
+            // Remove destaque dos outros no mesmo grupo (opcional, igual ao site de referencia)
+            const pai = el.parentElement;
+            pai.querySelectorAll('.active').forEach(b => b.classList.remove('active'));
+            add(null, id, op, odd, nm);
+            el.classList.add('active');
         }
 
         function topo() {
@@ -206,94 +240,11 @@
             document.getElementById('retorno-final').innerText = `R$ ${(val*tot).toFixed(2)}`;
         }
         function atualizarCalculo() { topo(); }
-
-        // --- MERCADOS EXTRAS ---
-        function abrirExtras(idJogo, nomes) {
-            document.getElementById('extra-title').innerText = nomes;
-            document.getElementById('modal-mercados').style.display = 'flex';
-            document.getElementById('mercados-content').innerHTML = 'Carregando...';
-            
-            const jogo = JOGOS_TODOS.find(j => j.id == idJogo);
-            if(jogo && jogo.mercados) { 
-                renderizarMercados(jogo.mercados, idJogo, nomes); 
-            } else {
-                document.getElementById('mercados-content').innerHTML = '<div style="padding:20px; text-align:center; color:red;">Mercados Fechados para este evento.</div>';
-            }
-        }
-
-        function renderizarMercados(m, id, nomeJogo) {
-            const isSelected = (sel) => CARRINHO.some(i => i.id === id && i.opcao === sel) ? 'border:1px solid var(--neon); color:var(--neon);' : '';
-            const btn = (sel, odd) => `<div class="m-btn" style="${isSelected(sel)}" onclick="addApostaExtra(this, ${id}, '${sel}', ${odd}, '${nomeJogo}')"><span>${sel}</span> <b>${odd}</b></div>`;
-            const bloco = (titulo, grid, btns) => `<div class="m-block"><div class="m-head">${titulo}</div><div class="m-grid ${grid}">${btns}</div></div>`;
-
-            let htmlPrinc = '', htmlGols = '', html1T = '', htmlComb = '';
-
-            if(m.dupla_chance) htmlPrinc += bloco("DUPLA CHANCE", "m-grid-3", btn("1X", m.dupla_chance["1X"]) + btn("12", m.dupla_chance["12"]) + btn("X2", m.dupla_chance["X2"]));
-            if(m.empate_anula) htmlPrinc += bloco("EMPATE ANULA", "m-grid", btn("Casa", m.empate_anula["1"]) + btn("Fora", m.empate_anula["2"]));
-            if(m.ambas_marcam) htmlPrinc += bloco("AMBAS MARCAM", "m-grid", btn("Sim", m.ambas_marcam.Sim) + btn("Não", m.ambas_marcam.Não));
-            if(m.par_impar) htmlPrinc += bloco("PAR/ÍMPAR", "m-grid", btn("Ímpar", m.par_impar["Ímpar"]) + btn("Par", m.par_impar["Par"]));
-
-            if(m.total_gols) htmlGols += bloco("TOTAL GOLS", "m-grid", btn("+1.5", m.total_gols["Mais 1.5"]) + btn("-1.5", m.total_gols["Menos 1.5"]) + btn("+2.5", m.total_gols["Mais 2.5"]) + btn("-2.5", m.total_gols["Menos 2.5"]) + btn("+3.5", m.total_gols["Mais 3.5"]));
-            if(m.gols_times) htmlGols += bloco("GOLS POR TIME", "m-grid", btn("Casa +1.5", m.gols_times["Casa +1.5"]) + btn("Fora +1.5", m.gols_times["Fora +1.5"]) + btn("Casa a Zero", m.gols_times["Casa Vence Zero"]));
-
-            if(m.tempos) html1T += bloco("1º TEMPO", "m-grid-3", btn("1", m.tempos["Vencedor 1ºT"]["1"]) + btn("X", m.tempos["Vencedor 1ºT"]["X"]) + btn("2", m.tempos["Vencedor 1ºT"]["2"]));
-            if(m.intervalos) html1T += bloco("GOL NO INTERVALO", "m-grid", btn("0-10 min", m.intervalos["Gol 0-10 min"]) + btn("81-90 min", m.intervalos["Gol 81-90 min"]));
-
-            if(m.escanteios) htmlComb += bloco("ESCANTEIOS", "m-grid", btn("+8.5", m.escanteios["Mais 8.5"]) + btn("-8.5", m.escanteios["Menos 8.5"]) + btn("+9.5", m.escanteios["Mais 9.5"]));
-            if(m.placar_exato) {
-                let p = ""; for(let k in m.placar_exato) p += btn(k, m.placar_exato[k]);
-                htmlComb += bloco("PLACAR EXATO", "m-grid-3", p);
-            }
-
-            document.getElementById('mercados-content').innerHTML = `
-                <div id="tab-princ" class="market-group active">${htmlPrinc}</div>
-                <div id="tab-gols" class="market-group">${htmlGols}</div>
-                <div id="tab-1t" class="market-group">${html1T}</div>
-                <div id="tab-comb" class="market-group">${htmlComb}</div>
-            `;
-        }
-
-        function mudarAba(idTab, el) {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); el.classList.add('active');
-            document.querySelectorAll('.market-group').forEach(d => d.classList.remove('active')); document.getElementById(idTab).classList.add('active');
-        }
-
-        function addApostaExtra(el, id, sel, odd, nome) {
-            add(null, id, sel, odd, nome);
-            // Visual simples
-            el.parentElement.querySelectorAll('.m-btn').forEach(b=>{b.style.border='none';b.style.color='';});
-            el.style.border='1px solid var(--neon)'; el.style.color='var(--neon)';
-        }
         function fecharExtras() { document.getElementById('modal-mercados').style.display = 'none'; }
-
-        function finalizarZap() {
-            const v = document.getElementById('valor-topo').value;
-            if(!v || v<=0) return alert("Valor inválido");
-            if(CARRINHO.length===0) return alert("Escolha jogos");
-            document.getElementById('modal-cupom').style.display = 'flex';
-            let html = ''; CARRINHO.forEach((i,k) => html += `<div class="cupom-item"><div><b>${i.nome}</b><br>${i.opcao} (${i.odd})</div><div class="cupom-del" onclick="rm(${k})">X</div></div>`);
-            document.getElementById('lista-cupom').innerHTML = html;
-        }
-        function rm(k) { CARRINHO.splice(k,1); finalizarZap(); topo(); if(CARRINHO.length===0) fecharModal(); }
         function fecharModal() { document.getElementById('modal-cupom').style.display = 'none'; }
-
-        async function enviarAposta() {
-            const cli = document.getElementById('cliente').value; const val = document.getElementById('valor-topo').value;
-            if(!cli) return alert("Nome cliente?");
-            const btn = document.getElementById('btn-finalizar'); btn.innerText = "..."; btn.disabled = true;
-            let ot = CARRINHO.reduce((a,i)=>a*parseFloat(i.odd),1);
-            try {
-                const res = await fetch(`${API_URL}/api/finalizar`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({usuario_id:1, valor:val, apostas:CARRINHO, odd_total:ot})});
-                const d = await res.json();
-                if(d.sucesso) {
-                    let msg = `🦍 *GURILA BET*\n🎫 ${d.codigo}\n👤 ${cli}\n💰 R$ ${val}\n🏆 R$ ${d.retorno}\n\n`;
-                    CARRINHO.forEach(c => msg += `⚽ ${c.nome} (${c.opcao})\n`);
-                    window.open(`https://wa.me/${ZAP_NUMERO}?text=${encodeURIComponent(msg)}`, '_blank');
-                    CARRINHO=[]; topo(); fecharModal(); document.querySelectorAll('.active').forEach(b=>b.classList.remove('active'));
-                } else alert(d.erro);
-            } catch(e) { alert("Erro"); }
-            btn.innerText = "GERAR BILHETE"; btn.disabled = false;
-        }
+        function finalizarZap() { const v = document.getElementById('valor-topo').value; if(!v || v<=0) return alert("Valor inválido"); if(CARRINHO.length===0) return alert("Escolha jogos"); document.getElementById('modal-cupom').style.display = 'flex'; let html = ''; CARRINHO.forEach((i,k) => html += `<div class="cupom-item"><div><b>${i.nome}</b><br>${i.opcao} (${i.odd})</div><div class="cupom-del" onclick="rm(${k})">X</div></div>`); document.getElementById('lista-cupom').innerHTML = html; }
+        function rm(k) { CARRINHO.splice(k,1); finalizarZap(); topo(); if(CARRINHO.length===0) fecharModal(); }
+        async function enviarAposta() { const cli = document.getElementById('cliente').value; const val = document.getElementById('valor-topo').value; if(!cli) return alert("Nome cliente?"); const btn = document.getElementById('btn-finalizar'); btn.innerText = "..."; btn.disabled = true; let ot = CARRINHO.reduce((a,i)=>a*parseFloat(i.odd),1); try { const res = await fetch(`${API_URL}/api/finalizar`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({usuario_id:1, valor:val, apostas:CARRINHO, odd_total:ot})}); const d = await res.json(); if(d.sucesso) { let msg = `🦍 *GURILA BET*\n🎫 ${d.codigo}\n👤 ${cli}\n💰 R$ ${val}\n🏆 R$ ${d.retorno}\n\n`; CARRINHO.forEach(c => msg += `⚽ ${c.nome} (${c.opcao})\n`); window.open(`https://wa.me/${ZAP_NUMERO}?text=${encodeURIComponent(msg)}`, '_blank'); CARRINHO=[]; topo(); fecharModal(); } else alert(d.erro); } catch(e) { alert("Erro"); } btn.innerText = "GERAR BILHETE"; btn.disabled = false; }
     </script>
 </body>
 </html>
