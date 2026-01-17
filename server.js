@@ -10,7 +10,7 @@ app.use(cors({ origin: '*' }));
 const CONFIG = {
     API_KEY: process.env.API_FOOTBALL_KEY || "SUA_CHAVE_AQUI", 
     LUCRO_CASA: 0.85, 
-    TEMPO_CACHE_MINUTOS: 10,
+    TEMPO_CACHE_MINUTOS: 5, // Cache rápido (5 min) para debug
     MIN_VALOR: 2.00,
     MAX_VALOR: 1000.00,
     MAX_PREMIO: 10000.00,
@@ -19,18 +19,18 @@ const CONFIG = {
     LIGAS_VIP: [
         "Premier League", "La Liga", "Serie A", "Bundesliga", "Ligue 1", 
         "Brasileirão", "Paulista", "Carioca", "Mineiro", "Gaucho", "Baiano", "Pernambucano", "Cearense",
-        "Champions League", "Libertadores", "Sudamericana"
+        "Champions League", "Libertadores", "Sudamericana", "Copa do Nordeste", "Verde Capixaba"
     ]
 };
 
-const TIMES_FORTES = ["Flamengo", "Palmeiras", "Atlético-MG", "Real Madrid", "Barcelona", "Man City", "Liverpool", "PSG", "Bayern", "Inter", "Arsenal", "Botafogo", "São Paulo", "Corinthians", "Grêmio", "Boca Juniors", "River Plate", "Juventus", "Milan"];
+const TIMES_FORTES = ["Flamengo", "Palmeiras", "Atlético-MG", "Real Madrid", "Barcelona", "Man City", "Liverpool", "PSG", "Bayern", "Inter", "Arsenal", "Botafogo", "São Paulo", "Corinthians", "Grêmio", "Boca Juniors", "River Plate", "Juventus", "Milan", "Vasco", "Fluminense"];
 
-// TRADUÇÃO REFORÇADA (CARIOCA CORRIGIDO)
+// TRADUÇÃO REFORÇADA (CARIOCA BLINDADO)
 const TRADUCOES = { 
     "World": "Mundo", "Brazil": "Brasil", "England": "Inglaterra", "Spain": "Espanha", "Italy": "Itália", "Germany": "Alemanha", "France": "França", "Portugal": "Portugal", 
     "Premier League": "Premier League", "Serie A": "Série A", "La Liga": "La Liga", "Bundesliga": "Bundesliga", "Ligue 1": "Ligue 1", 
     "Brasileiro Série A": "Brasileirão A", "Brasileiro Série B": "Brasileirão B",
-    "Carioca - 1": "Carioca", "Carioca - A2": "Carioca A2", "Taca Guanabara": "Carioca", "Campeonato Carioca": "Carioca",
+    "Carioca - 1": "Carioca", "Carioca - A2": "Carioca A2", "Taca Guanabara": "Carioca", "Campeonato Carioca": "Carioca", "Carioca Serie A": "Carioca",
     "Paulista - A1": "Paulista A1", "Copa Libertadores": "Libertadores", "UEFA Champions League": "Champions League"
 };
 
@@ -42,32 +42,44 @@ async function initDb() {
     try {
         await pool.query(`CREATE TABLE IF NOT EXISTS bilhetes (id SERIAL PRIMARY KEY, usuario_id INTEGER, codigo TEXT UNIQUE, valor NUMERIC, retorno NUMERIC, odds_total NUMERIC, status TEXT DEFAULT 'pendente', detalhes JSONB, data TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         await pool.query(`CREATE TABLE IF NOT EXISTS jogos_cache (id SERIAL PRIMARY KEY, data_ref TEXT UNIQUE, json_dados JSONB, atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
-        console.log("✅ Servidor V44 (Carioca Fix + Lista Gols) On!");
+        console.log("✅ Servidor V45 (Modo Espião Ativo) Online!");
     } catch (e) { console.error(e); }
 }
 initDb();
 
 app.get('/api/jogos', async (req, res) => {
     const dataHoje = req.query.data || new Date().toISOString().split('T')[0];
+    
+    console.log(`🔍 Buscando jogos para: ${dataHoje}`); // LOG NO RAILWAY
+
     try {
         const cache = await pool.query("SELECT json_dados, atualizado_em FROM jogos_cache WHERE data_ref = $1", [dataHoje]);
         if (cache.rows.length > 0) {
             const diff = (new Date() - new Date(cache.rows[0].atualizado_em)) / 1000 / 60;
-            if (diff < CONFIG.TEMPO_CACHE_MINUTOS) return res.json(cache.rows[0].json_dados);
+            if (diff < CONFIG.TEMPO_CACHE_MINUTOS) {
+                console.log("⚡ Usando Cache");
+                return res.json(cache.rows[0].json_dados);
+            }
         }
         
-        // Mantive o filtro 'NS' (Apenas jogos que NÃO começaram) como você pediu
+        // Pede jogos NS (Não iniciados)
         const url = `https://v3.football.api-sports.io/fixtures?date=${dataHoje}&status=NS`; 
         const resp = await axios.get(url, { headers: { 'x-apisports-key': CONFIG.API_KEY } });
         
         let jogos = [];
-        if (resp.data.response) jogos = formatarV44(resp.data.response);
+        if (resp.data.response) {
+            console.log(`📡 API retornou ${resp.data.response.length} jogos brutos.`);
+            jogos = formatarV45(resp.data.response);
+        }
         
         if (jogos.length > 0) {
             await pool.query(`INSERT INTO jogos_cache (data_ref, json_dados, atualizado_em) VALUES ($1, $2, NOW()) ON CONFLICT (data_ref) DO UPDATE SET json_dados = $2, atualizado_em = NOW()`, [dataHoje, JSON.stringify(jogos)]);
         }
         res.json(jogos);
-    } catch (e) { res.json([]); }
+    } catch (e) { 
+        console.error("Erro API:", e.message);
+        res.json([]); 
+    }
 });
 
 app.post('/api/finalizar', async (req, res) => {
@@ -88,7 +100,7 @@ app.post('/api/finalizar', async (req, res) => {
     } catch (e) { res.status(500).json({erro: "Erro"}); }
 });
 
-function formatarV44(lista) {
+function formatarV45(lista) {
     return lista.map(j => {
         try {
             if (j.fixture.status.short !== 'NS') return null;
@@ -97,6 +109,12 @@ function formatarV44(lista) {
             const paisOrig = j.league.country;
             const ligaNome = (paisOrig === "World" ? traduzir(ligaOrig) : `${traduzir(paisOrig)} - ${traduzir(ligaOrig)}`).toUpperCase();
             
+            // --- ESPIÃO DE LIGAS (OLHE O LOG DO RAILWAY) ---
+            // Isso vai imprimir "LIGA ENCONTRADA: BRASIL - CARIOCA 1" para a gente saber o nome certo
+            if (paisOrig === "Brazil") {
+                console.log(`🇧🇷 LIGA BRASILEIRA DETECTADA: ${ligaOrig} (Convertido: ${ligaNome})`);
+            }
+
             const ehVIP = CONFIG.LIGAS_VIP.some(v => ligaNome.includes(v.toUpperCase()));
             const oddsBase = calcularOddsSeguras(j.teams.home.name, j.teams.away.name);
 
@@ -109,7 +127,7 @@ function formatarV44(lista) {
                 data: j.fixture.date,
                 status: "VS",
                 odds: oddsBase,
-                mercados: ehVIP ? gerarListaMercadosV44(oddsBase) : [] 
+                mercados: ehVIP ? gerarListaMercadosExpandida(oddsBase) : [] 
             };
         } catch (e) { return null; }
     }).filter(Boolean);
@@ -125,8 +143,8 @@ function calcularOddsSeguras(home, away) {
     return { casa: (c*CONFIG.LUCRO_CASA).toFixed(2), empate: (e*CONFIG.LUCRO_CASA).toFixed(2), fora: (f*CONFIG.LUCRO_CASA).toFixed(2) };
 }
 
-// --- LISTA COMPLETA 0.5 a 5.5 ---
-function gerarListaMercadosV44(base) {
+// --- LISTA DE MERCADOS COMPLETA (V43 MANTIDA) ---
+function gerarListaMercadosExpandida(base) {
     const C = parseFloat(base.casa); const E = parseFloat(base.empate); const F = parseFloat(base.fora);
     const k = 0.90; 
     const fx = (v) => (v * k).toFixed(2);
@@ -188,4 +206,4 @@ function gerarListaMercadosV44(base) {
 }
 
 app.post('/api/login', async (req, res) => { res.json({sucesso:false}); });
-app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V44 On!"));
+app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V45 On!"));
