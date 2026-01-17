@@ -5,16 +5,17 @@
     <title>GURILA BET</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* --- VISUAL GURILA DARK (V41) --- */
+        /* GURILA BET - VISUAL DARK V42 (CORRIGIDO) */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Arial', sans-serif; outline: none; }
         body { background-color: #0d1117; color: #e6edf3; padding-bottom: 60px; }
         :root { --neon: #00ff88; --bg-dark: #0d1117; --bg-card: #161b22; --border: #30363d; --text-gray: #8b949e; }
 
-        /* HEADER & BARRA DE APOSTA */
+        /* HEADER */
         .header { background-color: var(--bg-card); padding: 12px 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--neon); }
         .brand { font-size: 20px; font-weight: 900; color: #fff; font-style: italic; letter-spacing: -1px; }
         .brand span { color: var(--neon); }
-        
+
+        /* BARRA FIXA */
         .bet-bar { background: #000; padding: 10px; display: flex; align-items: center; justify-content: space-between; border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 90; box-shadow: 0 2px 10px rgba(0,0,0,0.5); }
         .input-money { background: var(--bg-card); border: 1px solid var(--border); padding: 8px; width: 100px; border-radius: 4px; font-size: 16px; color: var(--neon); font-weight: bold; }
         .return-info { text-align: center; font-size: 10px; color: var(--text-gray); line-height: 1.3; }
@@ -22,12 +23,12 @@
         .btn-cupom { background: var(--neon); color: #000; font-weight: 900; padding: 8px 15px; border-radius: 4px; border: none; font-size: 12px; cursor: pointer; text-transform: uppercase; }
         .badge { background: #000; color: var(--neon); padding: 1px 6px; border-radius: 10px; font-size: 10px; margin-left: 5px; }
 
-        /* NAVEGAÇÃO */
+        /* NAV */
         .nav-dates { display: flex; background: var(--bg-dark); border-bottom: 1px solid var(--border); overflow-x: auto; }
         .nav-item { flex: 1; padding: 12px; text-align: center; font-size: 11px; font-weight: bold; color: var(--text-gray); cursor: pointer; border-bottom: 2px solid transparent; min-width: 80px; }
         .nav-item.active { color: var(--neon); border-bottom-color: var(--neon); background: var(--bg-card); }
 
-        /* LISTA DE JOGOS */
+        /* JOGOS */
         .league-container { padding: 5px; min-height: 400px; }
         .league-btn { background: linear-gradient(90deg, #161b22, #0d1117); color: #fff; padding: 12px; margin-bottom: 5px; border: 1px solid var(--border); border-left: 4px solid var(--neon); border-radius: 4px; font-weight: bold; font-size: 12px; text-transform: uppercase; display: flex; align-items: center; justify-content: space-between; cursor: pointer; }
         .league-btn img { width: 22px; height: 16px; margin-right: 8px; vertical-align: middle; border-radius: 2px; background: #000; object-fit: cover; }
@@ -55,42 +56,35 @@
         .modal-header { background: #161b22; padding: 15px; border-bottom: 1px solid var(--neon); display: flex; justify-content: space-between; color: #fff; font-weight: bold; align-items: center; }
         .modal-content { overflow-y: auto; flex: 1; padding: 10px; background: #0d1117; }
 
-        /* ACORDEÃO (LISTA DE MERCADOS) */
+        /* ACORDEÃO (MERCADOS) */
         .market-group { margin-bottom: 8px; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; }
         .market-header { 
             background: linear-gradient(90deg, #161b22, #0d1117); 
             color: var(--neon); 
-            padding: 12px; 
-            font-size: 12px; 
-            font-weight: bold; 
-            text-transform: uppercase; 
-            cursor: pointer;
-            display: flex; justify-content: space-between;
-            align-items: center;
+            padding: 12px; font-size: 12px; font-weight: bold; text-transform: uppercase; 
+            cursor: pointer; display: flex; justify-content: space-between; align-items: center;
             border-left: 3px solid var(--neon);
         }
         .market-body { display: none; background: #000; padding: 0; }
-        .market-body.open { display: block; }
-
+        
         .m-item { 
             display: flex; justify-content: space-between; padding: 12px; 
             border-bottom: 1px solid #21262d; cursor: pointer; color: #fff; font-size: 12px; 
         }
-        .m-item:last-child { border-bottom: none; }
-        .m-item span { color: #ccc; }
         .m-item b { color: var(--neon); font-size: 13px; }
-        
         .m-item.active { background: var(--neon); }
         .m-item.active span, .m-item.active b { color: #000; font-weight: bold; }
 
-        /* MODAL CUPOM */
+        /* CUPOM */
         .cupom-item { background: #0d1117; border: 1px solid var(--border); padding: 10px; margin-bottom: 8px; border-left: 3px solid var(--neon); display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: #fff; }
         .cupom-del { color: #ff4d4d; padding: 5px; cursor: pointer; font-weight: bold; }
+        
+        /* ADMIN */
         .admin-card { background: #000; padding: 15px; border-radius: 8px; border: 1px solid var(--border); margin-bottom: 10px; text-align: center; }
         .admin-val { font-size: 20px; font-weight: 900; color: var(--neon); }
         .admin-lbl { font-size: 10px; color: var(--text-gray); uppercase; }
         
-        /* MENU LATERAL */
+        /* SIDEBAR */
         .sidebar { position: fixed; top: 0; right: -260px; width: 260px; height: 100%; background: var(--bg-card); z-index: 200; transition: 0.3s; box-shadow: -5px 0 15px rgba(0,0,0,0.8); padding: 20px; border-left: 1px solid var(--border); }
         .sidebar.open { right: 0; }
         .overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 150; display: none; }
@@ -142,7 +136,7 @@
                 <div id="lista-cupom"></div>
                 <div style="margin-top:15px;">
                     <label style="font-size:10px; color:#888;">CLIENTE</label>
-                    <input type="text" id="cliente" class="form-control" placeholder="Nome do Apostador">
+                    <input type="text" id="cliente" class="form-control" style="width:100%;" placeholder="Nome do Apostador">
                 </div>
                 <div style="background:#000; padding:15px; border:1px solid #333; text-align:center; margin-top:10px;">
                     <small style="color:#888;">RETORNO</small><br><b id="retorno-final" style="font-size:20px; color:var(--neon);">R$ 0,00</b>
@@ -172,7 +166,6 @@
 
         window.onload = () => { carregarJogos(); verificarLogin(); };
 
-        // TRADUTOR FRONTEND
         const TRADUCOES = { "England":"Inglaterra", "Spain":"Espanha", "Italy":"Itália", "Brazil":"Brasil", "Premier League":"Premier League", "Serie A":"Série A" };
         function traduzirNome(txt) { let n = txt; for(let [k,v] of Object.entries(TRADUCOES)) { if(n.includes(k)) n=n.replace(k,v); } return n.toUpperCase(); }
 
@@ -191,7 +184,6 @@
 
         function renderizarLigas(lista) {
             if(!lista || lista.length === 0) return document.getElementById('container-ligas').innerHTML = `<div style="text-align:center; padding:40px; color:#555;">Nenhum jogo disponível hoje.</div>`;
-            
             const grupos = {};
             lista.forEach(j => {
                 j.liga = traduzirNome(j.liga);
@@ -199,16 +191,23 @@
                 if(!grupos[k]) grupos[k] = [];
                 grupos[k].push(j);
             });
-
             let html = '';
-            // Ordena Brasil primeiro
             Object.keys(grupos).sort((a,b) => a.includes("BRASIL") ? -1 : 1).forEach(key => {
                 const [nome, flag] = key.split('|');
                 html += `<div class="league-btn" onclick="this.nextElementSibling.classList.toggle('show')"><span><img src="${flag}" onerror="this.src='${BAND_ERRO}'"> ${nome}</span><i class="fas fa-chevron-down"></i></div><div class="league-games">`;
                 grupos[key].forEach(j => {
                     let h = new Date(j.data).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
-                    // Botão + só aparece se tiver mercados
-                    const btnMais = j.mercados ? `<div class="btn-more" onclick="abrirExtras(${j.id}, '${j.home.name} x ${j.away.name}')">+${j.mercados.length}</div>` : '';
+                    
+                    // CORREÇÃO UNIVERSAL: VERIFICA SE MERCADOS EXISTE DE VERDADE
+                    let temMercados = false;
+                    if(j.mercados) {
+                        // Verifica se é array com itens (V40) ou objeto com chaves (V39)
+                        if(Array.isArray(j.mercados) && j.mercados.length > 0) temMercados = true;
+                        else if(typeof j.mercados === 'object' && Object.keys(j.mercados).length > 0) temMercados = true;
+                    }
+
+                    // AQUI EU REMOVI O "UNDEFINED". AGORA É SÓ "+"
+                    const btnMais = temMercados ? `<div class="btn-more" onclick="abrirExtras(${j.id}, '${j.home.name} x ${j.away.name}')"><i class="fas fa-plus"></i></div>` : '';
                     
                     html += `<div class="game-row"><div class="game-info"><span>${h}</span><span>ID: ${j.id}</span></div>
                     <div class="teams-names"><div class="team-row"><img src="${j.home.logo}" onerror="this.src='${IMG_ERRO}'"> ${j.home.name}</div><div class="team-row"><img src="${j.away.logo}" onerror="this.src='${IMG_ERRO}'"> ${j.away.name}</div></div>
@@ -224,7 +223,7 @@
             document.getElementById('container-ligas').innerHTML = html;
         }
 
-        // --- SISTEMA DE ACORDEÃO PARA OS MERCADOS (A MÁGICA) ---
+        // --- SISTEMA DE ACORDEÃO (CORRIGIDO PARA NÃO TRAVAR "CARREGANDO") ---
         function abrirExtras(idJogo, nomes) {
             document.getElementById('extra-title').innerText = nomes;
             document.getElementById('modal-mercados').style.display = 'flex';
@@ -232,32 +231,49 @@
             container.innerHTML = '<div style="text-align:center; padding:20px; color:#888;"><i class="fas fa-circle-notch fa-spin"></i> Carregando...</div>';
             
             const jogo = JOGOS_TODOS.find(j => j.id == idJogo);
-            
-            if(jogo && jogo.mercados && Array.isArray(jogo.mercados)) {
-                let html = "";
-                jogo.mercados.forEach((grupo, index) => {
-                    const display = index === 0 ? 'block' : 'none'; // Abre só o primeiro
-                    const icone = index === 0 ? 'fa-chevron-up' : 'fa-chevron-down';
-                    
-                    html += `<div class="market-group">
-                        <div class="market-header" onclick="toggleMarket(this)">${grupo.grupo} <i class="fas ${icone}"></i></div>
-                        <div class="market-body" style="display:${display}">`;
-                    
-                    if(grupo.itens) {
-                        grupo.itens.forEach(item => {
-                            const opcaoNome = `${grupo.grupo}: ${item.nome}`;
-                            const active = CARRINHO.some(c => c.id == idJogo && c.opcao == opcaoNome) ? 'active' : '';
-                            html += `<div class="m-item ${active}" onclick="addApostaExtra(this, ${idJogo}, '${opcaoNome}', ${item.odd}, '${nomes}')">
-                                <span>${item.nome}</span> <b>${item.odd}</b>
-                            </div>`;
-                        });
-                    }
-                    html += `</div></div>`;
-                });
-                container.innerHTML = html;
-            } else {
-                container.innerHTML = '<div style="padding:20px; color:#ff4d4d; text-align:center;">Mercados fechados para este evento.</div>';
+            if(!jogo || !jogo.mercados) {
+                container.innerHTML = '<div style="padding:20px; color:red; text-align:center;">Mercados fechados.</div>';
+                return;
             }
+
+            // ADAPTADOR UNIVERSAL (Converte V39 para V40 se necessário)
+            let listaGrupos = [];
+            if(Array.isArray(jogo.mercados)) {
+                // Já está no formato novo V40 (Lista de Grupos)
+                listaGrupos = jogo.mercados;
+            } else {
+                // Formato antigo V39 (Objeto Chave: Valor) - Vamos converter na hora!
+                // Isso impede o travamento se o servidor estiver velho.
+                for (let [chave, valor] of Object.entries(jogo.mercados)) {
+                    let itensAdaptados = [];
+                    if(typeof valor === 'object') {
+                        for(let [k, v] of Object.entries(valor)) itensAdaptados.push({nome: k, odd: v});
+                    }
+                    listaGrupos.push({grupo: chave.toUpperCase().replace('_', ' '), itens: itensAdaptados});
+                }
+            }
+
+            let html = "";
+            listaGrupos.forEach((grupo, index) => {
+                const display = index === 0 ? 'block' : 'none'; 
+                const icone = index === 0 ? 'fa-chevron-up' : 'fa-chevron-down';
+                
+                html += `<div class="market-group">
+                    <div class="market-header" onclick="toggleMarket(this)">${grupo.grupo} <i class="fas ${icone}"></i></div>
+                    <div class="market-body" style="display:${display}">`;
+                
+                if(grupo.itens && Array.isArray(grupo.itens)) {
+                    grupo.itens.forEach(item => {
+                        const opcaoNome = `${grupo.grupo}: ${item.nome}`;
+                        const active = CARRINHO.some(c => c.id == idJogo && c.opcao == opcaoNome) ? 'active' : '';
+                        html += `<div class="m-item ${active}" onclick="addApostaExtra(this, ${idJogo}, '${opcaoNome}', ${item.odd}, '${nomes}')">
+                            <span>${item.nome}</span> <b>${item.odd}</b>
+                        </div>`;
+                    });
+                }
+                html += `</div></div>`;
+            });
+            container.innerHTML = html;
         }
 
         function toggleMarket(header) {
@@ -276,7 +292,6 @@
             const idx = CARRINHO.findIndex(i => i.id === id);
             if(idx !== -1) { 
                 CARRINHO.splice(idx, 1); 
-                // Limpa visual da lista principal
                 if(el && el.parentElement && el.parentElement.parentElement) {
                     el.parentElement.parentElement.querySelectorAll('.active').forEach(b=>b.classList.remove('active'));
                 }
@@ -287,12 +302,10 @@
         }
 
         function addApostaExtra(el, id, op, odd, nm) {
-            // Remove destaque dos outros no mesmo grupo
             const pai = el.parentElement;
             if(pai) pai.querySelectorAll('.active').forEach(b => b.classList.remove('active'));
-            
-            add(null, id, op, odd, nm); // Adiciona na lógica
-            el.classList.add('active'); // Marca visualmente
+            add(null, id, op, odd, nm);
+            el.classList.add('active');
         }
 
         function topo() {
@@ -305,40 +318,9 @@
         function atualizarCalculo() { topo(); }
         function fecharExtras() { document.getElementById('modal-mercados').style.display = 'none'; }
         function fecharModal() { document.getElementById('modal-cupom').style.display = 'none'; }
-        
-        function finalizarZap() { 
-            const v = document.getElementById('valor-topo').value; 
-            if(!v || v<=0) return alert("Valor inválido"); 
-            if(CARRINHO.length===0) return alert("Escolha jogos"); 
-            document.getElementById('modal-cupom').style.display = 'flex'; 
-            let html = ''; 
-            CARRINHO.forEach((i,k) => html += `<div class="cupom-item"><div><b>${i.nome}</b><br>${i.opcao} (${i.odd})</div><div class="cupom-del" onclick="rm(${k})">X</div></div>`); 
-            document.getElementById('lista-cupom').innerHTML = html; 
-        }
-        
+        function finalizarZap() { const v = document.getElementById('valor-topo').value; if(!v || v<=0) return alert("Valor inválido"); if(CARRINHO.length===0) return alert("Escolha jogos"); document.getElementById('modal-cupom').style.display = 'flex'; let html = ''; CARRINHO.forEach((i,k) => html += `<div class="cupom-item"><div><b>${i.nome}</b><br>${i.opcao} (${i.odd})</div><div class="cupom-del" onclick="rm(${k})">X</div></div>`); document.getElementById('lista-cupom').innerHTML = html; }
         function rm(k) { CARRINHO.splice(k,1); finalizarZap(); topo(); if(CARRINHO.length===0) fecharModal(); }
-        
-        async function enviarAposta() { 
-            const cli = document.getElementById('cliente').value; const val = document.getElementById('valor-topo').value; 
-            if(!cli) return alert("Nome cliente?"); 
-            const btn = document.getElementById('btn-finalizar'); btn.innerText = "..."; btn.disabled = true; 
-            let ot = CARRINHO.reduce((a,i)=>a*parseFloat(i.odd),1); 
-            try { 
-                const res = await fetch(`${API_URL}/api/finalizar`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({usuario_id:1, valor:val, apostas:CARRINHO, odd_total:ot})}); 
-                const d = await res.json(); 
-                if(d.sucesso) { 
-                    let msg = `🦍 *GURILA BET*\n🎫 ${d.codigo}\n👤 ${cli}\n💰 R$ ${val}\n🏆 R$ ${d.retorno}\n\n`; 
-                    CARRINHO.forEach(c => msg += `⚽ ${c.nome} (${c.opcao})\n`); 
-                    window.open(`https://wa.me/${ZAP_NUMERO}?text=${encodeURIComponent(msg)}`, '_blank'); 
-                    CARRINHO=[]; topo(); fecharModal(); 
-                    // Limpa todas as classes ativas
-                    document.querySelectorAll('.active').forEach(b=>b.classList.remove('active'));
-                } else alert(d.erro); 
-            } catch(e) { alert("Erro"); } 
-            btn.innerText = "GERAR BILHETE"; btn.disabled = false; 
-        }
-
-        // --- AUTH & ADMIN ---
+        async function enviarAposta() { const cli = document.getElementById('cliente').value; const val = document.getElementById('valor-topo').value; if(!cli) return alert("Nome cliente?"); const btn = document.getElementById('btn-finalizar'); btn.innerText = "..."; btn.disabled = true; let ot = CARRINHO.reduce((a,i)=>a*parseFloat(i.odd),1); try { const res = await fetch(`${API_URL}/api/finalizar`, {method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({usuario_id:1, valor:val, apostas:CARRINHO, odd_total:ot})}); const d = await res.json(); if(d.sucesso) { let msg = `🦍 *GURILA BET*\n🎫 ${d.codigo}\n👤 ${cli}\n💰 R$ ${val}\n🏆 R$ ${d.retorno}\n\n`; CARRINHO.forEach(c => msg += `⚽ ${c.nome} (${c.opcao})\n`); window.open(`https://wa.me/${ZAP_NUMERO}?text=${encodeURIComponent(msg)}`, '_blank'); CARRINHO=[]; topo(); fecharModal(); document.querySelectorAll('.active').forEach(b=>b.classList.remove('active')); } else alert(d.erro); } catch(e) { alert("Erro"); } btn.innerText = "GERAR BILHETE"; btn.disabled = false; }
         function toggleMenu() { document.getElementById('sidebar').classList.toggle('open'); document.getElementById('overlay').classList.toggle('open'); }
         function mostrarCadastro() { document.getElementById('form-login').style.display='none'; document.getElementById('form-cadastro').style.display='block'; }
         function mostrarLogin() { document.getElementById('form-cadastro').style.display='none'; document.getElementById('form-login').style.display='block'; }
