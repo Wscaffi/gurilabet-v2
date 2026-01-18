@@ -5,7 +5,7 @@
     <title>GURILA BET</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* VISUAL MODERN V58 (SEM BARRA SUPERIOR) */
+        /* VISUAL GURILA DARK V59 */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Arial', sans-serif; outline: none; }
         body { background-color: #0d1117; color: #e6edf3; padding-bottom: 80px; }
         :root { --neon: #00ff88; --bg-dark: #0d1117; --bg-card: #161b22; --border: #30363d; --text-gray: #8b949e; }
@@ -40,6 +40,7 @@
         .fab:active { transform: scale(0.95); }
         .badge { background: #000; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
 
+        /* MODAL MERCADOS (STYLE) */
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 300; display: none; justify-content: center; align-items: flex-end; backdrop-filter: blur(2px); }
         .modal-box { background: #161b22; width: 100%; max-height: 90vh; border-radius: 20px 20px 0 0; border-top: 1px solid var(--neon); display: flex; flex-direction: column; overflow: hidden; animation: slideUp 0.3s ease; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -55,12 +56,14 @@
         .m-item.active { background: var(--neon); color: #000; } 
         .m-item.active b { color: #000; } .m-item b { color: var(--neon); font-size: 13px; }
 
+        /* CUPOM */
         .cupom-item { background: #0d1117; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; position: relative; border-left: 3px solid var(--neon); }
         .cupom-title { color: #fff; font-size: 13px; font-weight: bold; margin-bottom: 4px; }
         .cupom-sel { color: var(--neon); font-size: 12px; font-weight: bold; }
         .cupom-odd { float: right; color: #fff; font-weight: bold; }
         .cupom-del { position: absolute; top: 10px; right: 10px; color: #ff4d4d; font-size: 16px; cursor: pointer; }
 
+        /* INPUTS */
         .input-group { margin-top: 15px; }
         .input-label { display: block; color: var(--text-gray); font-size: 11px; margin-bottom: 5px; font-weight: bold; uppercase; }
         .form-control { width: 100%; background: #0d1117; border: 1px solid var(--border); color: #fff; padding: 12px; border-radius: 6px; font-size: 16px; font-weight: bold; outline: none; }
@@ -69,15 +72,13 @@
         .summary-box { background: rgba(0, 255, 136, 0.05); border: 1px solid var(--neon); border-radius: 8px; padding: 15px; margin-top: 15px; }
         .summary-row { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 13px; color: #ccc; }
         .summary-total { display: flex; justify-content: space-between; margin-top: 10px; padding-top: 10px; border-top: 1px solid #333; font-size: 18px; font-weight: 900; color: var(--neon); }
-
         .btn-action { width: 100%; background: var(--neon); color: #000; border: none; padding: 15px; font-size: 16px; font-weight: 900; border-radius: 8px; margin-top: 15px; cursor: pointer; text-transform: uppercase; }
-        .btn-action:active { transform: scale(0.98); }
     </style>
 </head>
 <body>
+
     <div class="header">
         <div class="brand">GURILA<span>BET</span> 🦍</div>
-        <div style="font-size: 10px; color: #888;">v58</div>
     </div>
     
     <div class="nav-dates">
@@ -124,14 +125,15 @@
     <script>
         const API_URL = 'https://gurilabet-v2-production.up.railway.app'; 
         const ZAP_NUMERO = "5561995478204"; 
-        
-        // --- FIX LOGO FLAMENGO ---
-        const LOGO_FLAMENGO = "https://media.api-sports.io/football/teams/127.png"; 
         const IMG_ERRO = "https://cdn-icons-png.flaticon.com/512/861/861512.png"; 
+        const BAND_ERRO = "https://cdn-icons-png.flaticon.com/512/53/53280.png";
         
         let CARRINHO = [], JOGOS_TODOS = [];
 
         window.onload = () => carregarJogos();
+
+        const TRADUCOES = { "England":"Inglaterra", "Spain":"Espanha", "Italy":"Itália", "Brazil":"Brasil", "Premier League":"Premier League", "Serie A":"Série A" };
+        function traduzirNome(txt) { let n = txt; for(let [k,v] of Object.entries(TRADUCOES)) { if(n.includes(k)) n=n.replace(k,v); } return n.toUpperCase(); }
 
         async function carregarJogos(modo, el) {
             if(el) { document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active')); el.classList.add('active'); }
@@ -140,10 +142,9 @@
             if(modo==='depois') d.setDate(d.getDate()+2);
             let dataStr = d.toISOString().split('T')[0];
 
-            document.getElementById('container-ligas').innerHTML = `<div style="text-align:center; padding:50px; color:#555;"><i class="fas fa-circle-notch fa-spin"></i> ATUALIZANDO V58...</div>`;
+            document.getElementById('container-ligas').innerHTML = `<div style="text-align:center; padding:50px; color:#555;"><i class="fas fa-circle-notch fa-spin"></i> ATUALIZANDO V59...</div>`;
 
             try {
-                // PARAMETRO T PARA FORÇAR ATUALIZAÇÃO NO CELULAR
                 const res = await fetch(`${API_URL}/api/jogos?data=${dataStr}&t=${Date.now()}`);
                 JOGOS_TODOS = await res.json();
                 renderizarLigas(JOGOS_TODOS);
@@ -151,24 +152,24 @@
         }
 
         function renderizarLigas(lista) {
-            if(!lista || !lista.length) return document.getElementById('container-ligas').innerHTML = `<div style="text-align:center; padding:40px; color:#666;">Nenhum jogo futuro disponível.</div>`;
+            if(!lista || !lista.length) return document.getElementById('container-ligas').innerHTML = `<div style="text-align:center; padding:40px; color:#666;">Nenhum jogo disponível.</div>`;
             const grupos = {};
-            lista.forEach(j => { if(!grupos[j.liga]) grupos[j.liga]=[]; grupos[j.liga].push(j); });
+            lista.forEach(j => { 
+                j.liga = traduzirNome(j.liga); 
+                const k = `${j.liga}|${j.flag}`; 
+                if(!grupos[k]) grupos[k]=[]; grupos[k].push(j); 
+            });
             let html = '';
             Object.keys(grupos).sort().forEach(liga => {
-                html += `<div class="league-btn" onclick="toggleLiga(this)"><span><img src="${grupos[liga][0].flag}" onerror="this.style.display='none'"> ${liga}</span> <i class="fas fa-chevron-down"></i></div><div class="league-games" style="display:none;">`;
+                const [nome, flag] = liga.split('|');
+                html += `<div class="league-btn" onclick="toggleLiga(this)"><span><img src="${flag}" onerror="this.src='${BAND_ERRO}'"> ${nome}</span> <i class="fas fa-chevron-down"></i></div><div class="league-games" style="display:none;">`;
                 grupos[liga].forEach(j => {
                     let h = new Date(j.data).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
                     const qtd = (j.mercados && Array.isArray(j.mercados)) ? j.mercados.length : 0;
                     const btnMais = qtd > 0 ? `<div class="btn-more" onclick="abrirExtras(${j.id}, '${j.home.name} x ${j.away.name}')">+${qtd}</div>` : '';
-                    
-                    let logoCasa = j.home.logo; let logoFora = j.away.logo;
-                    if(j.home.name.includes("Flamengo")) logoCasa = LOGO_FLAMENGO;
-                    if(j.away.name.includes("Flamengo")) logoFora = LOGO_FLAMENGO;
-
                     html += `<div class="game-row">
                         <div class="game-info"><span>${h}</span><span>ID: ${j.id}</span></div>
-                        <div class="teams-names"><div class="team-row"><img src="${logoCasa}" onerror="this.src='${IMG_ERRO}'"> ${j.home.name}</div><div class="team-row"><img src="${logoFora}" onerror="this.src='${IMG_ERRO}'"> ${j.away.name}</div></div>
+                        <div class="teams-names"><div class="team-row"><img src="${j.home.logo}" onerror="this.src='${IMG_ERRO}'"> ${j.home.name}</div><div class="team-row"><img src="${j.away.logo}" onerror="this.src='${IMG_ERRO}'"> ${j.away.name}</div></div>
                         <div class="odds-container">
                             <div class="odd-sq" onclick="add(this,${j.id},'Casa',${j.odds.casa},'${j.home.name} x ${j.away.name}')"><span>1</span><b>${j.odds.casa}</b></div>
                             <div class="odd-sq" onclick="add(this,${j.id},'Empate',${j.odds.empate},'${j.home.name} x ${j.away.name}')"><span>X</span><b>${j.odds.empate}</b></div>
@@ -184,7 +185,10 @@
         function toggleLiga(el) { const c = el.nextElementSibling; c.style.display = c.style.display==='block' ? 'none' : 'block'; }
         function add(el, id, op, odd, nm) {
             const idx = CARRINHO.findIndex(i => i.id === id);
-            if(idx !== -1) { CARRINHO.splice(idx, 1); if(el && el.parentElement && el.parentElement.parentElement) { el.parentElement.parentElement.querySelectorAll('.active').forEach(b=>b.classList.remove('active')); } }
+            if(idx !== -1) { 
+                CARRINHO.splice(idx, 1); 
+                if(el && el.parentElement && el.parentElement.parentElement) { el.parentElement.parentElement.querySelectorAll('.active').forEach(b=>b.classList.remove('active')); }
+            }
             CARRINHO.push({id, opcao:op, odd, nome:nm});
             if(el) el.classList.add('active');
             document.getElementById('qtd-cupom').innerText = CARRINHO.length;
@@ -200,18 +204,23 @@
                 let html = "";
                 jogo.mercados.forEach(grupo => {
                     html += `<div class="market-group"><div class="market-header">${grupo.grupo}</div><div class="market-grid">`;
-                    if(grupo.itens && Array.isArray(grupo.itens)) {
-                        grupo.itens.forEach(item => {
-                            const sel = CARRINHO.some(c => c.id == idJogo && c.opcao == `${grupo.grupo}: ${item.nome}`) ? 'active' : '';
-                            html += `<div class="m-item ${sel}" onclick="addExtra(this, ${idJogo}, '${grupo.grupo}: ${item.nome}', ${item.odd}, '${nomes}')"><span>${item.nome}</span><b>${item.odd}</b></div>`;
-                        });
-                    }
+                    grupo.itens.forEach(item => {
+                        const sel = CARRINHO.some(c => c.id == idJogo && c.opcao == `${grupo.grupo}: ${item.nome}`) ? 'active' : '';
+                        html += `<div class="m-item ${sel}" onclick="addExtra(this, ${idJogo}, '${grupo.grupo}: ${item.nome}', ${item.odd}, '${nomes}')"><span>${item.nome}</span><b>${item.odd}</b></div>`;
+                    });
                     html += `</div></div>`;
                 });
                 container.innerHTML = html;
             } else { container.innerHTML = '<div style="padding:20px; text-align:center; color:#555;">Sem mercados extras.</div>'; }
         }
-        function addExtra(el, id, op, odd, nm) { const pai = el.parentElement; if(pai) pai.querySelectorAll('.active').forEach(b => b.classList.remove('active')); add(null, id, op, odd, nm); el.classList.add('active'); }
+        
+        function addExtra(el, id, op, odd, nm) {
+            const pai = el.parentElement;
+            if(pai) pai.querySelectorAll('.active').forEach(b => b.classList.remove('active'));
+            add(null, id, op, odd, nm);
+            el.classList.add('active');
+        }
+
         function abrirCupom() { if(CARRINHO.length === 0) return alert("Selecione pelo menos um jogo."); renderizarListaCupom(); atualizarResumo(); document.getElementById('modal-cupom').style.display = 'flex'; }
         function renderizarListaCupom() {
             let html = '';
