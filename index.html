@@ -5,22 +5,19 @@
     <title>GURILA BET</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* VISUAL GURILA DARK V50 - CLEAN */
+        /* VISUAL CLEAN - V56 */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Arial', sans-serif; outline: none; }
-        body { background-color: #0d1117; color: #e6edf3; padding-bottom: 80px; } /* Espaço pro botão flutuante */
+        body { background-color: #0d1117; color: #e6edf3; padding-bottom: 80px; }
         :root { --neon: #00ff88; --bg-dark: #0d1117; --bg-card: #161b22; --border: #30363d; --text-gray: #8b949e; }
         
-        /* HEADER */
         .header { background-color: var(--bg-card); padding: 15px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--neon); box-shadow: 0 2px 10px rgba(0,0,0,0.5); position: sticky; top: 0; z-index: 100; }
         .brand { font-size: 22px; font-weight: 900; color: #fff; font-style: italic; letter-spacing: -1px; } 
         .brand span { color: var(--neon); }
 
-        /* NAVEGAÇÃO DATAS */
         .nav-dates { display: flex; background: var(--bg-dark); border-bottom: 1px solid var(--border); overflow-x: auto; padding: 5px 0; }
         .nav-item { flex: 1; padding: 12px; text-align: center; font-size: 11px; font-weight: bold; color: var(--text-gray); border-bottom: 2px solid transparent; min-width: 80px; cursor: pointer; transition: 0.3s; }
         .nav-item.active { color: var(--neon); border-bottom-color: var(--neon); background: rgba(0, 255, 136, 0.05); }
 
-        /* LISTA DE JOGOS */
         .league-btn { background: linear-gradient(90deg, #161b22, #0d1117); color: #fff; padding: 12px; margin: 8px 5px 2px 5px; border: 1px solid var(--border); border-left: 4px solid var(--neon); border-radius: 4px; font-weight: bold; font-size: 12px; display: flex; justify-content: space-between; align-items: center; text-transform: uppercase; cursor: pointer; }
         .league-btn img { width: 20px; margin-right: 10px; vertical-align: middle; }
         
@@ -39,12 +36,10 @@
         
         .btn-more { width: 45px; background: #21262d; border: 1px solid var(--border); border-radius: 6px; display: flex; align-items: center; justify-content: center; color: var(--text-gray); font-weight: bold; font-size: 12px; cursor: pointer; }
 
-        /* BOTÃO FLUTUANTE (FAB) */
         .fab { position: fixed; bottom: 20px; right: 20px; background: var(--neon); color: #000; padding: 15px 25px; border-radius: 50px; font-weight: 900; font-size: 14px; box-shadow: 0 4px 15px rgba(0, 255, 136, 0.4); cursor: pointer; z-index: 200; display: flex; align-items: center; gap: 10px; transition: 0.3s; }
         .fab:active { transform: scale(0.95); }
         .badge { background: #000; color: #fff; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
 
-        /* MODAIS */
         .modal { position: fixed; inset: 0; background: rgba(0,0,0,0.9); z-index: 300; display: none; justify-content: center; align-items: flex-end; backdrop-filter: blur(2px); }
         .modal-box { background: #161b22; width: 100%; max-height: 90vh; border-radius: 20px 20px 0 0; border-top: 1px solid var(--neon); display: flex; flex-direction: column; overflow: hidden; animation: slideUp 0.3s ease; }
         @keyframes slideUp { from { transform: translateY(100%); } to { transform: translateY(0); } }
@@ -53,7 +48,6 @@
         .modal-close { font-size: 24px; color: #ff4d4d; cursor: pointer; }
         .modal-content { flex: 1; overflow-y: auto; padding: 15px; }
 
-        /* MERCADOS EXTRA */
         .market-group { margin-bottom: 12px; border: 1px solid var(--border); border-radius: 8px; overflow: hidden; }
         .market-header { background: #21262d; padding: 12px; font-size: 12px; font-weight: bold; color: var(--neon); text-transform: uppercase; border-left: 4px solid var(--neon); }
         .market-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: #30363d; }
@@ -61,14 +55,12 @@
         .m-item.active { background: var(--neon); color: #000; } 
         .m-item.active b { color: #000; } .m-item b { color: var(--neon); font-size: 13px; }
 
-        /* ESTILO DO CUPOM (MODAL) */
         .cupom-item { background: #0d1117; border: 1px solid var(--border); border-radius: 8px; padding: 12px; margin-bottom: 10px; position: relative; border-left: 3px solid var(--neon); }
         .cupom-title { color: #fff; font-size: 13px; font-weight: bold; margin-bottom: 4px; }
         .cupom-sel { color: var(--neon); font-size: 12px; font-weight: bold; }
         .cupom-odd { float: right; color: #fff; font-weight: bold; }
         .cupom-del { position: absolute; top: 10px; right: 10px; color: #ff4d4d; font-size: 16px; cursor: pointer; }
 
-        /* INPUTS E RESUMO NO MODAL */
         .input-group { margin-top: 15px; }
         .input-label { display: block; color: var(--text-gray); font-size: 11px; margin-bottom: 5px; font-weight: bold; uppercase; }
         .form-control { width: 100%; background: #0d1117; border: 1px solid var(--border); color: #fff; padding: 12px; border-radius: 6px; font-size: 16px; font-weight: bold; outline: none; }
@@ -83,20 +75,16 @@
     </style>
 </head>
 <body>
-
     <div class="header">
         <div class="brand">GURILA<span>BET</span> 🦍</div>
-        <div style="font-size: 10px; color: #888;">v50</div>
+        <div style="font-size: 10px; color: #888;">v56</div>
     </div>
-    
     <div class="nav-dates">
         <div class="nav-item active" onclick="carregarJogos('hoje', this)">HOJE</div>
         <div class="nav-item" onclick="carregarJogos('amanha', this)">AMANHÃ</div>
         <div class="nav-item" onclick="carregarJogos('depois', this)">SÁBADO</div>
     </div>
-    
     <div id="container-ligas" style="padding-bottom: 20px;"></div>
-
     <div class="fab" onclick="abrirCupom()">
         <i class="fas fa-ticket-alt"></i> BILHETE <span class="badge" id="qtd-cupom">0</span>
     </div>
@@ -119,24 +107,12 @@
             </div>
             <div class="modal-content">
                 <div id="lista-cupom"></div>
-                
-                <div class="input-group">
-                    <label class="input-label">VALOR DA APOSTA (R$)</label>
-                    <input type="number" id="valor-aposta" class="form-control" placeholder="0.00" oninput="atualizarResumo()">
-                </div>
-
-                <div class="input-group">
-                    <label class="input-label">NOME DO CLIENTE</label>
-                    <input type="text" id="cliente" class="form-control" placeholder="Digite o nome...">
-                </div>
-
+                <div class="input-group"><label class="input-label">VALOR DA APOSTA (R$)</label><input type="number" id="valor-aposta" class="form-control" placeholder="0.00" oninput="atualizarResumo()"></div>
+                <div class="input-group"><label class="input-label">NOME DO CLIENTE</label><input type="text" id="cliente" class="form-control" placeholder="Digite o nome..."></div>
                 <div class="summary-box">
                     <div class="summary-row"><span>Odd Total:</span> <b id="resumo-odd">1.00</b></div>
-                    <div class="summary-total">
-                        <span>RETORNO:</span> <span id="resumo-retorno">R$ 0,00</span>
-                    </div>
+                    <div class="summary-total"><span>RETORNO:</span> <span id="resumo-retorno">R$ 0,00</span></div>
                 </div>
-
                 <button onclick="enviarAposta()" class="btn-action">GERAR BILHETE</button>
             </div>
         </div>
@@ -156,10 +132,11 @@
             if(modo==='depois') d.setDate(d.getDate()+2);
             let dataStr = d.toISOString().split('T')[0];
 
-            document.getElementById('container-ligas').innerHTML = `<div style="text-align:center; padding:50px; color:#555;"><i class="fas fa-circle-notch fa-spin"></i> CARREGANDO JOGOS...</div>`;
+            document.getElementById('container-ligas').innerHTML = `<div style="text-align:center; padding:50px; color:#555;"><i class="fas fa-circle-notch fa-spin"></i> ATUALIZANDO ODDS (V56)...</div>`;
 
             try {
-                const res = await fetch(`${API_URL}/api/jogos?data=${dataStr}`);
+                // ADICIONEI ?v=56 NO FINAL PARA FORÇAR ATUALIZAÇÃO E NÃO PEGAR CACHE DO CELULAR
+                const res = await fetch(`${API_URL}/api/jogos?data=${dataStr}&v=56`);
                 JOGOS_TODOS = await res.json();
                 renderizarLigas(JOGOS_TODOS);
             } catch(e) { document.getElementById('container-ligas').innerHTML = `<div style="text-align:center; padding:40px; color:red;">Erro ao carregar jogos.</div>`; }
@@ -167,10 +144,8 @@
 
         function renderizarLigas(lista) {
             if(!lista || !lista.length) return document.getElementById('container-ligas').innerHTML = `<div style="text-align:center; padding:40px; color:#666;">Nenhum jogo disponível nesta data.</div>`;
-            
             const grupos = {};
             lista.forEach(j => { if(!grupos[j.liga]) grupos[j.liga]=[]; grupos[j.liga].push(j); });
-
             let html = '';
             Object.keys(grupos).sort().forEach(liga => {
                 html += `<div class="league-btn" onclick="toggleLiga(this)"><span><img src="${grupos[liga][0].flag}" onerror="this.style.display='none'"> ${liga}</span> <i class="fas fa-chevron-down"></i></div><div class="league-games" style="display:none;">`;
@@ -178,62 +153,35 @@
                     let h = new Date(j.data).toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
                     const qtd = (j.mercados && Array.isArray(j.mercados)) ? j.mercados.length : 0;
                     const btnMais = qtd > 0 ? `<div class="btn-more" onclick="abrirExtras(${j.id}, '${j.home.name} x ${j.away.name}')">+${qtd}</div>` : '';
-                    
                     html += `<div class="game-row">
                         <div class="game-info"><span>${h}</span><span>ID: ${j.id}</span></div>
-                        <div class="teams-names">
-                            <div class="team-row"><img src="${j.home.logo}" onerror="this.style.display='none'"> ${j.home.name}</div>
-                            <div class="team-row"><img src="${j.away.logo}" onerror="this.style.display='none'"> ${j.away.name}</div>
-                        </div>
+                        <div class="teams-names"><div class="team-row"><img src="${j.home.logo}" onerror="this.style.display='none'"> ${j.home.name}</div><div class="team-row"><img src="${j.away.logo}" onerror="this.style.display='none'"> ${j.away.name}</div></div>
                         <div class="odds-container">
                             <div class="odd-sq" onclick="add(this,${j.id},'Casa',${j.odds.casa},'${j.home.name} x ${j.away.name}')"><span>1</span><b>${j.odds.casa}</b></div>
                             <div class="odd-sq" onclick="add(this,${j.id},'Empate',${j.odds.empate},'${j.home.name} x ${j.away.name}')"><span>X</span><b>${j.odds.empate}</b></div>
                             <div class="odd-sq" onclick="add(this,${j.id},'Fora',${j.odds.fora},'${j.home.name} x ${j.away.name}')"><span>2</span><b>${j.odds.fora}</b></div>
                             ${btnMais}
-                        </div>
-                    </div>`;
+                        </div></div>`;
                 });
                 html += `</div>`;
             });
             document.getElementById('container-ligas').innerHTML = html;
         }
 
-        function toggleLiga(el) {
-            const content = el.nextElementSibling;
-            content.style.display = content.style.display==='block' ? 'none' : 'block';
-        }
-
-        // --- LÓGICA DE APOSTA ---
+        function toggleLiga(el) { const c = el.nextElementSibling; c.style.display = c.style.display==='block' ? 'none' : 'block'; }
         function add(el, id, op, odd, nm) {
             const idx = CARRINHO.findIndex(i => i.id === id);
-            if(idx !== -1) { 
-                // Remove anterior se for do mesmo jogo
-                CARRINHO.splice(idx, 1); 
-                // Limpa visual
-                if(el && el.parentElement && el.parentElement.parentElement) {
-                    el.parentElement.parentElement.querySelectorAll('.active').forEach(b=>b.classList.remove('active'));
-                }
-            }
+            if(idx !== -1) { CARRINHO.splice(idx, 1); if(el && el.parentElement && el.parentElement.parentElement) { el.parentElement.parentElement.querySelectorAll('.active').forEach(b=>b.classList.remove('active')); } }
             CARRINHO.push({id, opcao:op, odd, nome:nm});
             if(el) el.classList.add('active');
-            
-            // Atualiza apenas o contador do botão flutuante
             document.getElementById('qtd-cupom').innerText = CARRINHO.length;
-            
-            // Se o modal estiver aberto, atualiza valores
-            if(document.getElementById('modal-cupom').style.display === 'flex') {
-                renderizarListaCupom();
-                atualizarResumo();
-            }
+            if(document.getElementById('modal-cupom').style.display === 'flex') { renderizarListaCupom(); atualizarResumo(); }
         }
-
-        // --- MERCADOS EXTRAS ---
         function abrirExtras(idJogo, nomes) {
             document.getElementById('extra-title').innerText = nomes;
             document.getElementById('modal-mercados').style.display = 'flex';
             const container = document.getElementById('mercados-content');
             container.innerHTML = '<div style="text-align:center; padding:20px; color:#888;">Carregando...</div>';
-            
             const jogo = JOGOS_TODOS.find(j => j.id == idJogo);
             if(jogo && jogo.mercados && Array.isArray(jogo.mercados)) {
                 let html = "";
@@ -242,136 +190,44 @@
                     if(grupo.itens && Array.isArray(grupo.itens)) {
                         grupo.itens.forEach(item => {
                             const sel = CARRINHO.some(c => c.id == idJogo && c.opcao == `${grupo.grupo}: ${item.nome}`) ? 'active' : '';
-                            html += `<div class="m-item ${sel}" onclick="addExtra(this, ${idJogo}, '${grupo.grupo}: ${item.nome}', ${item.odd}, '${nomes}')">
-                                <span>${item.nome}</span><b>${item.odd}</b>
-                            </div>`;
+                            html += `<div class="m-item ${sel}" onclick="addExtra(this, ${idJogo}, '${grupo.grupo}: ${item.nome}', ${item.odd}, '${nomes}')"><span>${item.nome}</span><b>${item.odd}</b></div>`;
                         });
                     }
                     html += `</div></div>`;
                 });
                 container.innerHTML = html;
-            } else {
-                container.innerHTML = '<div style="padding:20px; text-align:center; color:#555;">Sem mercados extras.</div>';
-            }
+            } else { container.innerHTML = '<div style="padding:20px; text-align:center; color:#555;">Sem mercados extras.</div>'; }
         }
-
-        function addExtra(el, id, op, odd, nm) {
-            const pai = el.parentElement;
-            if(pai) pai.querySelectorAll('.active').forEach(b => b.classList.remove('active'));
-            add(null, id, op, odd, nm);
-            el.classList.add('active');
-        }
-
-        // --- CUPOM & CÁLCULOS ---
-        function abrirCupom() {
-            if(CARRINHO.length === 0) return alert("Selecione pelo menos um jogo.");
-            renderizarListaCupom();
-            atualizarResumo(); // Garante que o cálculo comece zerado ou com valor que estiver lá
-            document.getElementById('modal-cupom').style.display = 'flex';
-        }
-
+        function addExtra(el, id, op, odd, nm) { const pai = el.parentElement; if(pai) pai.querySelectorAll('.active').forEach(b => b.classList.remove('active')); add(null, id, op, odd, nm); el.classList.add('active'); }
+        function abrirCupom() { if(CARRINHO.length === 0) return alert("Selecione pelo menos um jogo."); renderizarListaCupom(); atualizarResumo(); document.getElementById('modal-cupom').style.display = 'flex'; }
         function renderizarListaCupom() {
             let html = '';
-            CARRINHO.forEach((i, k) => {
-                html += `<div class="cupom-item">
-                    <div class="cupom-title">${i.nome}</div>
-                    <div><span class="cupom-sel">${i.opcao}</span> <span class="cupom-odd">${i.odd}</span></div>
-                    <div class="cupom-del" onclick="removerItem(${k})">&times;</div>
-                </div>`;
-            });
+            CARRINHO.forEach((i, k) => { html += `<div class="cupom-item"><div class="cupom-title">${i.nome}</div><div><span class="cupom-sel">${i.opcao}</span> <span class="cupom-odd">${i.odd}</span></div><div class="cupom-del" onclick="removerItem(${k})">&times;</div></div>`; });
             document.getElementById('lista-cupom').innerHTML = html;
         }
-
-        function removerItem(k) {
-            const item = CARRINHO[k];
-            CARRINHO.splice(k, 1);
-            
-            // Remove classe active do jogo na tela principal (visual)
-            // Nota: Isso é difícil de fazer 100% perfeito sem re-renderizar, mas o foco é o cálculo.
-            
-            document.getElementById('qtd-cupom').innerText = CARRINHO.length;
-            if(CARRINHO.length === 0) {
-                document.getElementById('modal-cupom').style.display = 'none';
-            } else {
-                renderizarListaCupom();
-                atualizarResumo();
-            }
-        }
-
+        function removerItem(k) { CARRINHO.splice(k, 1); document.getElementById('qtd-cupom').innerText = CARRINHO.length; if(CARRINHO.length === 0) { document.getElementById('modal-cupom').style.display = 'none'; } else { renderizarListaCupom(); atualizarResumo(); } }
         function atualizarResumo() {
             const val = parseFloat(document.getElementById('valor-aposta').value);
             const oddTotal = CARRINHO.reduce((a, i) => a * parseFloat(i.odd), 1);
-            
             document.getElementById('resumo-odd').innerText = oddTotal.toFixed(2);
-            
-            if(!isNaN(val) && val > 0) {
-                const retorno = val * oddTotal;
-                document.getElementById('resumo-retorno').innerText = `R$ ${retorno.toFixed(2)}`;
-            } else {
-                document.getElementById('resumo-retorno').innerText = `R$ 0,00`;
-            }
+            if(!isNaN(val) && val > 0) { document.getElementById('resumo-retorno').innerText = `R$ ${(val * oddTotal).toFixed(2)}`; } else { document.getElementById('resumo-retorno').innerText = `R$ 0,00`; }
         }
-
         async function enviarAposta() {
-            const cli = document.getElementById('cliente').value;
-            const val = document.getElementById('valor-aposta').value;
-            
-            if(!cli) return alert("Por favor, digite o nome do cliente.");
-            if(!val || parseFloat(val) <= 0) return alert("Digite um valor válido para a aposta.");
-
-            const btn = document.querySelector('.btn-action');
-            const txtOriginal = btn.innerText;
-            btn.innerText = "GERANDO...";
-            btn.disabled = true;
-
+            const cli = document.getElementById('cliente').value; const val = document.getElementById('valor-aposta').value;
+            if(!cli) return alert("Nome?"); if(!val || parseFloat(val) <= 0) return alert("Valor?");
+            const btn = document.querySelector('.btn-action'); btn.innerText = "GERANDO..."; btn.disabled = true;
             try {
                 const oddTotal = CARRINHO.reduce((a, i) => a * parseFloat(i.odd), 1);
-                
-                const res = await fetch(`${API_URL}/api/finalizar`, {
-                    method:'POST', 
-                    headers:{'Content-Type':'application/json'}, 
-                    body:JSON.stringify({
-                        usuario_id: 1, 
-                        valor: val, 
-                        apostas: CARRINHO, 
-                        odd_total: oddTotal
-                    })
-                });
-                
+                const res = await fetch(`${API_URL}/api/finalizar`, { method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({ usuario_id: 1, valor: val, apostas: CARRINHO, odd_total: oddTotal }) });
                 const d = await res.json();
-                
                 if(d.sucesso) {
-                    let msg = `🦍 *GURILA BET*\n` +
-                              `🎫 *Bilhete:* ${d.codigo}\n` +
-                              `👤 *Cliente:* ${cli}\n` +
-                              `💰 *Valor:* R$ ${val}\n` +
-                              `🏆 *Retorno:* R$ ${d.retorno}\n` +
-                              `⚠️ *Status:* Aguardando PIX\n\n` +
-                              `📋 *PALPITES:*\n`;
-                    
-                    CARRINHO.forEach(c => { 
-                        msg += `⚽ ${c.nome}\n   ↳ ${c.opcao} (${c.odd})\n\n`; 
-                    });
-                    
+                    let msg = `🦍 *GURILA BET*\n🎫 *Bilhete:* ${d.codigo}\n👤 *Cliente:* ${cli}\n💰 *Valor:* R$ ${val}\n🏆 *Retorno:* R$ ${d.retorno}\n⚠️ *Status:* Aguardando PIX\n\n📋 *PALPITES:*\n`;
+                    CARRINHO.forEach(c => { msg += `⚽ ${c.nome}\n   ↳ ${c.opcao} (${c.odd})\n\n`; });
                     window.open(`https://wa.me/${ZAP_NUMERO}?text=${encodeURIComponent(msg)}`, '_blank');
-                    
-                    // Limpa tudo
-                    CARRINHO = [];
-                    document.getElementById('qtd-cupom').innerText = "0";
-                    document.getElementById('modal-cupom').style.display = 'none';
-                    document.getElementById('valor-aposta').value = "";
-                    document.getElementById('cliente').value = "";
-                    document.querySelectorAll('.active').forEach(b => b.classList.remove('active'));
-                    
-                } else {
-                    alert("Erro: " + d.erro);
-                }
-            } catch(e) { 
-                alert("Erro de conexão."); 
-            }
-            
-            btn.innerText = txtOriginal;
-            btn.disabled = false;
+                    CARRINHO = []; document.getElementById('qtd-cupom').innerText = "0"; document.getElementById('modal-cupom').style.display = 'none'; document.getElementById('valor-aposta').value = ""; document.getElementById('cliente').value = ""; document.querySelectorAll('.active').forEach(b => b.classList.remove('active'));
+                } else { alert("Erro: " + d.erro); }
+            } catch(e) { alert("Erro de conexão."); }
+            btn.innerText = "GERAR BILHETE"; btn.disabled = false;
         }
     </script>
 </body>
