@@ -9,14 +9,20 @@ app.use(cors({ origin: '*' }));
 
 const CONFIG = {
     API_KEY: process.env.API_FOOTBALL_KEY || "SUA_CHAVE_AQUI", 
-    LUCRO_CASA: 0.93, 
-    // Cache de 1 hora para segurança da conta (Modo Seguro)
-    TEMPO_CACHE_MINUTOS: 60, 
+    LUCRO_CASA: 0.94, // Margem ajustada para ficar mais perto da Bet365
+    TEMPO_CACHE_MINUTOS: 20, 
     MIN_VALOR: 2.00,
     MAX_VALOR: 1000.00,
     MAX_PREMIO: 10000.00,
     LIGAS_VIP: ["Premier League", "La Liga", "Serie A", "Brasileirão", "Paulista", "Carioca", "Champions League", "Libertadores"]
 };
+
+// --- CORREÇÃO: ADICIONEI TODOS OS GRANDES DO BRASIL ---
+const TIMES_FORTES = [
+    "Flamengo", "Palmeiras", "Atlético-MG", "Real Madrid", "Barcelona", "Man City", "Liverpool", "PSG", "Bayern", "Inter", "Arsenal", 
+    "Botafogo", "São Paulo", "Corinthians", "Grêmio", "Boca Juniors", "River Plate", "Juventus", "Milan", "Vasco", "Fluminense",
+    "Santos", "Cruzeiro", "Internacional", "Bahia", "Athletico-PR", "Fortaleza"
+];
 
 const TRADUCOES = { "World": "Mundo", "Brazil": "Brasil", "England": "Inglaterra", "Spain": "Espanha", "Italy": "Itália", "Germany": "Alemanha", "France": "França", "Portugal": "Portugal", "Premier League": "Premier League", "Serie A": "Série A", "La Liga": "La Liga", "Carioca - 1": "Carioca", "Paulista - A1": "Paulista A1", "Copa Libertadores": "Libertadores", "UEFA Champions League": "Champions League" };
 function traduzir(txt) { return TRADUCOES[txt] || txt; }
@@ -27,8 +33,8 @@ async function initDb() {
     try {
         await pool.query(`CREATE TABLE IF NOT EXISTS bilhetes (id SERIAL PRIMARY KEY, usuario_id INTEGER, codigo TEXT UNIQUE, valor NUMERIC, retorno NUMERIC, odds_total NUMERIC, status TEXT DEFAULT 'pendente', detalhes JSONB, data TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         await pool.query(`CREATE TABLE IF NOT EXISTS jogos_cache (id SERIAL PRIMARY KEY, data_ref TEXT UNIQUE, json_dados JSONB, atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
-        await pool.query("DELETE FROM jogos_cache"); 
-        console.log("✅ Servidor V66 (Lista Híbrida Full) Online!");
+        await pool.query("DELETE FROM jogos_cache"); // Limpa cache para atualizar o Santos
+        console.log("✅ Servidor V67 (Santos Fix) Online!");
     } catch (e) { console.error(e); }
 }
 initDb();
@@ -39,32 +45,27 @@ app.get('/api/jogos', async (req, res) => {
         const cache = await pool.query("SELECT json_dados, atualizado_em FROM jogos_cache WHERE data_ref = $1", [dataHoje]);
         if (cache.rows.length > 0) {
             const diff = (new Date() - new Date(cache.rows[0].atualizado_em)) / 1000 / 60;
-            if (diff < CONFIG.TEMPO_CACHE_MINUTOS) {
-                console.log(`📦 Cache V66 Válido (${diff.toFixed(0)} min).`);
-                return res.json(cache.rows[0].json_dados);
-            }
+            if (diff < CONFIG.TEMPO_CACHE_MINUTOS) return res.json(cache.rows[0].json_dados);
         }
         
-        console.log(`🌍 V66: Atualizando dados...`);
+        console.log(`🌍 V67: Atualizando dados...`);
         const headers = { 'x-apisports-key': CONFIG.API_KEY };
 
         // 1. Jogos
         const respJogos = await axios.get(`https://v3.football.api-sports.io/fixtures?date=${dataHoje}&timezone=America/Sao_Paulo`, { headers });
         const listaBruta = respJogos.data.response || [];
 
-        // 2. Odds (Modo Seguro 3 Páginas)
+        // 2. Odds (Busca 2 páginas para tentar achar o Santos na real)
         let mapaOdds = {};
-        for (let p = 1; p <= 3; p++) {
+        for (let p = 1; p <= 2; p++) {
             try {
                 const r = await axios.get(`https://v3.football.api-sports.io/odds?date=${dataHoje}&bookmaker=6&timezone=America/Sao_Paulo&page=${p}`, { headers });
-                if (r.data.response) {
-                    r.data.response.forEach(o => { mapaOdds[o.fixture.id] = o.bookmakers[0].bets; });
-                }
+                if (r.data.response) r.data.response.forEach(o => { mapaOdds[o.fixture.id] = o.bookmakers[0].bets; });
                 if (!r.data.paging || r.data.paging.current >= r.data.paging.total) break;
             } catch (e) { break; }
         }
 
-        let jogosFinais = formatarV66(listaBruta, mapaOdds, dataHoje);
+        let jogosFinais = formatarV67(listaBruta, mapaOdds, dataHoje);
         
         if (jogosFinais.length > 0) {
             await pool.query(`INSERT INTO jogos_cache (data_ref, json_dados, atualizado_em) VALUES ($1, $2, NOW()) ON CONFLICT (data_ref) DO UPDATE SET json_dados = $2, atualizado_em = NOW()`, [dataHoje, JSON.stringify(jogosFinais)]);
@@ -73,7 +74,7 @@ app.get('/api/jogos', async (req, res) => {
     } catch (e) { res.json([]); }
 });
 
-function formatarV66(listaJogos, mapaOdds, dataFiltro) {
+function formatarV67(listaJogos, mapaOdds, dataFiltro) {
     return listaJogos.map(j => {
         try {
             const dataLocal = j.fixture.date.substring(0, 10); 
@@ -98,6 +99,7 @@ function formatarV66(listaJogos, mapaOdds, dataFiltro) {
                 const betsReais = mapaOdds[j.fixture.id]; 
                 let oddsBase = null;
 
+                // TENTA PEGAR ODD REAL
                 if (betsReais) {
                     const m1 = betsReais.find(b => b.id === 1);
                     if (m1) {
@@ -109,6 +111,7 @@ function formatarV66(listaJogos, mapaOdds, dataFiltro) {
                     }
                 }
 
+                // SE NÃO ACHAR REAL, SIMULA (AGORA COM SANTOS NA LISTA DE FORTES)
                 if (!oddsBase) oddsBase = gerarOddUnica(j.teams.home.name, j.teams.away.name);
 
                 oddsFinais = {
@@ -117,8 +120,7 @@ function formatarV66(listaJogos, mapaOdds, dataFiltro) {
                     fora: (oddsBase.fora * CONFIG.LUCRO_CASA).toFixed(2)
                 };
                 
-                // MÁGICA V66: Se a API não tiver os mercados extras, a gente CALCULA pra lista ficar cheia.
-                mercadosCalculados = gerarListaHibridaCheia(oddsBase, betsReais);
+                mercadosCalculados = gerarMercadosReais(oddsBase, betsReais);
             }
 
             const ligaNome = `${traduzir(j.league.country)} - ${traduzir(j.league.name)}`.toUpperCase();
@@ -145,19 +147,27 @@ function findOdd(market, label) {
 }
 
 function gerarOddUnica(home, away) {
-    let seed = 0; const combo = home + away;
-    for(let i=0; i<combo.length; i++) seed += combo.charCodeAt(i);
-    const varCasa = (seed % 30) / 100;
-    const varFora = (seed % 20) / 100;
-    return { casa: 2.30 + varCasa, empate: 3.10 + varFora, fora: 2.70 + (0.30 - varCasa) };
+    // Lógica V67: Se o time for forte (Santos), odd cai para 1.50
+    const hStrong = TIMES_FORTES.some(t => home.includes(t));
+    const aStrong = TIMES_FORTES.some(t => away.includes(t));
+    
+    let c = 2.30, e = 3.20, f = 2.80;
+
+    if (hStrong && !aStrong) { c = 1.45; e = 4.20; f = 6.50; } // Casa Forte (Santos)
+    else if (aStrong && !hStrong) { c = 5.80; e = 3.90; f = 1.50; } // Fora Forte
+    
+    // Pequena variação para não ficar cravado
+    c += Math.random() * 0.2; 
+    
+    return { casa: c, empate: e, fora: f };
 }
 
-// --- O SEGREDO DA LISTA CHEIA (V66) ---
-function gerarListaHibridaCheia(base, betsApi) {
+function gerarMercadosReais(base, betsApi) {
     const margem = CONFIG.LUCRO_CASA;
     const fx = (v) => (v * margem).toFixed(2);
-    
-    // 1. GOLS (ID 5) - Se não tiver na API, calcula com base na média
+    const C = base.casa; const E = base.empate; const F = base.fora;
+
+    // Tenta API, se falhar, calcula
     const getGol = (val, padraoOver, padraoUnder) => {
         if(betsApi) {
             const m5 = betsApi.find(b => b.id === 5);
@@ -170,8 +180,7 @@ function gerarListaHibridaCheia(base, betsApi) {
         return { over: fx(padraoOver), under: fx(padraoUnder) }; 
     };
 
-    // 2. AMBAS MARCAM (ID 8) - Se não tiver, calcula
-    let btts = null;
+    let btts = { s: fx(1.90), n: fx(1.80) };
     if(betsApi) {
         const m8 = betsApi.find(b => b.id === 8);
         if(m8) {
@@ -179,40 +188,14 @@ function gerarListaHibridaCheia(base, betsApi) {
             if(s && n) btts = { s: fx(s), n: fx(n) };
         }
     }
-    if(!btts) {
-        // Cálculo matemático
-        let bYes = 1.90; if(base.empate < 3.2) bYes = 1.75;
-        btts = { s: fx(bYes), n: fx((1/(1-(1/bYes)))*1.05) };
-    }
 
-    // 3. CHANCE DUPLA (ID 12) - Se não tiver, calcula
-    let dc = null;
-    if(betsApi) {
-        const m12 = betsApi.find(b => b.id === 12);
-        if(m12) {
-            const ce = findOdd(m12, 'Home/Draw'); const cf = findOdd(m12, 'Home/Away'); const ef = findOdd(m12, 'Draw/Away');
-            if(ce && cf && ef) dc = { c: fx(ce), f: fx(cf), e: fx(ef) };
-        }
-    }
-    if(!dc) {
-        const C=base.casa, E=base.empate, F=base.fora;
-        dc = { 
-            c: fx(1/(1/C + 1/E)), 
-            f: fx(1/(1/C + 1/F)), 
-            e: fx(1/(1/E + 1/F)) 
-        };
-    }
-
-    // LISTA GIGANTE GARANTIDA
     return [
         {
             grupo: "Total de Gols",
             itens: [
-                { nome: "Mais 0.5", odd: getGol(0.5, 1.06, 10.0).over }, { nome: "Menos 0.5", odd: getGol(0.5, 1.06, 10.0).under },
-                { nome: "Mais 1.5", odd: getGol(1.5, 1.29, 3.40).over }, { nome: "Menos 1.5", odd: getGol(1.5, 1.29, 3.40).under },
+                { nome: "Mais 1.5", odd: getGol(1.5, 1.28, 3.40).over }, { nome: "Menos 1.5", odd: getGol(1.5, 1.28, 3.40).under },
                 { nome: "Mais 2.5", odd: getGol(2.5, 1.95, 1.85).over }, { nome: "Menos 2.5", odd: getGol(2.5, 1.95, 1.85).under },
-                { nome: "Mais 3.5", odd: getGol(3.5, 3.30, 1.30).over }, { nome: "Menos 3.5", odd: getGol(3.5, 3.30, 1.30).under },
-                { nome: "Mais 4.5", odd: getGol(4.5, 6.50, 1.10).over }, { nome: "Menos 4.5", odd: getGol(4.5, 6.50, 1.10).under }
+                { nome: "Mais 3.5", odd: getGol(3.5, 3.30, 1.30).over }, { nome: "Menos 3.5", odd: getGol(3.5, 3.30, 1.30).under }
             ]
         },
         {
@@ -221,21 +204,18 @@ function gerarListaHibridaCheia(base, betsApi) {
         },
         {
             grupo: "Chance Dupla",
-            itens: [ { nome: "Casa/Empate", odd: dc.c }, { nome: "Casa/Fora", odd: dc.f }, { nome: "Empate/Fora", odd: dc.e } ]
+            itens: [ 
+                { nome: "Casa/Empate", odd: fx(1.0 + (1/C)) }, 
+                { nome: "Casa/Fora", odd: fx(1.25) }, 
+                { nome: "Empate/Fora", odd: fx(1.0 + (1/F)) } 
+            ]
         },
         {
             grupo: "Placar Exato",
             itens: [
-                { nome: "1-0", odd: fx(base.casa * 3.1) }, { nome: "2-0", odd: fx(base.casa * 4.9) }, { nome: "2-1", odd: fx(base.casa * 5.5) },
-                { nome: "0-1", odd: fx(base.fora * 3.1) }, { nome: "0-2", odd: fx(base.fora * 4.9) }, { nome: "1-2", odd: fx(base.fora * 5.5) },
-                { nome: "0-0", odd: fx(8.50) }, { nome: "1-1", odd: fx(6.00) }, { nome: "2-2", odd: fx(14.0) }
-            ]
-        },
-        {
-            grupo: "Handicap Europeu",
-            itens: [
-                { nome: "Casa -1", odd: fx(base.casa*2.4) }, { nome: "Fora +1", odd: fx(1.25) },
-                { nome: "Casa +1", odd: fx(1.12) }, { nome: "Fora -1", odd: fx(base.fora*2.4) }
+                { nome: "1-0", odd: fx(C*3.2) }, { nome: "2-0", odd: fx(C*5.0) },
+                { nome: "0-1", odd: fx(F*3.2) }, { nome: "0-2", odd: fx(F*5.0) },
+                { nome: "1-1", odd: fx(6.50) }, { nome: "0-0", odd: fx(8.50) }
             ]
         }
     ];
@@ -255,4 +235,4 @@ app.post('/api/finalizar', async (req, res) => {
 });
 app.get('/api/admin/resumo', async (req, res) => { try { const f = await pool.query(`SELECT COUNT(*) as t, SUM(valor) as e, SUM(retorno) as r FROM bilhetes`); const u = await pool.query(`SELECT codigo, valor, retorno, data FROM bilhetes ORDER BY data DESC LIMIT 10`); res.json({ caixa: { total: f.rows[0].t, entrada: `R$ ${parseFloat(f.rows[0].e||0).toFixed(2)}`, risco: `R$ ${parseFloat(f.rows[0].r||0).toFixed(2)}` }, ultimos: u.rows }); } catch (e) { res.status(500).json({ erro: "Erro" }); } });
 app.post('/api/login', async (req, res) => { res.json({sucesso:false}); });
-app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V66 On!"));
+app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V67 (Santos Fix) On!"));
