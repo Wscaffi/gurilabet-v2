@@ -5,7 +5,7 @@
     <title>GURILA BET</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        /* VISUAL CLEAN V57 - SEM BARRA VELHA */
+        /* VISUAL MODERN V58 (SEM BARRA SUPERIOR) */
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Arial', sans-serif; outline: none; }
         body { background-color: #0d1117; color: #e6edf3; padding-bottom: 80px; }
         :root { --neon: #00ff88; --bg-dark: #0d1117; --bg-card: #161b22; --border: #30363d; --text-gray: #8b949e; }
@@ -77,7 +77,7 @@
 <body>
     <div class="header">
         <div class="brand">GURILA<span>BET</span> 🦍</div>
-        <div style="font-size: 10px; color: #888;">v57</div>
+        <div style="font-size: 10px; color: #888;">v58</div>
     </div>
     
     <div class="nav-dates">
@@ -125,7 +125,7 @@
         const API_URL = 'https://gurilabet-v2-production.up.railway.app'; 
         const ZAP_NUMERO = "5561995478204"; 
         
-        // --- CORREÇÃO DO LOGO DO FLAMENGO ---
+        // --- FIX LOGO FLAMENGO ---
         const LOGO_FLAMENGO = "https://media.api-sports.io/football/teams/127.png"; 
         const IMG_ERRO = "https://cdn-icons-png.flaticon.com/512/861/861512.png"; 
         
@@ -140,11 +140,11 @@
             if(modo==='depois') d.setDate(d.getDate()+2);
             let dataStr = d.toISOString().split('T')[0];
 
-            document.getElementById('container-ligas').innerHTML = `<div style="text-align:center; padding:50px; color:#555;"><i class="fas fa-circle-notch fa-spin"></i> ATUALIZANDO (V57)...</div>`;
+            document.getElementById('container-ligas').innerHTML = `<div style="text-align:center; padding:50px; color:#555;"><i class="fas fa-circle-notch fa-spin"></i> ATUALIZANDO V58...</div>`;
 
             try {
-                // FORÇA ATUALIZAÇÃO
-                const res = await fetch(`${API_URL}/api/jogos?data=${dataStr}&v=57`);
+                // PARAMETRO T PARA FORÇAR ATUALIZAÇÃO NO CELULAR
+                const res = await fetch(`${API_URL}/api/jogos?data=${dataStr}&t=${Date.now()}`);
                 JOGOS_TODOS = await res.json();
                 renderizarLigas(JOGOS_TODOS);
             } catch(e) { document.getElementById('container-ligas').innerHTML = `<div style="text-align:center; padding:40px; color:red;">Erro ao carregar jogos.</div>`; }
@@ -162,7 +162,6 @@
                     const qtd = (j.mercados && Array.isArray(j.mercados)) ? j.mercados.length : 0;
                     const btnMais = qtd > 0 ? `<div class="btn-more" onclick="abrirExtras(${j.id}, '${j.home.name} x ${j.away.name}')">+${qtd}</div>` : '';
                     
-                    // FIX LOGO FLAMENGO
                     let logoCasa = j.home.logo; let logoFora = j.away.logo;
                     if(j.home.name.includes("Flamengo")) logoCasa = LOGO_FLAMENGO;
                     if(j.away.name.includes("Flamengo")) logoFora = LOGO_FLAMENGO;
