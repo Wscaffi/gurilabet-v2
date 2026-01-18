@@ -239,4 +239,11 @@ app.post('/api/finalizar', async (req, res) => {
         let oddTotal = 1.0; apostas.forEach(a => oddTotal *= parseFloat(a.odd));
         let retorno = parseFloat(valor) * oddTotal;
         if(retorno > CONFIG.MAX_PREMIO) retorno = CONFIG.MAX_PREMIO;
-        const codigo = "GB" + Math.floor(100
+        const codigo = "GB" + Math.floor(100000 + Math.random() * 900000);
+        await pool.query('INSERT INTO bilhetes (usuario_id, codigo, valor, retorno, odds_total, detalhes) VALUES ($1, $2, $3, $4, $5, $6)', [usuario_id||1, codigo, valor, retorno.toFixed(2), oddTotal.toFixed(2), JSON.stringify(apostas)]);
+        res.json({sucesso: true, codigo, retorno: retorno.toFixed(2)});
+    } catch (e) { res.status(500).json({erro: "Erro"}); }
+});
+app.get('/api/admin/resumo', async (req, res) => { try { const f = await pool.query(`SELECT COUNT(*) as t, SUM(valor) as e, SUM(retorno) as r FROM bilhetes`); const u = await pool.query(`SELECT codigo, valor, retorno, data FROM bilhetes ORDER BY data DESC LIMIT 10`); res.json({ caixa: { total: f.rows[0].t, entrada: `R$ ${parseFloat(f.rows[0].e||0).toFixed(2)}`, risco: `R$ ${parseFloat(f.rows[0].r||0).toFixed(2)}` }, ultimos: u.rows }); } catch (e) { res.status(500).json({ erro: "Erro" }); } });
+app.post('/api/login', async (req, res) => { res.json({sucesso:false}); });
+app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V65 On!"));
