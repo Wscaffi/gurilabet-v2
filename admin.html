@@ -1,18 +1,116 @@
-<body style="background:#000; color:#0f0; font-family:monospace; padding:20px;">
-    <h2>SISTEMA GURILA BET - BILHETES GERADOS</h2>
-    <div id="lista"></div>
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+    <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GURILA ADMIN 🦍</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        /* CSS DO PAINEL (TEMA PRETO) */
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Arial', sans-serif; }
+        body { background-color: #0d1117; color: #e6edf3; padding: 20px; }
+        h1 { color: #00ff88; text-align: center; font-style: italic; margin-bottom: 20px; }
+        
+        .card { background: #161b22; border: 1px solid #30363d; padding: 15px; margin-bottom: 15px; border-radius: 10px; border-left: 5px solid orange; box-shadow: 0 4px 6px rgba(0,0,0,0.3); }
+        .header { display: flex; justify-content: space-between; margin-bottom: 10px; border-bottom: 1px solid #333; padding-bottom: 10px; }
+        .code { font-size: 18px; font-weight: 900; color: #fff; }
+        .client { color: #888; font-size: 14px; text-transform: uppercase; font-weight: bold; }
+        
+        .info { display: flex; justify-content: space-between; margin-bottom: 15px; font-size: 14px; }
+        .val { color: #00ff88; font-weight: bold; font-size: 16px; }
+        
+        .games { background: #000; padding: 10px; border-radius: 6px; font-size: 11px; color: #ccc; margin-bottom: 15px; max-height: 150px; overflow-y: auto; }
+        .game-row { border-bottom: 1px solid #333; padding: 5px 0; }
+        .game-row b { color: #fff; }
+
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 5px; font-size: 14px; }
+        .btn-validar { background: #00ff88; color: #000; }
+        .btn-excluir { background: #ff4d4d; color: #fff; }
+    </style>
+</head>
+<body>
+
+    <h1>PAINEL ADMIN 🦍</h1>
+    <div id="lista" style="max-width: 600px; margin: 0 auto;">
+        <div style="text-align:center; color:#555;">Carregando bilhetes...</div>
+    </div>
+
     <script>
-        const API_URL = 'SUA_URL_DO_RAILWAY';
-        async function load() {
-            const res = await fetch(API_URL + '/api/admin/bilhetes');
-            const data = await res.json();
-            document.getElementById('lista').innerHTML = data.map(b => `
-                <div style="border:1px solid #333; padding:10px; margin-bottom:10px;">
-                    <b>COD: ${b.codigo}</b> | R$ ${b.valor} -> Retorno: R$ ${b.retorno}<br>
-                    Jogo: ${b.times} | Palpite: ${b.palpite} | Status: ${b.status}
-                </div>
-            `).join('');
+        const API = 'https://gurilabet-v2-production.up.railway.app'; 
+
+        // Atualiza a cada 5 segundos
+        setInterval(carregar, 5000);
+        window.onload = carregar;
+
+        async function carregar() {
+            try {
+                const res = await fetch(`${API}/api/admin/pendentes`);
+                const lista = await res.json();
+                const div = document.getElementById('lista');
+                
+                if(lista.length === 0) {
+                    div.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Nenhum bilhete pendente.</div>';
+                    return;
+                }
+
+                let html = '';
+                lista.forEach(b => {
+                    const apostas = JSON.parse(b.detalhes);
+                    let palpitesHtml = '';
+                    apostas.forEach(p => {
+                        palpitesHtml += `<div class="game-row">⚽ ${p.nome}<br>↳ <b>${p.opcao}</b> (${p.odd})</div>`;
+                    });
+
+                    html += `
+                    <div class="card">
+                        <div class="header">
+                            <div>
+                                <div class="code">${b.codigo}</div>
+                                <div class="client"><i class="fas fa-user"></i> ${b.cliente || 'Sem Nome'}</div>
+                            </div>
+                            <div style="font-size:10px; color:orange; font-weight:bold;">PENDENTE</div>
+                        </div>
+                        <div class="info">
+                            <div>Aposta: <span class="val">R$ ${b.valor}</span></div>
+                            <div>Retorno: <span>R$ ${b.retorno}</span></div>
+                        </div>
+                        <div class="games">${palpitesHtml}</div>
+                        <button class="btn btn-validar" onclick="validar('${b.codigo}', '${b.cliente}', '${b.valor}', '${b.retorno}')">✅ VALIDAR E ENVIAR ZAP</button>
+                        <button class="btn btn-excluir" onclick="excluir('${b.codigo}')">🗑️ EXCLUIR</button>
+                    </div>`;
+                });
+                div.innerHTML = html;
+            } catch(e) { console.log("Erro conexão admin"); }
         }
-        load();
+
+        async function validar(cod, cli, val, ret) {
+            if(!confirm(`Validar aposta de ${cli}?`)) return;
+            try {
+                await fetch(`${API}/api/admin/validar`, {
+                    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({codigo:cod})
+                });
+                
+                // MENSAGEM WHATSAPP DE VALIDAÇÃO
+                const msg = `✅ *GURILA BET - APOSTA CONFIRMADA*\n\n` +
+                            `🎫 *Bilhete:* ${cod}\n` +
+                            `👤 *Cliente:* ${cli}\n` +
+                            `💰 *Aposta:* R$ ${val}\n` +
+                            `🏆 *Retorno:* R$ ${ret}\n\n` +
+                            `Boa sorte! 🦍🍀`;
+                
+                window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
+                carregar(); // Atualiza a lista
+            } catch(e) { alert("Erro ao validar"); }
+        }
+
+        async function excluir(cod) {
+            if(!confirm("Excluir bilhete?")) return;
+            try {
+                await fetch(`${API}/api/admin/excluir`, {
+                    method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({codigo:cod})
+                });
+                carregar();
+            } catch(e) { alert("Erro ao excluir"); }
+        }
     </script>
 </body>
+</html>
