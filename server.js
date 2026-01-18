@@ -10,7 +10,7 @@ app.use(cors({ origin: '*' }));
 const CONFIG = {
     API_KEY: process.env.API_FOOTBALL_KEY || "SUA_CHAVE_AQUI", 
     LUCRO_CASA: 0.90, 
-    TEMPO_CACHE_MINUTOS: 15, // Cache curto para garantir limpeza de jogos acabados
+    TEMPO_CACHE_MINUTOS: 10, // Cache curto
     MIN_VALOR: 2.00,
     MAX_VALOR: 1000.00,
     MAX_PREMIO: 10000.00,
@@ -27,8 +27,10 @@ async function initDb() {
     try {
         await pool.query(`CREATE TABLE IF NOT EXISTS bilhetes (id SERIAL PRIMARY KEY, usuario_id INTEGER, codigo TEXT UNIQUE, valor NUMERIC, retorno NUMERIC, odds_total NUMERIC, status TEXT DEFAULT 'pendente', detalhes JSONB, data TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         await pool.query(`CREATE TABLE IF NOT EXISTS jogos_cache (id SERIAL PRIMARY KEY, data_ref TEXT UNIQUE, json_dados JSONB, atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
-        await pool.query("DELETE FROM jogos_cache"); // Limpa memória ao iniciar
-        console.log("✅ Servidor V57 (Filtro Tempo + Visual Moderno) Online!");
+        
+        // LIMPEZA FORÇADA AO INICIAR
+        await pool.query("DELETE FROM jogos_cache");
+        console.log("✅ Servidor V58 (Timezone Brasil + Visual Clean) Online!");
     } catch (e) { console.error(e); }
 }
 initDb();
@@ -42,14 +44,14 @@ app.get('/api/jogos', async (req, res) => {
             if (diff < CONFIG.TEMPO_CACHE_MINUTOS) return res.json(cache.rows[0].json_dados);
         }
         
-        console.log("🌍 Buscando API (V57)...");
+        console.log("🌍 V58: Buscando na API (Timezone BR)...");
         const headers = { 'x-apisports-key': CONFIG.API_KEY };
 
         // 1. Busca Jogos
         const respJogos = await axios.get(`https://v3.football.api-sports.io/fixtures?date=${dataHoje}&timezone=America/Sao_Paulo`, { headers });
         const listaBruta = respJogos.data.response || [];
 
-        // 2. Busca Odds (Tentativa)
+        // 2. Busca Odds
         let mapaOdds = {};
         try {
             const respOdds = await axios.get(`https://v3.football.api-sports.io/odds?date=${dataHoje}&bookmaker=6&timezone=America/Sao_Paulo`, { headers });
@@ -58,7 +60,7 @@ app.get('/api/jogos', async (req, res) => {
             }
         } catch (e) { console.log("⚠️ API Odds limitou."); }
 
-        let jogosFinais = formatarV57(listaBruta, mapaOdds);
+        let jogosFinais = formatarV58(listaBruta, mapaOdds);
         
         if (jogosFinais.length > 0) {
             await pool.query(`INSERT INTO jogos_cache (data_ref, json_dados, atualizado_em) VALUES ($1, $2, NOW()) ON CONFLICT (data_ref) DO UPDATE SET json_dados = $2, atualizado_em = NOW()`, [dataHoje, JSON.stringify(jogosFinais)]);
@@ -67,21 +69,17 @@ app.get('/api/jogos', async (req, res) => {
     } catch (e) { res.json([]); }
 });
 
-function formatarV57(listaJogos, mapaOdds) {
-    const agora = Date.now(); // Hora atual em MS
-
+function formatarV58(listaJogos, mapaOdds) {
     return listaJogos.map(j => {
         try {
-            // --- FILTRO DE TEMPO E STATUS ---
             const st = j.fixture.status.short;
-            const horaJogo = new Date(j.fixture.date).getTime();
             
-            // 1. Se o status diz que acabou ou tá rolando -> TCHAU
+            // --- FILTRO DE OURO V58 ---
+            // 1. Se acabou (FT) ou tá rolando (1H/2H) -> TCHAU.
             if (['FT', 'AET', 'PEN', '1H', '2H', 'HT', 'ET', 'P', 'BT', 'INT'].includes(st)) return null;
-            
-            // 2. TRAVA DE SEGURANÇA: Se o jogo começou há mais de 10 minutos e ainda tá como 'NS' (erro da API), esconde.
-            // (Dá uma tolerância de 15 min pro jogo começar)
-            if (horaJogo < (agora - 15 * 60 * 1000) && st === 'NS') return null;
+
+            // 2. Se é "NS" (Não iniciado), deixa passar SEMPRE, mesmo que esteja atrasado.
+            // Isso garante que o jogo do Flamengo apareça mesmo se tiver delay na API.
 
             const oddsReais = mapaOdds[j.fixture.id]; 
             let oddsBase;
@@ -107,8 +105,8 @@ function formatarV57(listaJogos, mapaOdds) {
                 fora: (oddsBase.fora * CONFIG.LUCRO_CASA).toFixed(2)
             };
             
-            // USA A LISTA GIGANTE AGORA
-            const mercadosCalculados = gerarMercadosCompletosV57(oddsBase);
+            // LISTA GIGANTE DE MERCADOS (SEM ODD REPETIDA)
+            const mercadosCalculados = gerarMercadosCompletosV58(oddsBase);
 
             const ligaNome = `${traduzir(j.league.country)} - ${traduzir(j.league.name)}`.toUpperCase();
             return {
@@ -134,34 +132,33 @@ function gerarOddUnica(home, away) {
     return { casa: 2.30 + varCasa, empate: 3.10 + varFora, fora: 2.70 + (0.30 - varCasa) };
 }
 
-// --- LISTA GIGANTE (ESTILO V46) COM MATEMÁTICA REAL (ESTILO V56) ---
-function gerarMercadosCompletosV57(base) {
+function gerarMercadosCompletosV58(base) {
     const margem = CONFIG.LUCRO_CASA;
     const fx = (v) => (v * margem).toFixed(2);
     
     const C = base.casa; const E = base.empate; const F = base.fora;
-
-    // Matemáticas
+    
+    // Cálculo de probabilidades reais
     const probC = 1/C; const probE = 1/E; const probF = 1/F;
     const dc1X = 1 / (probC + probE);
     const dc12 = 1 / (probC + probF);
     const dcX2 = 1 / (probE + probF);
 
     let bttsYes = 1.95; 
-    if(E < 3.0) bttsYes = 1.80; 
-    if(C < 1.4 || F < 1.4) bttsYes = 2.15;
+    if(E < 3.2) bttsYes = 1.75; // Jogo parelho = BTTS provável
+    if(C < 1.4 || F < 1.4) bttsYes = 2.10; // Jogo desequilibrado
     const bttsNo = (1 / (1 - (1/bttsYes))) * 1.05;
 
     return [
         {
             grupo: "Total de Gols",
             itens: [
-                { nome: "Mais 0.5", odd: fx(1.06) }, { nome: "Menos 0.5", odd: fx(9.50) },
-                { nome: "Mais 1.5", odd: fx(1.28 + (E/15)) }, { nome: "Menos 1.5", odd: fx(3.30) },
-                { nome: "Mais 2.5", odd: fx(1.90 + (E/20)) }, { nome: "Menos 2.5", odd: fx(1.80) },
-                { nome: "Mais 3.5", odd: fx(3.20) }, { nome: "Menos 3.5", odd: fx(1.25) },
+                { nome: "Mais 0.5", odd: fx(1.06) }, { nome: "Menos 0.5", odd: fx(10.0) },
+                { nome: "Mais 1.5", odd: fx(1.29) }, { nome: "Menos 1.5", odd: fx(3.40) },
+                { nome: "Mais 2.5", odd: fx(1.95) }, { nome: "Menos 2.5", odd: fx(1.85) },
+                { nome: "Mais 3.5", odd: fx(3.30) }, { nome: "Menos 3.5", odd: fx(1.30) },
                 { nome: "Mais 4.5", odd: fx(6.50) }, { nome: "Menos 4.5", odd: fx(1.10) },
-                { nome: "Mais 5.5", odd: fx(12.0) }, { nome: "Menos 5.5", odd: fx(1.02) }
+                { nome: "Mais 5.5", odd: fx(13.0) }, { nome: "Menos 5.5", odd: fx(1.02) }
             ]
         },
         {
@@ -174,7 +171,7 @@ function gerarMercadosCompletosV57(base) {
         },
         {
             grupo: "Empate não tem aposta",
-            itens: [ { nome: "Casa", odd: fx(C*0.7) }, { nome: "Fora", odd: fx(F*0.7) } ]
+            itens: [ { nome: "Casa", odd: fx(C*0.75) }, { nome: "Fora", odd: fx(F*0.75) } ]
         },
         {
             grupo: "Vencedor 1º Tempo",
@@ -185,7 +182,7 @@ function gerarMercadosCompletosV57(base) {
             itens: [
                 { nome: "1-0", odd: fx(C * 3.1) }, { nome: "2-0", odd: fx(C * 4.9) }, { nome: "2-1", odd: fx(C*5.5) },
                 { nome: "0-1", odd: fx(F * 3.1) }, { nome: "0-2", odd: fx(F * 4.9) }, { nome: "1-2", odd: fx(F*5.5) },
-                { nome: "1-1", odd: fx(E * 1.9) }, { nome: "0-0", odd: fx(8.50) }, { nome: "2-2", odd: fx(13.0) }
+                { nome: "0-0", odd: fx(8.50) }, { nome: "1-1", odd: fx(6.00) }, { nome: "2-2", odd: fx(14.0) }
             ]
         },
         {
@@ -212,4 +209,4 @@ app.post('/api/finalizar', async (req, res) => {
 });
 app.get('/api/admin/resumo', async (req, res) => { try { const f = await pool.query(`SELECT COUNT(*) as t, SUM(valor) as e, SUM(retorno) as r FROM bilhetes`); const u = await pool.query(`SELECT codigo, valor, retorno, data FROM bilhetes ORDER BY data DESC LIMIT 10`); res.json({ caixa: { total: f.rows[0].t, entrada: `R$ ${parseFloat(f.rows[0].e||0).toFixed(2)}`, risco: `R$ ${parseFloat(f.rows[0].r||0).toFixed(2)}` }, ultimos: u.rows }); } catch (e) { res.status(500).json({ erro: "Erro" }); } });
 app.post('/api/login', async (req, res) => { res.json({sucesso:false}); });
-app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V57 On!"));
+app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V58 On!"));
