@@ -93,6 +93,13 @@
 
         .btn-action { width: 100%; background: var(--neon); color: #000; border: none; padding: 15px; font-size: 16px; font-weight: 900; border-radius: 8px; margin-top: 15px; cursor: pointer; text-transform: uppercase; }
         .btn-action:active { transform: scale(0.98); }
+        
+        .btn-action:disabled {
+            background: #555;
+            color: #888;
+            cursor: not-allowed;
+            transform: none;
+        }
     </style>
 </head>
 <body>
@@ -268,16 +275,20 @@
             if(!isNaN(val) && val > 0) { document.getElementById('resumo-retorno').innerText = `R$ ${(val * oddTotal).toFixed(2)}`; } else { document.getElementById('resumo-retorno').innerText = `R$ 0,00`; }
         }
 
-        // FUNÇÃO DE ENVIO V75 (COM PROTEÇÃO)
+        // ============================================
+        // FUNÇÃO DE ENVIO CORRIGIDA (V77) - TRATA ERRO E DESTRAVA
+        // ============================================
         async function enviarAposta(forcar = false) {
             const cli = document.getElementById('cliente').value; 
             const val = document.getElementById('valor-aposta').value;
             
-            if(!cli) return alert("Nome?"); 
-            if(!val || parseFloat(val) <= 0) return alert("Valor?");
+            if(!cli) return alert("Por favor, digite o nome do cliente."); 
+            if(!val || parseFloat(val) <= 0) return alert("Digite um valor válido para a aposta.");
             
             const btn = document.querySelector('.btn-action'); 
-            btn.innerText = "VERIFICANDO ODDS..."; 
+            
+            // Trava o botão e muda o texto
+            btn.innerText = "PROCESSANDO..."; 
             btn.disabled = true;
             
             try {
@@ -296,9 +307,16 @@
                     }) 
                 });
                 
+                // 1. Verifica se o servidor respondeu com erro (ex: 500 ou 404)
+                if (!res.ok) {
+                    const textoErro = await res.text();
+                    // Joga um erro proposital para cair no catch
+                    throw new Error(`Erro do Servidor (${res.status}): ${textoErro.substring(0, 50)}...`);
+                }
+
                 const d = await res.json();
                 
-                // VERIFICA SE O SERVIDOR DEVOLVEU AVISO DE MUDANÇA
+                // 2. Verifica mudança de Odds
                 if(d.aviso_mudanca) {
                     let texto = "⚠️ ATENÇÃO: ALGUMAS ODDS MUDARAM!\n\n";
                     d.mudancas.forEach(m => {
@@ -309,22 +327,28 @@
                     texto += "Deseja continuar com as novas odds?";
                     
                     if(confirm(texto)) {
-                        renderizarListaCupom(); 
-                        atualizarResumo();     
-                        enviarAposta(true);    // REENVIA ACEITANDO A MUDANÇA
+                        renderizarListaCupom();  
+                        atualizarResumo();       
+                        // Tenta enviar de novo confirmando
+                        enviarAposta(true).catch(e => {
+                            console.error(e);
+                            btn.innerText = "GERAR BILHETE";
+                            btn.disabled = false;
+                        });
+                        return; // Sai da função atual
                     } else {
-                        btn.innerText = "GERAR BILHETE";
-                        btn.disabled = false;
                         alert("Aposta cancelada. Verifique as novas odds no cupom.");
                         renderizarListaCupom();
                         atualizarResumo();
+                        // O finally vai rodar e destravar o botão
+                        return; 
                     }
-                    return;
                 }
 
                 if(d.sucesso) {
                     let msg = `🦍 *GURILA BET*\n🎫 *Bilhete:* ${d.codigo}\n👤 *Cliente:* ${cli}\n💰 *Valor:* R$ ${val}\n🏆 *Retorno:* R$ ${d.retorno}\n⚠️ *Status:* Aguardando Confirmação\n\n📋 *PALPITES:*\n`;
                     CARRINHO.forEach(c => { msg += `⚽ ${c.nome}\n   ↳ ${c.opcao} (${c.odd})\n\n`; });
+                    
                     window.open(`https://wa.me/${ZAP_NUMERO}?text=${encodeURIComponent(msg)}`, '_blank');
                     
                     CARRINHO = []; 
@@ -334,14 +358,21 @@
                     document.getElementById('cliente').value = ""; 
                     document.querySelectorAll('.active').forEach(b => b.classList.remove('active'));
                 } else { 
-                    alert("Erro: " + (d.erro || "Desconhecido")); 
+                    // 3. Mostra o erro real se o JSON tiver um campo de erro
+                    const msgErro = d.erro || d.error || d.message || "Erro desconhecido ao processar aposta.";
+                    alert("Atenção: " + msgErro); 
                 }
             } catch(e) { 
-                console.error(e);
-                alert("Erro de conexão."); 
+                console.error("Erro completo:", e);
+                // Aqui mostramos o erro real no alerta
+                alert("Falha técnica: " + e.message); 
+            } finally {
+                // 4. SEMPRE destrava o botão no final
+                setTimeout(() => {
+                    btn.innerText = "GERAR BILHETE"; 
+                    btn.disabled = false;
+                }, 500);
             }
-            btn.innerText = "GERAR BILHETE"; 
-            btn.disabled = false;
         }
     </script>
 </body>
