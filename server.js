@@ -8,25 +8,30 @@ app.use(express.json());
 app.use(cors({ origin: '*' }));
 
 // =====================================================
-// CONFIGURAÇÕES GERAIS - V88 (CORREÇÃO DE ID + TRAVA)
+// CONFIGURAÇÕES GERAIS - V89 (BUSCA QUALQUER CASA DE APOSTA)
 // =====================================================
 const CONFIG = {
     API_KEY: process.env.API_FOOTBALL_KEY || "SUA_CHAVE_AQUI", 
-    LUCRO_CASA: 0.98, 
+    
+    // COLOQUEI 1.0 PARA A ODD FICAR IDÊNTICA À DA BET365/API (SEM DESCONTO)
+    // Se quiser lucrar depois, mude para 0.95 ou 0.90
+    LUCRO_CASA: 1.00, 
+    
     TEMPO_CACHE_MINUTOS: 45, 
     MIN_VALOR: 2.00,
     MAX_VALOR: 1000.00,
     MAX_PREMIO: 10000.00,
-    MAX_PAGINAS_ODDS: 10 
+    
+    // Aumentei para garantir que leia todos os jogos
+    MAX_PAGINAS_ODDS: 15 
 };
 
-// LISTA DE TIMES FORTES (Para garantir mercados se a API falhar)
+// TIMES FORTES (Só usa se a API falhar TOTALMENTE em todas as casas)
 const TIMES_FORTES = [
     "flamengo", "palmeiras", "atletico-mg", "real madrid", "barcelona", "man city", "liverpool", "psg", "bayern", "inter", "arsenal", 
     "botafogo", "sao paulo", "corinthians", "gremio", "boca juniors", "river plate", "juventus", "milan", "vasco", "fluminense",
     "santos", "cruzeiro", "internacional", "bahia", "athletico-pr", "fortaleza", "vitoria", "sport", "ceara",
-    "bragantino", "red bull", "rb bragantino", "cuiaba", "atletico-go", "juventude", "chelsea", "man utd", "tottenham", "napoli", 
-    "benfica", "porto", "sporting", "ajax", "dortmund", "atletico madrid", "novorizontino", "ponte preta", "guarani"
+    "bragantino", "red bull", "rb bragantino", "cuiaba", "atletico-go", "juventude", "chelsea", "man utd", "tottenham", "napoli"
 ];
 
 const TRADUCOES = { "World": "Mundo", "Brazil": "Brasil", "England": "Inglaterra", "Spain": "Espanha", "Italy": "Itália", "Germany": "Alemanha", "France": "França", "Portugal": "Portugal", "Premier League": "Premier League", "Serie A": "Série A", "La Liga": "La Liga", "Carioca - 1": "Carioca", "Paulista - A1": "Paulista A1", "Copa Libertadores": "Libertadores" };
@@ -42,7 +47,7 @@ async function initDb() {
         await pool.query(`ALTER TABLE bilhetes ADD COLUMN IF NOT EXISTS cliente TEXT`);
         await pool.query(`ALTER TABLE bilhetes ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'pendente'`);
         await pool.query(`ALTER TABLE bilhetes ADD COLUMN IF NOT EXISTS detalhes JSONB`);
-        console.log("✅ Servidor V88 (Correção Bug ID) Online!");
+        console.log("✅ Servidor V89 (Odds Reais - Qualquer Casa) Online!");
     } catch (e) { console.error("Erro Banco:", e.message); }
 }
 initDb();
@@ -57,7 +62,7 @@ app.get('/api/jogos', async (req, res) => {
             if (diff < CONFIG.TEMPO_CACHE_MINUTOS) return res.json(cache.rows[0].json_dados);
         }
         
-        console.log(`🌍 V88: Buscando Odds API...`);
+        console.log(`🌍 V89: Buscando Odds (Sem filtro de Bookmaker)...`);
         const headers = { 'x-apisports-key': CONFIG.API_KEY };
         const respJogos = await axios.get(`https://v3.football.api-sports.io/fixtures?date=${dataHoje}&timezone=America/Sao_Paulo`, { headers });
         const listaBruta = respJogos.data.response || [];
@@ -66,15 +71,25 @@ app.get('/api/jogos', async (req, res) => {
         try {
             let page = 1; let totalPages = 1;
             do {
-                const r = await axios.get(`https://v3.football.api-sports.io/odds?date=${dataHoje}&bookmaker=6&timezone=America/Sao_Paulo&page=${page}`, { headers });
-                if(r.data.response) r.data.response.forEach(o => { mapaOdds[o.fixture.id] = o.bookmakers[0].bets; });
+                // REMOVI O &bookmaker=6. AGORA PEGA QUALQUER UMA (Bet365, 1xBet, etc)
+                const r = await axios.get(`https://v3.football.api-sports.io/odds?date=${dataHoje}&timezone=America/Sao_Paulo&page=${page}`, { headers });
+                
+                if(r.data.response) {
+                    r.data.response.forEach(o => { 
+                        // Pega a primeira casa de aposta que aparecer (Geralmente é a melhor disponível na API)
+                        if(o.bookmakers && o.bookmakers.length > 0) {
+                            mapaOdds[o.fixture.id] = o.bookmakers[0].bets; 
+                        }
+                    });
+                }
+                
                 totalPages = r.data.paging.total;
                 page++;
                 await new Promise(resolve => setTimeout(resolve, 300));
             } while (page <= totalPages && page <= CONFIG.MAX_PAGINAS_ODDS);
         } catch (e) { console.log("⚠️ API Odds limitou/falhou."); }
 
-        let jogosFinais = formatarV88(listaBruta, mapaOdds, dataHoje);
+        let jogosFinais = formatarV89(listaBruta, mapaOdds, dataHoje);
         
         if (jogosFinais.length > 0) {
             await pool.query(`INSERT INTO jogos_cache (data_ref, json_dados, atualizado_em) VALUES ($1, $2, NOW()) ON CONFLICT (data_ref) DO UPDATE SET json_dados = $2, atualizado_em = NOW()`, [dataHoje, JSON.stringify(jogosFinais)]);
@@ -104,6 +119,7 @@ app.post('/api/finalizar', async (req, res) => {
                 const jogoAtual = jogosAtuais.find(j => j.id === aposta.id);
                 if(jogoAtual) {
                     let oddAtual = buscarOddNoJogo(jogoAtual, aposta.opcao);
+                    // Tolerância 0.25
                     if(oddAtual && Math.abs(parseFloat(oddAtual) - parseFloat(aposta.odd)) > 0.25) {
                         mudancas.push({ id: aposta.id, nome: aposta.nome, opcao: aposta.opcao, oddAntiga: aposta.odd, oddNova: oddAtual });
                     }
@@ -142,8 +158,8 @@ app.get('/api/admin/pendentes', async (req, res) => { try { const r = await pool
 app.post('/api/admin/validar', async (req, res) => { try { await pool.query("UPDATE bilhetes SET status = 'validado' WHERE codigo = $1", [req.body.codigo]); res.json({sucesso: true}); } catch (e) { res.status(500).json({erro: "Erro"}); } });
 app.post('/api/admin/excluir', async (req, res) => { try { await pool.query("DELETE FROM bilhetes WHERE codigo = $1", [req.body.codigo]); res.json({sucesso: true}); } catch (e) { res.status(500).json({erro: "Erro"}); } });
 
-// --- LÓGICA V88 (CORREÇÃO DE BUGS) ---
-function formatarV88(listaJogos, mapaOdds, dataFiltro) {
+// --- LÓGICA V89 (SEM FILTRO) ---
+function formatarV89(listaJogos, mapaOdds, dataFiltro) {
     return listaJogos.map(j => {
         try {
             const dataLocal = j.fixture.date.substring(0, 10); 
@@ -164,15 +180,14 @@ function formatarV88(listaJogos, mapaOdds, dataFiltro) {
 
                 let oddsBase = null;
 
-                // 1. TENTA API (ID 1)
-                // AQUI ESTAVA O ERRO: Usei == em vez de === para pegar ID string ou number
+                // TENTA API (QUALQUER CASA AGORA)
                 if (betsReais) {
                     const m1 = betsReais.find(b => b.id == 1); 
                     if (m1) oddsBase = { casa: findOdd(m1, 'Home'), empate: findOdd(m1, 'Draw'), fora: findOdd(m1, 'Away') };
                 }
 
                 if (!oddsBase) {
-                    // SEM API
+                    // SEM API -> GERA MATH
                     oddsBase = gerarOddInteligente(j.teams.home.name, j.teams.away.name);
                     oddsFinais = { 
                         casa: (oddsBase.casa * CONFIG.LUCRO_CASA).toFixed(2), 
@@ -181,18 +196,17 @@ function formatarV88(listaJogos, mapaOdds, dataFiltro) {
                     };
                     
                     if (ehTimeGrande) {
-                        mercadosCalculados = gerarListaSintetica(oddsBase); // Gera para não ficar vazio
+                        mercadosCalculados = gerarListaSintetica(oddsBase); 
                     } else {
                         mercadosCalculados = []; // Bloqueia várzea
                     }
                 } else {
-                    // COM API
+                    // COM API (REAL)
                     oddsFinais = { 
                         casa: (oddsBase.casa * CONFIG.LUCRO_CASA).toFixed(2), 
                         empate: (oddsBase.empate * CONFIG.LUCRO_CASA).toFixed(2), 
                         fora: (oddsBase.fora * CONFIG.LUCRO_CASA).toFixed(2) 
                     };
-                    // Passa flag de time grande para garantir fallback se API falhar em mercados específicos
                     mercadosCalculados = gerarListaHibrida(oddsBase, betsReais, ehTimeGrande);
                 }
             }
@@ -216,15 +230,13 @@ function gerarOddInteligente(h, a) {
     return {casa:c, empate:e, fora:f}; 
 }
 
-// 1. GERADOR HÍBRIDO (Tenta API, se falhar usa matemática se for grande)
 function gerarListaHibrida(base, betsApi, ehGrande) {
     const fx = (v) => (v * CONFIG.LUCRO_CASA).toFixed(2);
     const lista = [];
     
-    // CORREÇÃO CRÍTICA: '==' para pegar ID string ou number
+    // ATENÇÃO: ID PODE SER NUMERO OU TEXTO
     const getM = (id) => betsApi.find(b => b.id == id);
 
-    // GOLS (ID 5)
     const m5 = getM(5);
     const golsItems = [];
     [0.5, 1.5, 2.5, 3.5, 4.5].forEach(g => {
@@ -233,14 +245,12 @@ function gerarListaHibrida(base, betsApi, ehGrande) {
             const o = findOdd(m5, `Over ${g}`), u = findOdd(m5, `Under ${g}`);
             if(o && u) { golsItems.push({nome: `Mais ${g}`, odd: fx(o)}); golsItems.push({nome: `Menos ${g}`, odd: fx(u)}); found = true; }
         }
-        // Fallback matemático para Time Grande se API falhar no GOL
         if(!found && ehGrande && g === 2.5) {
             golsItems.push({nome: `Mais 2.5`, odd: fx(1.90)}); golsItems.push({nome: `Menos 2.5`, odd: fx(1.85)});
         }
     });
     if(golsItems.length) lista.push({ grupo: "Total de Gols", itens: golsItems });
 
-    // AMBAS MARCAM (ID 8)
     const m8 = getM(8);
     if(m8) {
         const s = findOdd(m8, 'Yes'), n = findOdd(m8, 'No');
@@ -249,7 +259,6 @@ function gerarListaHibrida(base, betsApi, ehGrande) {
         lista.push({ grupo: "Ambas as equipes marcam", itens: [{nome: "Sim", odd: fx(1.90)}, {nome: "Não", odd: fx(1.80)}] });
     }
 
-    // CHANCE DUPLA (ID 12)
     const m12 = getM(12);
     if(m12) {
         const ce = findOdd(m12, 'Home/Draw'), cf = findOdd(m12, 'Home/Away'), ef = findOdd(m12, 'Draw/Away');
@@ -259,7 +268,6 @@ function gerarListaHibrida(base, betsApi, ehGrande) {
         lista.push({ grupo: "Chance Dupla", itens: [{nome: "Casa/Empate", odd: fx(dcC)}, {nome: "Casa/Fora", odd: fx(dcF)}, {nome: "Empate/Fora", odd: fx(dcE)}] });
     }
 
-    // RESTANTE (Só API)
     const mDnb = betsApi.find(b => b.name === "Draw No Bet" || b.id == 6); if(mDnb) { const c = findOdd(mDnb, 'Home'), f = findOdd(mDnb, 'Away'); if(c && f) lista.push({ grupo: "Empate não tem aposta", itens: [{nome: "Casa", odd: fx(c)}, {nome: "Fora", odd: fx(f)}] }); }
     const m2 = getM(2); if(m2) { const i = findOdd(m2, 'Odd'), p = findOdd(m2, 'Even'); if(i && p) lista.push({ grupo: "Ímpar/Par", itens: [{nome: "Ímpar", odd: fx(i)}, {nome: "Par", odd: fx(p)}] }); }
     const m13 = getM(13); if(m13) { const c = findOdd(m13, 'Home'), e = findOdd(m13, 'Draw'), f = findOdd(m13, 'Away'); if(c && e && f) lista.push({ grupo: "Vencedor do 1º Tempo", itens: [{nome: "Casa", odd: fx(c)}, {nome: "Empate", odd: fx(e)}, {nome: "Fora", odd: fx(f)}] }); }
@@ -272,7 +280,6 @@ function gerarListaHibrida(base, betsApi, ehGrande) {
     return lista;
 }
 
-// 2. GERADOR SINTÉTICO (SOMENTE PARA TIME GRANDE SEM API)
 function gerarListaSintetica(base) {
     const fx = (v) => (v * CONFIG.LUCRO_CASA).toFixed(2);
     const lista = [];
@@ -287,4 +294,4 @@ function gerarListaSintetica(base) {
     return lista;
 }
 
-app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V88 (Correção ID) On!"));
+app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V89 (Odds Reais) On!"));
