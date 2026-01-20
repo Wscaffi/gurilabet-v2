@@ -254,3 +254,83 @@ function gerarListaCompleta(base, betsApi) {
     const mDnb = betsApi.find(b => b.name === "Draw No Bet");
     if(mDnb) {
         const c = findOdd(mDnb, 'Home'), f = findOdd(mDnb, 'Away');
+        if(c && f) lista.push({ grupo: "Empate não tem aposta", itens: [{nome: "Casa", odd: fx(c)}, {nome: "Fora", odd: fx(f)}] });
+    }
+
+    // --- 5. ÍMPAR/PAR (ID 2) ---
+    const m2 = getM(2);
+    if(m2) {
+        const i = findOdd(m2, 'Odd'), p = findOdd(m2, 'Even');
+        if(i && p) lista.push({ grupo: "Ímpar/Par", itens: [{nome: "Ímpar", odd: fx(i)}, {nome: "Par", odd: fx(p)}] });
+    }
+
+    // --- 6. VENCEDOR 1º TEMPO (ID 13) ---
+    const m13 = getM(13);
+    if(m13) {
+        const c = findOdd(m13, 'Home'), e = findOdd(m13, 'Draw'), f = findOdd(m13, 'Away');
+        if(c && e && f) lista.push({ grupo: "Vencedor do 1º Tempo", itens: [{nome: "Casa", odd: fx(c)}, {nome: "Empate", odd: fx(e)}, {nome: "Fora", odd: fx(f)}] });
+    }
+
+    // --- 7. INTERVALO / FINAL (ID 7) ---
+    const m7 = getM(7);
+    if(m7) {
+        const htft = [];
+        const mapKeys = [
+            {k:'Home/Home', n:'Casa/Casa'}, {k:'Home/Draw', n:'Casa/Empate'}, {k:'Home/Away', n:'Casa/Fora'},
+            {k:'Draw/Home', n:'Empate/Casa'}, {k:'Draw/Draw', n:'Empate/Empate'}, {k:'Draw/Away', n:'Empate/Fora'},
+            {k:'Away/Home', n:'Fora/Casa'}, {k:'Away/Draw', n:'Fora/Empate'}, {k:'Away/Away', n:'Fora/Fora'}
+        ];
+        mapKeys.forEach(p => { const odd = findOdd(m7, p.k); if(odd) htft.push({nome: p.n, odd: fx(odd)}); });
+        if(htft.length) lista.push({ grupo: "Intervalo / Final", itens: htft });
+    }
+
+    // --- 8. GOLS 1º TEMPO (ID 6) ---
+    const m6 = getM(6);
+    if(m6) {
+        const o05 = findOdd(m6, 'Over 0.5'), u05 = findOdd(m6, 'Under 0.5');
+        const o15 = findOdd(m6, 'Over 1.5'), u15 = findOdd(m6, 'Under 1.5');
+        const golsHT = [];
+        if(o05 && u05) { golsHT.push({nome: "Mais 0.5", odd: fx(o05)}); golsHT.push({nome: "Menos 0.5", odd: fx(u05)}); }
+        if(o15 && u15) { golsHT.push({nome: "Mais 1.5", odd: fx(o15)}); golsHT.push({nome: "Menos 1.5", odd: fx(u15)}); }
+        if(golsHT.length) lista.push({ grupo: "Total de Gols 1º Tempo", itens: golsHT });
+    }
+
+    // --- 9. HANDICAP (ID 4 - European Handicap) ---
+    // A API retorna algo como "Home (-1)", "Away (+1)". Vamos tentar filtrar os comuns
+    const m4 = getM(4);
+    if(m4 && m4.values) {
+        const handicaps = [];
+        // Filtra linhas comuns (0:1, 1:0)
+        m4.values.forEach(v => {
+            if(v.value.includes("Home (-1)") || v.value.includes("Away (+1)")) {
+                handicaps.push({nome: v.value.replace("Home", "Casa").replace("Away", "Fora"), odd: fx(v.odd)});
+            }
+            if(v.value.includes("Home (+1)") || v.value.includes("Away (-1)")) {
+                handicaps.push({nome: v.value.replace("Home", "Casa").replace("Away", "Fora"), odd: fx(v.odd)});
+            }
+        });
+        if(handicaps.length) lista.push({ grupo: "Handicap Resultado", itens: handicaps });
+    }
+
+    // --- 10. PLACAR EXATO (ID 10) ---
+    const m10 = getM(10);
+    if(m10 && m10.values) {
+        const placares = [];
+        const permitidos = ["1:0","2:0","2:1","3:0","3:1","3:2","0:1","0:2","1:2","0:3","1:3","2:3","0:0","1:1","2:2"];
+        m10.values.forEach(v => {
+            if(permitidos.includes(v.value)) placares.push({nome: v.value, odd: fx(v.odd)});
+        });
+        if(placares.length) lista.push({ grupo: "Placar Exato", itens: placares });
+    }
+
+    // --- 11. AMBOS MARCAM 1º TEMPO (ID 34) ---
+    const m34 = getM(34); // Às vezes ID muda, mas 34 é comum p/ BTTS HT
+    if(m34) {
+        const s = findOdd(m34, 'Yes'), n = findOdd(m34, 'No');
+        if(s && n) lista.push({ grupo: "1º Tempo - Ambas Marcam", itens: [{nome: "Sim", odd: fx(s)}, {nome: "Não", odd: fx(n)}] });
+    }
+
+    return lista;
+}
+
+app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V81 (Mercados FULL) On!"));
