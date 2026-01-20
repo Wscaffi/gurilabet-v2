@@ -25,6 +25,8 @@
         .btn { width: 100%; padding: 12px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; margin-top: 5px; font-size: 14px; }
         .btn-validar { background: #00ff88; color: #000; }
         .btn-excluir { background: #ff4d4d; color: #fff; }
+        
+        .erro-box { color: #ff4d4d; text-align: center; padding: 20px; border: 1px solid #ff4d4d; border-radius: 10px; background: rgba(255, 77, 77, 0.1); }
     </style>
 </head>
 <body>
@@ -42,10 +44,13 @@
         window.onload = carregar;
 
         async function carregar() {
+            const div = document.getElementById('lista');
             try {
                 const res = await fetch(`${API}/api/admin/pendentes`);
+                
+                if(!res.ok) throw new Error("Servidor Offline");
+
                 const lista = await res.json();
-                const div = document.getElementById('lista');
                 
                 if(lista.length === 0) {
                     div.innerHTML = '<div style="text-align:center; padding:20px; color:#666;">Nenhum bilhete pendente.</div>';
@@ -54,11 +59,13 @@
 
                 let html = '';
                 lista.forEach(b => {
-                    const apostas = JSON.parse(b.detalhes);
                     let palpitesHtml = '';
-                    apostas.forEach(p => {
-                        palpitesHtml += `<div class="game-row">⚽ ${p.nome}<br>↳ <b>${p.opcao}</b> (${p.odd})</div>`;
-                    });
+                    try {
+                        const apostas = JSON.parse(b.detalhes);
+                        apostas.forEach(p => {
+                            palpitesHtml += `<div class="game-row">⚽ ${p.nome}<br>↳ <b>${p.opcao}</b> (${p.odd})</div>`;
+                        });
+                    } catch(err) { palpitesHtml = "Erro ao ler palpites"; }
 
                     html += `
                     <div class="card">
@@ -79,7 +86,10 @@
                     </div>`;
                 });
                 div.innerHTML = html;
-            } catch(e) { console.log("Erro conexão admin"); }
+            } catch(e) { 
+                // AQUI ESTÁ A CORREÇÃO: MOSTRA O ERRO NA TELA AO INVÉS DE TRAVAR
+                div.innerHTML = `<div class="erro-box">⚠️ ERRO DE CONEXÃO<br><small>Não foi possível conectar ao servidor.</small></div>`;
+            }
         }
 
         async function validar(cod, cli, val, ret) {
@@ -89,7 +99,6 @@
                     method:'POST', headers:{'Content-Type':'application/json'}, body:JSON.stringify({codigo:cod})
                 });
                 
-                // MENSAGEM WHATSAPP DE VALIDAÇÃO
                 const msg = `✅ *GURILA BET - APOSTA CONFIRMADA*\n\n` +
                             `🎫 *Bilhete:* ${cod}\n` +
                             `👤 *Cliente:* ${cli}\n` +
@@ -98,7 +107,7 @@
                             `Boa sorte! 🦍🍀`;
                 
                 window.open(`https://wa.me/?text=${encodeURIComponent(msg)}`, '_blank');
-                carregar(); // Atualiza a lista
+                carregar(); 
             } catch(e) { alert("Erro ao validar"); }
         }
 
