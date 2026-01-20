@@ -8,7 +8,7 @@ app.use(express.json());
 app.use(cors({ origin: '*' }));
 
 // =====================================================
-// CONFIGURAÇÕES GERAIS - V87 (LIBERAÇÃO INTELIGENTE)
+// CONFIGURAÇÕES GERAIS - V88 (CORREÇÃO DE ID + TRAVA)
 // =====================================================
 const CONFIG = {
     API_KEY: process.env.API_FOOTBALL_KEY || "SUA_CHAVE_AQUI", 
@@ -20,14 +20,13 @@ const CONFIG = {
     MAX_PAGINAS_ODDS: 10 
 };
 
-// LISTA DE CONFIANÇA (TIMES GRANDES)
-// Se for um desses times, NUNCA bloqueia os mercados, mesmo se a API falhar.
+// LISTA DE TIMES FORTES (Para garantir mercados se a API falhar)
 const TIMES_FORTES = [
     "flamengo", "palmeiras", "atletico-mg", "real madrid", "barcelona", "man city", "liverpool", "psg", "bayern", "inter", "arsenal", 
     "botafogo", "sao paulo", "corinthians", "gremio", "boca juniors", "river plate", "juventus", "milan", "vasco", "fluminense",
     "santos", "cruzeiro", "internacional", "bahia", "athletico-pr", "fortaleza", "vitoria", "sport", "ceara",
     "bragantino", "red bull", "rb bragantino", "cuiaba", "atletico-go", "juventude", "chelsea", "man utd", "tottenham", "napoli", 
-    "benfica", "porto", "sporting", "ajax", "dortmund", "atletico madrid"
+    "benfica", "porto", "sporting", "ajax", "dortmund", "atletico madrid", "novorizontino", "ponte preta", "guarani"
 ];
 
 const TRADUCOES = { "World": "Mundo", "Brazil": "Brasil", "England": "Inglaterra", "Spain": "Espanha", "Italy": "Itália", "Germany": "Alemanha", "France": "França", "Portugal": "Portugal", "Premier League": "Premier League", "Serie A": "Série A", "La Liga": "La Liga", "Carioca - 1": "Carioca", "Paulista - A1": "Paulista A1", "Copa Libertadores": "Libertadores" };
@@ -43,7 +42,7 @@ async function initDb() {
         await pool.query(`ALTER TABLE bilhetes ADD COLUMN IF NOT EXISTS cliente TEXT`);
         await pool.query(`ALTER TABLE bilhetes ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'pendente'`);
         await pool.query(`ALTER TABLE bilhetes ADD COLUMN IF NOT EXISTS detalhes JSONB`);
-        console.log("✅ Servidor V87 (Desbloqueio Inteligente) Online!");
+        console.log("✅ Servidor V88 (Correção Bug ID) Online!");
     } catch (e) { console.error("Erro Banco:", e.message); }
 }
 initDb();
@@ -58,7 +57,7 @@ app.get('/api/jogos', async (req, res) => {
             if (diff < CONFIG.TEMPO_CACHE_MINUTOS) return res.json(cache.rows[0].json_dados);
         }
         
-        console.log(`🌍 V87: Buscando Odds (Tentando até ${CONFIG.MAX_PAGINAS_ODDS} pgs)...`);
+        console.log(`🌍 V88: Buscando Odds API...`);
         const headers = { 'x-apisports-key': CONFIG.API_KEY };
         const respJogos = await axios.get(`https://v3.football.api-sports.io/fixtures?date=${dataHoje}&timezone=America/Sao_Paulo`, { headers });
         const listaBruta = respJogos.data.response || [];
@@ -71,11 +70,11 @@ app.get('/api/jogos', async (req, res) => {
                 if(r.data.response) r.data.response.forEach(o => { mapaOdds[o.fixture.id] = o.bookmakers[0].bets; });
                 totalPages = r.data.paging.total;
                 page++;
-                await new Promise(resolve => setTimeout(resolve, 400));
+                await new Promise(resolve => setTimeout(resolve, 300));
             } while (page <= totalPages && page <= CONFIG.MAX_PAGINAS_ODDS);
-        } catch (e) { console.log("⚠️ API Odds limitou/falhou. Usando fallback."); }
+        } catch (e) { console.log("⚠️ API Odds limitou/falhou."); }
 
-        let jogosFinais = formatarV87(listaBruta, mapaOdds, dataHoje);
+        let jogosFinais = formatarV88(listaBruta, mapaOdds, dataHoje);
         
         if (jogosFinais.length > 0) {
             await pool.query(`INSERT INTO jogos_cache (data_ref, json_dados, atualizado_em) VALUES ($1, $2, NOW()) ON CONFLICT (data_ref) DO UPDATE SET json_dados = $2, atualizado_em = NOW()`, [dataHoje, JSON.stringify(jogosFinais)]);
@@ -105,7 +104,6 @@ app.post('/api/finalizar', async (req, res) => {
                 const jogoAtual = jogosAtuais.find(j => j.id === aposta.id);
                 if(jogoAtual) {
                     let oddAtual = buscarOddNoJogo(jogoAtual, aposta.opcao);
-                    // Tolerância 0.25 para evitar bloqueio chato em pequenas variações
                     if(oddAtual && Math.abs(parseFloat(oddAtual) - parseFloat(aposta.odd)) > 0.25) {
                         mudancas.push({ id: aposta.id, nome: aposta.nome, opcao: aposta.opcao, oddAntiga: aposta.odd, oddNova: oddAtual });
                     }
@@ -144,8 +142,8 @@ app.get('/api/admin/pendentes', async (req, res) => { try { const r = await pool
 app.post('/api/admin/validar', async (req, res) => { try { await pool.query("UPDATE bilhetes SET status = 'validado' WHERE codigo = $1", [req.body.codigo]); res.json({sucesso: true}); } catch (e) { res.status(500).json({erro: "Erro"}); } });
 app.post('/api/admin/excluir', async (req, res) => { try { await pool.query("DELETE FROM bilhetes WHERE codigo = $1", [req.body.codigo]); res.json({sucesso: true}); } catch (e) { res.status(500).json({erro: "Erro"}); } });
 
-// --- LÓGICA V87 (CORAÇÃO DO DESBLOQUEIO) ---
-function formatarV87(listaJogos, mapaOdds, dataFiltro) {
+// --- LÓGICA V88 (CORREÇÃO DE BUGS) ---
+function formatarV88(listaJogos, mapaOdds, dataFiltro) {
     return listaJogos.map(j => {
         try {
             const dataLocal = j.fixture.date.substring(0, 10); 
@@ -160,48 +158,41 @@ function formatarV87(listaJogos, mapaOdds, dataFiltro) {
             const betsReais = mapaOdds[j.fixture.id]; 
             
             if (statusFinal === "VS") {
-                // VERIFICA SE É TIME GRANDE
                 const nomeCasa = limparNome(j.teams.home.name);
                 const nomeFora = limparNome(j.teams.away.name);
                 const ehTimeGrande = TIMES_FORTES.some(t => nomeCasa.includes(t) || nomeFora.includes(t));
 
                 let oddsBase = null;
 
-                // TENTA PEGAR DA API
+                // 1. TENTA API (ID 1)
+                // AQUI ESTAVA O ERRO: Usei == em vez de === para pegar ID string ou number
                 if (betsReais) {
-                    const m1 = betsReais.find(b => b.id === 1);
+                    const m1 = betsReais.find(b => b.id == 1); 
                     if (m1) oddsBase = { casa: findOdd(m1, 'Home'), empate: findOdd(m1, 'Draw'), fora: findOdd(m1, 'Away') };
                 }
 
-                // SE NÃO TEM NA API, MAS É TIME GRANDE -> GERA MATEMÁTICO (PARA NÃO BLOQUEAR)
                 if (!oddsBase) {
+                    // SEM API
                     oddsBase = gerarOddInteligente(j.teams.home.name, j.teams.away.name);
-                    
-                    if (ehTimeGrande) {
-                        // É TIME GRANDE: GERA TUDO (Híbrido)
-                        oddsFinais = { 
-                            casa: (oddsBase.casa * CONFIG.LUCRO_CASA).toFixed(2), 
-                            empate: (oddsBase.empate * CONFIG.LUCRO_CASA).toFixed(2), 
-                            fora: (oddsBase.fora * CONFIG.LUCRO_CASA).toFixed(2) 
-                        };
-                        mercadosCalculados = gerarListaSintetica(oddsBase);
-                    } else {
-                        // É TIME PEQUENO E SEM API: AÍ SIM BLOQUEIA (Segurança)
-                        oddsFinais = { 
-                            casa: (oddsBase.casa * CONFIG.LUCRO_CASA).toFixed(2), 
-                            empate: (oddsBase.empate * CONFIG.LUCRO_CASA).toFixed(2), 
-                            fora: (oddsBase.fora * CONFIG.LUCRO_CASA).toFixed(2) 
-                        };
-                        mercadosCalculados = [];
-                    }
-                } else {
-                    // TEM NA API -> USA A REAL (PRIORIDADE MÁXIMA)
                     oddsFinais = { 
                         casa: (oddsBase.casa * CONFIG.LUCRO_CASA).toFixed(2), 
                         empate: (oddsBase.empate * CONFIG.LUCRO_CASA).toFixed(2), 
                         fora: (oddsBase.fora * CONFIG.LUCRO_CASA).toFixed(2) 
                     };
-                    // Passa 'ehTimeGrande' para garantir fallback se faltar mercado específico na API
+                    
+                    if (ehTimeGrande) {
+                        mercadosCalculados = gerarListaSintetica(oddsBase); // Gera para não ficar vazio
+                    } else {
+                        mercadosCalculados = []; // Bloqueia várzea
+                    }
+                } else {
+                    // COM API
+                    oddsFinais = { 
+                        casa: (oddsBase.casa * CONFIG.LUCRO_CASA).toFixed(2), 
+                        empate: (oddsBase.empate * CONFIG.LUCRO_CASA).toFixed(2), 
+                        fora: (oddsBase.fora * CONFIG.LUCRO_CASA).toFixed(2) 
+                    };
+                    // Passa flag de time grande para garantir fallback se API falhar em mercados específicos
                     mercadosCalculados = gerarListaHibrida(oddsBase, betsReais, ehTimeGrande);
                 }
             }
@@ -225,13 +216,13 @@ function gerarOddInteligente(h, a) {
     return {casa:c, empate:e, fora:f}; 
 }
 
-// --- GERADORES DE MERCADO ---
-
-// 1. GERADOR HÍBRIDO (Tenta API, se falhar e for Time Grande, usa Matemática)
-function gerarListaHibrida(base, betsApi, usarMatematicaSeFaltar) {
+// 1. GERADOR HÍBRIDO (Tenta API, se falhar usa matemática se for grande)
+function gerarListaHibrida(base, betsApi, ehGrande) {
     const fx = (v) => (v * CONFIG.LUCRO_CASA).toFixed(2);
     const lista = [];
-    const getM = (id) => betsApi.find(b => b.id === id);
+    
+    // CORREÇÃO CRÍTICA: '==' para pegar ID string ou number
+    const getM = (id) => betsApi.find(b => b.id == id);
 
     // GOLS (ID 5)
     const m5 = getM(5);
@@ -242,8 +233,8 @@ function gerarListaHibrida(base, betsApi, usarMatematicaSeFaltar) {
             const o = findOdd(m5, `Over ${g}`), u = findOdd(m5, `Under ${g}`);
             if(o && u) { golsItems.push({nome: `Mais ${g}`, odd: fx(o)}); golsItems.push({nome: `Menos ${g}`, odd: fx(u)}); found = true; }
         }
-        // Fallback matemático para Over 2.5 se falhar API
-        if(!found && usarMatematicaSeFaltar && g === 2.5) {
+        // Fallback matemático para Time Grande se API falhar no GOL
+        if(!found && ehGrande && g === 2.5) {
             golsItems.push({nome: `Mais 2.5`, odd: fx(1.90)}); golsItems.push({nome: `Menos 2.5`, odd: fx(1.85)});
         }
     });
@@ -254,7 +245,7 @@ function gerarListaHibrida(base, betsApi, usarMatematicaSeFaltar) {
     if(m8) {
         const s = findOdd(m8, 'Yes'), n = findOdd(m8, 'No');
         if(s && n) lista.push({ grupo: "Ambas as equipes marcam", itens: [{nome: "Sim", odd: fx(s)}, {nome: "Não", odd: fx(n)}] });
-    } else if(usarMatematicaSeFaltar) {
+    } else if(ehGrande) {
         lista.push({ grupo: "Ambas as equipes marcam", itens: [{nome: "Sim", odd: fx(1.90)}, {nome: "Não", odd: fx(1.80)}] });
     }
 
@@ -263,31 +254,20 @@ function gerarListaHibrida(base, betsApi, usarMatematicaSeFaltar) {
     if(m12) {
         const ce = findOdd(m12, 'Home/Draw'), cf = findOdd(m12, 'Home/Away'), ef = findOdd(m12, 'Draw/Away');
         if(ce && cf && ef) lista.push({ grupo: "Chance Dupla", itens: [{nome: "Casa/Empate", odd: fx(ce)}, {nome: "Casa/Fora", odd: fx(cf)}, {nome: "Empate/Fora", odd: fx(ef)}] });
-    } else if(usarMatematicaSeFaltar) {
-        const dcC = 1 / (1/base.casa + 1/base.empate);
-        const dcF = 1 / (1/base.casa + 1/base.fora);
-        const dcE = 1 / (1/base.empate + 1/base.fora);
+    } else if(ehGrande) {
+        const dcC = 1 / (1/base.casa + 1/base.empate); const dcF = 1 / (1/base.casa + 1/base.fora); const dcE = 1 / (1/base.empate + 1/base.fora);
         lista.push({ grupo: "Chance Dupla", itens: [{nome: "Casa/Empate", odd: fx(dcC)}, {nome: "Casa/Fora", odd: fx(dcF)}, {nome: "Empate/Fora", odd: fx(dcE)}] });
     }
 
-    // EMPATE NÃO TEM APOSTA
-    const mDnb = betsApi.find(b => b.name === "Draw No Bet" || b.id === 6);
-    if(mDnb) {
-        const c = findOdd(mDnb, 'Home'), f = findOdd(mDnb, 'Away');
-        if(c && f) lista.push({ grupo: "Empate não tem aposta", itens: [{nome: "Casa", odd: fx(c)}, {nome: "Fora", odd: fx(f)}] });
-    } else if(usarMatematicaSeFaltar) {
-        const dnbC = base.casa * 0.7; // Aprox
-        const dnbF = base.fora * 0.7;
-        lista.push({ grupo: "Empate não tem aposta", itens: [{nome: "Casa", odd: fx(dnbC)}, {nome: "Fora", odd: fx(dnbF)}] });
-    }
-
-    // RESTANTE DOS MERCADOS (APENAS API)
+    // RESTANTE (Só API)
+    const mDnb = betsApi.find(b => b.name === "Draw No Bet" || b.id == 6); if(mDnb) { const c = findOdd(mDnb, 'Home'), f = findOdd(mDnb, 'Away'); if(c && f) lista.push({ grupo: "Empate não tem aposta", itens: [{nome: "Casa", odd: fx(c)}, {nome: "Fora", odd: fx(f)}] }); }
     const m2 = getM(2); if(m2) { const i = findOdd(m2, 'Odd'), p = findOdd(m2, 'Even'); if(i && p) lista.push({ grupo: "Ímpar/Par", itens: [{nome: "Ímpar", odd: fx(i)}, {nome: "Par", odd: fx(p)}] }); }
     const m13 = getM(13); if(m13) { const c = findOdd(m13, 'Home'), e = findOdd(m13, 'Draw'), f = findOdd(m13, 'Away'); if(c && e && f) lista.push({ grupo: "Vencedor do 1º Tempo", itens: [{nome: "Casa", odd: fx(c)}, {nome: "Empate", odd: fx(e)}, {nome: "Fora", odd: fx(f)}] }); }
     const m7 = getM(7); if(m7) { const htft=[]; const mapKeys=[{k:'Home/Home', n:'Casa/Casa'}, {k:'Home/Draw', n:'Casa/Empate'}, {k:'Home/Away', n:'Casa/Fora'}, {k:'Draw/Home', n:'Empate/Casa'}, {k:'Draw/Draw', n:'Empate/Empate'}, {k:'Draw/Away', n:'Empate/Fora'}, {k:'Away/Home', n:'Fora/Casa'}, {k:'Away/Draw', n:'Fora/Empate'}, {k:'Away/Away', n:'Fora/Fora'}]; mapKeys.forEach(p => { const odd = findOdd(m7, p.k); if(odd) htft.push({nome: p.n, odd: fx(odd)}); }); if(htft.length) lista.push({ grupo: "Intervalo / Final", itens: htft }); }
     const m6 = getM(6); if(m6 && m6.values) { const golsHT=[]; m6.values.forEach(v => { if(["Over 0.5", "Under 0.5", "Over 1.5", "Under 1.5"].includes(v.value)) { golsHT.push({nome: v.value.replace("Over", "Mais").replace("Under", "Menos"), odd: fx(v.odd)}); } }); if(golsHT.length) lista.push({ grupo: "Total de Gols 1º Tempo", itens: golsHT }); }
     const m4 = getM(4); if(m4 && m4.values) { const handicaps=[]; m4.values.forEach(v => { if((v.value.includes("Home") || v.value.includes("Away")) && (v.value.includes("-1") || v.value.includes("+1"))) { handicaps.push({nome: v.value.replace("Home", "Casa").replace("Away", "Fora"), odd: fx(v.odd)}); } }); if(handicaps.length) lista.push({ grupo: "Handicap Resultado", itens: handicaps }); }
     const m10 = getM(10); if(m10 && m10.values) { const placares=[]; const permitidos=["1:0","2:0","2:1","3:0","3:1","0:1","0:2","1:2","0:3","1:3","0:0","1:1","2:2"]; m10.values.forEach(v => { if(permitidos.includes(v.value)) placares.push({nome: v.value, odd: fx(v.odd)}); }); if(placares.length) lista.push({ grupo: "Placar Exato", itens: placares }); }
+    const m34 = getM(34); if(m34) { const s = findOdd(m34, 'Yes'), n = findOdd(m34, 'No'); if(s && n) lista.push({ grupo: "1º Tempo - Ambas Marcam", itens: [{nome: "Sim", odd: fx(s)}, {nome: "Não", odd: fx(n)}] }); }
     
     return lista;
 }
@@ -296,24 +276,15 @@ function gerarListaHibrida(base, betsApi, usarMatematicaSeFaltar) {
 function gerarListaSintetica(base) {
     const fx = (v) => (v * CONFIG.LUCRO_CASA).toFixed(2);
     const lista = [];
-    const dcC = 1 / (1/base.casa + 1/base.empate);
-    const dcF = 1 / (1/base.casa + 1/base.fora);
-    const dcE = 1 / (1/base.empate + 1/base.fora);
+    const dcC = 1 / (1/base.casa + 1/base.empate); const dcF = 1 / (1/base.casa + 1/base.fora); const dcE = 1 / (1/base.empate + 1/base.fora);
     lista.push({ grupo: "Chance Dupla", itens: [{nome: "Casa/Empate", odd: fx(dcC)}, {nome: "Casa/Fora", odd: fx(dcF)}, {nome: "Empate/Fora", odd: fx(dcE)}] });
-    const dnbC = base.casa * 0.75;
-    const dnbF = base.fora * 0.75;
+    const dnbC = base.casa * 0.75; const dnbF = base.fora * 0.75;
     lista.push({ grupo: "Empate não tem aposta", itens: [{nome: "Casa", odd: fx(dnbC)}, {nome: "Fora", odd: fx(dnbF)}] });
-    let bttsS = 1.90, bttsN = 1.80;
-    if(base.casa < 1.5 || base.fora < 1.5) { bttsS = 2.10; bttsN = 1.65; }
+    let bttsS = 1.90, bttsN = 1.80; if(base.casa < 1.5 || base.fora < 1.5) { bttsS = 2.10; bttsN = 1.65; }
     lista.push({ grupo: "Ambas as equipes marcam", itens: [{nome: "Sim", odd: fx(bttsS)}, {nome: "Não", odd: fx(bttsN)}] });
-    lista.push({ grupo: "Total de Gols", itens: [
-        {nome: "Mais 0.5", odd: fx(1.05)}, {nome: "Menos 0.5", odd: fx(8.00)},
-        {nome: "Mais 1.5", odd: fx(1.30)}, {nome: "Menos 1.5", odd: fx(3.20)},
-        {nome: "Mais 2.5", odd: fx(1.95)}, {nome: "Menos 2.5", odd: fx(1.85)},
-        {nome: "Mais 3.5", odd: fx(3.10)}, {nome: "Menos 3.5", odd: fx(1.30)}
-    ]});
+    lista.push({ grupo: "Total de Gols", itens: [{nome: "Mais 0.5", odd: fx(1.05)}, {nome: "Menos 0.5", odd: fx(8.00)}, {nome: "Mais 1.5", odd: fx(1.30)}, {nome: "Menos 1.5", odd: fx(3.20)}, {nome: "Mais 2.5", odd: fx(1.95)}, {nome: "Menos 2.5", odd: fx(1.85)}, {nome: "Mais 3.5", odd: fx(3.10)}, {nome: "Menos 3.5", odd: fx(1.30)}] });
     lista.push({ grupo: "Ímpar/Par", itens: [{nome: "Ímpar", odd: fx(1.90)}, {nome: "Par", odd: fx(1.90)}] });
     return lista;
 }
 
-app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V87 (Desbloqueado) On!"));
+app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V88 (Correção ID) On!"));
