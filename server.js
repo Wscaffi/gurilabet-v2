@@ -8,25 +8,19 @@ app.use(express.json());
 app.use(cors({ origin: '*' }));
 
 // =====================================================
-// CONFIGURAÇÕES GERAIS - V79 (CORREÇÃO DE BANCO DE DADOS)
+// CONFIGURAÇÕES GERAIS - V80 (NOVOS MERCADOS + FILTRO DE RISCO)
 // =====================================================
 const CONFIG = {
-    // Se tiver no Railway, ele pega a var, senão usa a string
     API_KEY: process.env.API_FOOTBALL_KEY || "SUA_CHAVE_AQUI", 
-    
-    // 1.0 = Odd Igual da Bet365. 0.98 = 2% de margem pra casa.
-    LUCRO_CASA: 0.98, 
-    
+    LUCRO_CASA: 0.98, // Multiplicador para garantir lucro da casa
     TEMPO_CACHE_MINUTOS: 45, 
     MIN_VALOR: 2.00,
     MAX_VALOR: 1000.00,
     MAX_PREMIO: 10000.00,
-    
-    // Limite de páginas de odds para buscar
     MAX_PAGINAS_ODDS: 5 
 };
 
-// LISTA DE "FORTES" (Só usada se a API falhar ou não tiver odd)
+// LISTA DE "FORTES" (Fallback)
 const TIMES_FORTES = [
     "flamengo", "palmeiras", "atletico-mg", "real madrid", "barcelona", "man city", "liverpool", "psg", "bayern", "inter", "arsenal", 
     "botafogo", "sao paulo", "corinthians", "gremio", "boca juniors", "river plate", "juventus", "milan", "vasco", "fluminense",
@@ -41,21 +35,18 @@ function limparNome(nome) { return nome.normalize("NFD").replace(/[\u0300-\u036f
 // CONEXÃO COM O BANCO
 const pool = new Pool({ connectionString: process.env.DATABASE_URL, ssl: { rejectUnauthorized: false } });
 
-// --- INICIALIZAÇÃO E CORREÇÃO AUTOMÁTICA DO BANCO ---
 async function initDb() {
     try {
-        // Cria tabelas se não existirem
         await pool.query(`CREATE TABLE IF NOT EXISTS bilhetes (id SERIAL PRIMARY KEY, usuario_id INTEGER, codigo TEXT UNIQUE, valor NUMERIC, retorno NUMERIC, odds_total NUMERIC, status TEXT DEFAULT 'pendente', detalhes JSONB, cliente TEXT, data TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         await pool.query(`CREATE TABLE IF NOT EXISTS jogos_cache (id SERIAL PRIMARY KEY, data_ref TEXT UNIQUE, json_dados JSONB, atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP)`);
         
-        // --- CORREÇÃO V79: GARANTE QUE AS COLUNAS NOVAS EXISTAM ---
-        // Se você usava uma versão antiga, essas colunas podiam faltar e travar o sistema
+        // Colunas de segurança
         await pool.query(`ALTER TABLE bilhetes ADD COLUMN IF NOT EXISTS cliente TEXT`);
         await pool.query(`ALTER TABLE bilhetes ADD COLUMN IF NOT EXISTS status TEXT DEFAULT 'pendente'`);
         await pool.query(`ALTER TABLE bilhetes ADD COLUMN IF NOT EXISTS detalhes JSONB`);
 
-        console.log("✅ Servidor V79 (Banco Atualizado e Pronto) Online!");
-    } catch (e) { console.error("FATAL: Erro ao conectar no Banco:", e.message); }
+        console.log("✅ Servidor V80 (Mercados Extras + Filtro Risco) Online!");
+    } catch (e) { console.error("Erro Banco:", e.message); }
 }
 initDb();
 
@@ -63,21 +54,21 @@ initDb();
 app.get('/api/jogos', async (req, res) => {
     const dataHoje = req.query.data || new Date().toISOString().split('T')[0];
     try {
-        // 1. Verifica Cache
+        // Cache
         const cache = await pool.query("SELECT json_dados, atualizado_em FROM jogos_cache WHERE data_ref = $1", [dataHoje]);
         if (cache.rows.length > 0) {
             const diff = (new Date() - new Date(cache.rows[0].atualizado_em)) / 1000 / 60;
             if (diff < CONFIG.TEMPO_CACHE_MINUTOS) return res.json(cache.rows[0].json_dados);
         }
         
-        console.log(`🌍 V79: Buscando Jogos e Odds...`);
+        console.log(`🌍 V80: Buscando Jogos e Odds...`);
         const headers = { 'x-apisports-key': CONFIG.API_KEY };
         
-        // 2. Busca Jogos
+        // Busca Jogos
         const respJogos = await axios.get(`https://v3.football.api-sports.io/fixtures?date=${dataHoje}&timezone=America/Sao_Paulo`, { headers });
         const listaBruta = respJogos.data.response || [];
 
-        // 3. Busca Odds (Loop Seguro)
+        // Busca Odds (Loop)
         let mapaOdds = {};
         try {
             let page = 1;
@@ -87,37 +78,34 @@ app.get('/api/jogos', async (req, res) => {
                 if(r.data.response) r.data.response.forEach(o => { mapaOdds[o.fixture.id] = o.bookmakers[0].bets; });
                 totalPages = r.data.paging.total;
                 page++;
-                await new Promise(resolve => setTimeout(resolve, 250)); // Delay p/ não travar
+                await new Promise(resolve => setTimeout(resolve, 200)); 
             } while (page <= totalPages && page <= CONFIG.MAX_PAGINAS_ODDS);
         } catch (e) { console.log("⚠️ API Odds limitou. Usando fallback."); }
 
-        let jogosFinais = formatarV78(listaBruta, mapaOdds, dataHoje);
+        let jogosFinais = formatarV80(listaBruta, mapaOdds, dataHoje);
         
         if (jogosFinais.length > 0) {
             await pool.query(`INSERT INTO jogos_cache (data_ref, json_dados, atualizado_em) VALUES ($1, $2, NOW()) ON CONFLICT (data_ref) DO UPDATE SET json_dados = $2, atualizado_em = NOW()`, [dataHoje, JSON.stringify(jogosFinais)]);
         }
         res.json(jogosFinais);
     } catch (e) { 
-        console.error("Erro Jogos:", e.message);
+        console.error("Erro Geral:", e.message);
         const cacheBackup = await pool.query("SELECT json_dados FROM jogos_cache WHERE data_ref = $1", [dataHoje]);
         if(cacheBackup.rows.length > 0) return res.json(cacheBackup.rows[0].json_dados);
         res.json([]); 
     }
 });
 
-// --- ROTA FINALIZAR (AGORA MOSTRA O ERRO REAL) ---
+// --- ROTA FINALIZAR ---
 app.post('/api/finalizar', async (req, res) => {
     try {
         let { usuario_id, valor, apostas, cliente, forcar } = req.body;
-        
-        // Validações básicas
         if(!apostas || !apostas.length) return res.status(400).json({erro: "Carrinho vazio"});
         if(!valor) return res.status(400).json({erro: "Valor inválido"});
         
         const dataHoje = new Date().toISOString().split('T')[0];
         const cache = await pool.query("SELECT json_dados FROM jogos_cache WHERE data_ref = $1", [dataHoje]);
         
-        // Verifica mudança de odds
         if(cache.rows.length > 0 && !forcar) {
             const jogosAtuais = cache.rows[0].json_dados;
             let mudancas = [];
@@ -136,20 +124,16 @@ app.post('/api/finalizar', async (req, res) => {
         let oddTotal = 1.0; 
         apostas.forEach(a => oddTotal *= parseFloat(a.odd));
         let retorno = parseFloat(valor) * oddTotal;
-        
         if(retorno > CONFIG.MAX_PREMIO) retorno = CONFIG.MAX_PREMIO;
         const codigo = "GB" + Math.floor(100000 + Math.random() * 900000);
         
-        // Tenta Salvar no Banco
         await pool.query('INSERT INTO bilhetes (usuario_id, codigo, valor, retorno, odds_total, detalhes, cliente, status) VALUES ($1, $2, $3, $4, $5, $6, $7, $8)', 
             [usuario_id||1, codigo, valor, retorno.toFixed(2), oddTotal.toFixed(2), JSON.stringify(apostas), cliente || "Anônimo", "pendente"]);
             
         res.json({sucesso: true, codigo, retorno: retorno.toFixed(2)});
-
     } catch (e) { 
-        console.error("ERRO AO FINALIZAR:", e); // Log no terminal do Railway
-        // AQUI ESTÁ A CORREÇÃO: Enviamos a mensagem real do erro para o Front
-        res.status(500).json({erro: e.message || "Erro desconhecido no servidor"}); 
+        console.error(e);
+        res.status(500).json({erro: e.message || "Erro interno"}); 
     }
 });
 
@@ -165,12 +149,18 @@ function buscarOddNoJogo(jogo, opcaoNome) {
     return null;
 }
 
-// --- LÓGICA DE FORMATAÇÃO E ODDS ---
-function formatarV78(listaJogos, mapaOdds, dataFiltro) {
+// --- ROTAS ADMIN ---
+app.get('/api/admin/pendentes', async (req, res) => { try { const r = await pool.query("SELECT * FROM bilhetes WHERE status = 'pendente' ORDER BY data DESC"); res.json(r.rows); } catch (e) { res.status(500).json({erro: "Erro banco"}); } });
+app.post('/api/admin/validar', async (req, res) => { try { await pool.query("UPDATE bilhetes SET status = 'validado' WHERE codigo = $1", [req.body.codigo]); res.json({sucesso: true}); } catch (e) { res.status(500).json({erro: "Erro"}); } });
+app.post('/api/admin/excluir', async (req, res) => { try { await pool.query("DELETE FROM bilhetes WHERE codigo = $1", [req.body.codigo]); res.json({sucesso: true}); } catch (e) { res.status(500).json({erro: "Erro"}); } });
+
+// --- LÓGICA DE FORMATAÇÃO E MERCADOS ---
+function formatarV80(listaJogos, mapaOdds, dataFiltro) {
     return listaJogos.map(j => {
         try {
             const dataLocal = j.fixture.date.substring(0, 10); 
             if (dataLocal !== dataFiltro) return null;
+            
             const st = j.fixture.status.short;
             let statusFinal = "VS", placar = null;
             if (['FT', 'AET', 'PEN'].includes(st)) { statusFinal = "FT"; placar = { home: j.goals.home||0, away: j.goals.away||0 }; } 
@@ -181,18 +171,35 @@ function formatarV78(listaJogos, mapaOdds, dataFiltro) {
             
             if (statusFinal === "VS") {
                 let oddsBase = null;
+                
+                // --- LÓGICA DE SEGURANÇA (JOGOS PEQUENOS) ---
                 if (betsReais) {
+                    // SE TEM ODDS NA API: JOGO "SEGURO", LIBERA TUDO
                     const m1 = betsReais.find(b => b.id === 1);
                     if (m1) oddsBase = { casa: findOdd(m1, 'Home'), empate: findOdd(m1, 'Draw'), fora: findOdd(m1, 'Away') };
                 }
-                if (!oddsBase) oddsBase = gerarOddInteligente(j.teams.home.name, j.teams.away.name);
-                
-                oddsFinais = { 
-                    casa: (oddsBase.casa * CONFIG.LUCRO_CASA).toFixed(2), 
-                    empate: (oddsBase.empate * CONFIG.LUCRO_CASA).toFixed(2), 
-                    fora: (oddsBase.fora * CONFIG.LUCRO_CASA).toFixed(2) 
-                };
-                mercadosCalculados = gerarListaGarantida(oddsBase, betsReais);
+
+                if (!oddsBase) {
+                    // SE NÃO TEM ODDS NA API: JOGO "ARRISCADO"
+                    // GERA ODD ARTIFICIAL E BLOQUEIA MERCADOS EXTRAS
+                    oddsBase = gerarOddInteligente(j.teams.home.name, j.teams.away.name);
+                    oddsFinais = { 
+                        casa: (oddsBase.casa * CONFIG.LUCRO_CASA).toFixed(2), 
+                        empate: (oddsBase.empate * CONFIG.LUCRO_CASA).toFixed(2), 
+                        fora: (oddsBase.fora * CONFIG.LUCRO_CASA).toFixed(2) 
+                    };
+                    // Retorna lista VAZIA de mercados extras para evitar manipulação
+                    mercadosCalculados = []; 
+                } else {
+                    // SE O JOGO É BOM, LIBERA MERCADOS NOVOS
+                    oddsFinais = { 
+                        casa: (oddsBase.casa * CONFIG.LUCRO_CASA).toFixed(2), 
+                        empate: (oddsBase.empate * CONFIG.LUCRO_CASA).toFixed(2), 
+                        fora: (oddsBase.fora * CONFIG.LUCRO_CASA).toFixed(2) 
+                    };
+                    // Chama função expandida com novos mercados
+                    mercadosCalculados = gerarListaExpandida(oddsBase, betsReais);
+                }
             }
             
             const ligaNome = `${traduzir(j.league.country)} - ${traduzir(j.league.name)}`.toUpperCase();
@@ -214,8 +221,11 @@ function gerarOddInteligente(h, a) {
     return {casa:c, empate:e, fora:f}; 
 }
 
-function gerarListaGarantida(base, betsApi) {
+// --- NOVA FUNÇÃO COM MAIS MERCADOS ---
+function gerarListaExpandida(base, betsApi) {
     const fx = (v) => (v * CONFIG.LUCRO_CASA).toFixed(2);
+    
+    // 1. GOLS (MERCADO 5)
     const getGol = (val, fo, fu) => { 
         if(betsApi) { 
             const m5=betsApi.find(b=>b.id===5); 
@@ -223,18 +233,80 @@ function gerarListaGarantida(base, betsApi) {
         } 
         return {over:fx(fo), under:fx(fu)}; 
     };
-    let btts = null; 
-    if(betsApi) { const m8=betsApi.find(b=>b.id===8); if(m8) { const s=findOdd(m8, 'Yes'), n=findOdd(m8, 'No'); if(s&&n) btts={s:fx(s), n:fx(n)}; } } 
-    if(!btts) { let by=1.90; if(base.empate<3.2) by=1.75; btts={s:fx(by), n:fx((1/(1-(1/by)))*1.05)}; }
-    let dc = null; 
+
+    // 2. BTTS (MERCADO 8)
+    let btts = {s:'-', n:'-'}; 
+    if(betsApi) { const m8=betsApi.find(b=>b.id===8); if(m8) { const s=findOdd(m8, 'Yes'), n=findOdd(m8, 'No'); if(s&&n) btts={s:fx(s), n:fx(n)}; } }
+
+    // 3. DUPLA CHANCE (MERCADO 12)
+    let dc = {c:'-', f:'-', e:'-'}; 
     if(betsApi) { const m12=betsApi.find(b=>b.id===12); if(m12) { const ce=findOdd(m12, 'Home/Draw'), cf=findOdd(m12, 'Home/Away'), ef=findOdd(m12, 'Draw/Away'); if(ce&&cf&&ef) dc={c:fx(ce), f:fx(cf), e:fx(ef)}; } } 
-    if(!dc) dc={c:fx(1/(1/base.casa+1/base.empate)), f:fx(1/(1/base.casa+1/base.fora)), e:fx(1/(1/base.empate+1/base.fora))};
-    return [
-        { grupo: "Total de Gols", itens: [ {nome:"Mais 0.5", odd:getGol(0.5, 1.06, 10.0).over}, {nome:"Menos 0.5", odd:getGol(0.5, 1.06, 10.0).under}, {nome:"Mais 1.5", odd:getGol(1.5, 1.29, 3.40).over}, {nome:"Menos 1.5", odd:getGol(1.5, 1.29, 3.40).under}, {nome:"Mais 2.5", odd:getGol(2.5, 1.95, 1.85).over}, {nome:"Menos 2.5", odd:getGol(2.5, 1.95, 1.85).under}, {nome:"Mais 3.5", odd:getGol(3.5, 3.30, 1.30).over}, {nome:"Menos 3.5", odd:getGol(3.5, 3.30, 1.30).under} ] },
+    if(dc.c === '-') dc={c:fx(1/(1/base.casa+1/base.empate)), f:fx(1/(1/base.casa+1/base.fora)), e:fx(1/(1/base.empate+1/base.fora))};
+
+    // 4. EMPATE NÃO TEM APOSTA (Draw No Bet) - MERCADO 6 ou similar (Depende da API, as vezes ID 16)
+    // Vamos tentar achar pelo nome no array geral, pois o ID varia
+    let dnb = {c:'-', f:'-'};
+    if(betsApi) {
+        // ID 16 costuma ser DNB na API V3, ou ID 20. Vamos varrer por nome se possível ou ID fixo
+        const mDnb = betsApi.find(b => b.id === 16 || b.name === "Draw No Bet");
+        if(mDnb) { const c=findOdd(mDnb, 'Home'), f=findOdd(mDnb, 'Away'); if(c&&f) dnb={c:fx(c), f:fx(f)}; }
+    }
+
+    // 5. VENCEDOR 1º TEMPO (MERCADO 13)
+    let htWinner = {c:'-', e:'-', f:'-'};
+    if(betsApi) {
+        const m13 = betsApi.find(b => b.id === 13); // Halftime Result
+        if(m13) { const c=findOdd(m13, 'Home'), e=findOdd(m13, 'Draw'), f=findOdd(m13, 'Away'); if(c&&e&&f) htWinner={c:fx(c), e:fx(e), f:fx(f)}; }
+    }
+
+    // 6. GOLS 1º TEMPO (MERCADO 6)
+    const getGolHT = (val) => {
+        if(betsApi) {
+            const m6 = betsApi.find(b => b.id === 6); // Goals Over/Under 1st Half
+            if(m6) { const o=findOdd(m6, `Over ${val}`), u=findOdd(m6, `Under ${val}`); if(o&&u) return {over:fx(o), under:fx(u)}; }
+        }
+        return {over:'-', under:'-'};
+    }
+
+    // 7. INTERVALO / FINAL (HT/FT) - MERCADO 7
+    // Esse é complexo, mapeia Casa/Casa, etc.
+    let htft = [];
+    if(betsApi) {
+        const m7 = betsApi.find(b => b.id === 7);
+        if(m7) {
+            const mapKeys = [
+                {k:'Home/Home', n:'Casa/Casa'}, {k:'Home/Draw', n:'Casa/Empate'}, {k:'Home/Away', n:'Casa/Fora'},
+                {k:'Draw/Home', n:'Empate/Casa'}, {k:'Draw/Draw', n:'Empate/Empate'}, {k:'Draw/Away', n:'Empate/Fora'},
+                {k:'Away/Home', n:'Fora/Casa'}, {k:'Away/Draw', n:'Fora/Empate'}, {k:'Away/Away', n:'Fora/Fora'}
+            ];
+            mapKeys.forEach(p => {
+                const odd = findOdd(m7, p.k);
+                if(odd) htft.push({nome: p.n, odd: fx(odd)});
+            });
+        }
+    }
+
+    // MONTA O ARRAY FINAL
+    const lista = [
+        { grupo: "Total de Gols", itens: [ {nome:"Mais 0.5", odd:getGol(0.5, 1.06, 10.0).over}, {nome:"Menos 0.5", odd:getGol(0.5, 1.06, 10.0).under}, {nome:"Mais 1.5", odd:getGol(1.5, 1.29, 3.40).over}, {nome:"Menos 1.5", odd:getGol(1.5, 1.29, 3.40).under}, {nome:"Mais 2.5", odd:getGol(2.5, 1.95, 1.85).over}, {nome:"Menos 2.5", odd:getGol(2.5, 1.95, 1.85).under} ] },
         { grupo: "Ambas Marcam", itens: [ {nome:"Sim", odd:btts.s}, {nome:"Não", odd:btts.n} ] },
-        { grupo: "Chance Dupla", itens: [ {nome:"Casa/Empate", odd:dc.c}, {nome:"Casa/Fora", odd:dc.f}, {nome:"Empate/Fora", odd:dc.e} ] },
-        { grupo: "Placar Exato", itens: [ {nome:"1-0", odd:fx(base.casa*3.2)}, {nome:"2-0", odd:fx(base.casa*5.0)}, {nome:"0-1", odd:fx(base.fora*3.2)}, {nome:"0-2", odd:fx(base.fora*5.0)}, {nome:"1-1", odd:fx(6.00)}, {nome:"0-0", odd:fx(8.50)} ] }
+        { grupo: "Chance Dupla", itens: [ {nome:"Casa/Empate", odd:dc.c}, {nome:"Casa/Fora", odd:dc.f}, {nome:"Empate/Fora", odd:dc.e} ] }
     ];
+
+    // Adiciona condicionais se existirem
+    if(dnb.c !== '-') lista.push({ grupo: "Empate não tem aposta", itens: [{nome: "Casa", odd: dnb.c}, {nome: "Fora", odd: dnb.f}] });
+    if(htWinner.c !== '-') lista.push({ grupo: "Vencedor do 1º Tempo", itens: [{nome: "Casa", odd: htWinner.c}, {nome: "Empate", odd: htWinner.e}, {nome: "Fora", odd: htWinner.f}] });
+    
+    // Gols HT (Só mostra se tiver odd)
+    const golHT05 = getGolHT(0.5);
+    if(golHT05.over !== '-') lista.push({ grupo: "Gols 1º Tempo", itens: [{nome: "Mais 0.5", odd: golHT05.over}, {nome: "Menos 0.5", odd: golHT05.under}] });
+
+    if(htft.length > 0) lista.push({ grupo: "Intervalo / Final", itens: htft });
+
+    // Placar Exato (Sempre bom ter, baseado na odd do jogo)
+    lista.push({ grupo: "Placar Exato", itens: [ {nome:"1-0", odd:fx(base.casa*3.2)}, {nome:"2-0", odd:fx(base.casa*5.0)}, {nome:"0-1", odd:fx(base.fora*3.2)}, {nome:"0-2", odd:fx(base.fora*5.0)}, {nome:"1-1", odd:fx(6.00)}, {nome:"0-0", odd:fx(8.50)} ] });
+
+    return lista;
 }
 
-app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V79 (Correção BD) On!"));
+app.listen(process.env.PORT || 3000, () => console.log("🔥 Server V80 On!"));
